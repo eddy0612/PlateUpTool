@@ -1,0 +1,23 @@
+[
+  {
+    "Delete" : [
+        { "filename" : "Bin-1551609169.png", "reason" : "Duplicate of Bin-1159228054.png" },
+        { "filename" : "CeilingLight-230540973.png", "reason" : "Only need one celiling light" },
+        { "filename" : "ChristmasTree-1797739089.png", "reason" : "Only need one xmas tree" },
+        { "filename" : "Conveyor--667884240.png", "reason" : "Remove the xmas decorated conveyor" },
+        { "filename" : "Counter--996680732.png", "reason" : "Remove the black counter" },
+        { "filename" : "DiscountDesk-1586911545.png", "reason" : "Only need one discount desk" },
+        { "filename" : "DishRack-434150763.png", "reason" : "Only need one dish rack" },
+        { "filename" : "NeonSign-371247235.png", "reason" : "Only need one neon sign" },
+        { "filename" : "NeonSign-785615801.png", "reason" : "Only need one neon sign" },
+        { "filename" : "Pumpkin--621580281.png", "reason" : "Individual pumpkin" },
+        { "filename" : "RobotBuffer--751458770.png", "reason" : "Keep base not robot" },
+        { "filename" : "RobotMop--2091039911.png", "reason" : "Keep base not robot" },
+        { "filename" : "Rug--648349801.png", "reason" : "Cant tell rugs apart yet" },
+        { "filename" : "Rug-591400026.png", "reason" : "Cant tell rugs apart yet" },
+        { "filename" : "SafetyHob--349733673.png", "reason" : "Not a safety hob!" },
+        { "filename" : "SafetyHob-369884364.png", "reason" : "Not a safety hob!" },
+        { "filename" : "SafetyHob-1836107598.png", "reason" : "Not a safety hob!" }
+    ]
+  }
+]
