@@ -11,43 +11,44 @@ echo Calculated location of code to be : "%MYPATH%"
 @rem ------------------------------------------------------------------
 @rem Rextract resources
 @rem ------------------------------------------------------------------
-for %%i in (%MYPATH%\Resources\*.zip) do set PURESOURCES=%%i
-echo Calculated location of resources  : "%PURESOURCES%"
+for %%i in (%MYPATH%\Resources\*.zip) do set PU_RESOURCE_FILE=%%i
+echo Calculated location of resources  : "%PU_RESOURCE_FILE%"
 
-set PUEXPRES=%MYPATH%\res
-if not exist "%PUEXPRES%" (
-    md "%PUEXPRES%"
+set PU_EXPANDED_RESOURCES=%MYPATH%\src\public\expanded_res
+if not exist "%PU_EXPANDED_RESOURCES%" (
+    md "%PU_EXPANDED_RESOURCES%"
     echo Expanding provided resources, please wait
-    powershell -Command "&{Expand-Archive -Path \"!PURESOURCES!\" -DestinationPath \"!PUEXPRES!\" -Force}"
+    powershell -Command "&{Expand-Archive -Path \"!PU_RESOURCE_FILE!\" -DestinationPath \"!PU_EXPANDED_RESOURCES!\" -Force}"
 )
-for /d %%i in (%PUEXPRES%\*) do set PUFILES=%%i
-echo PlateUp provided files are in     : %PUFILES%
+for /d %%i in (%PU_EXPANDED_RESOURCES%\*) do set PU_ACTUAL_FILES=%%i
+echo PlateUp provided files are in     : %PU_ACTUAL_FILES%
 
 echo Ensuring csvtojson is available
 call npm install csvtojson
 
 echo Converting Appliances
 pushd "%MYPATH%\node_modules\csvtojson\bin"
-call .\csvtojson parse --output json "%PUFILES%/Appliances.txt" > "%PUFILES%/Appliances.json"
+call .\csvtojson parse --output json "%PU_ACTUAL_FILES%/Appliances.txt" > "%PU_ACTUAL_FILES%/Appliances.json"
 popd
 
 echo Removing all providers
-del %PUFILES%\AppliancePicture\*Provider*
+del %PU_ACTUAL_FILES%\AppliancePicture\*Provider*
 
 echo Processing special case issues
 pushd %MYPATH%\BuildTools
-call specialcase "%MYPATH%\Resources\SpecialCase.json" "%PUFILES%"
+call specialcase "%MYPATH%\Resources\SpecialCase.json" "%PU_ACTUAL_FILES%"
 popd
 
 @rem ------------------------------------------------------------------
 @rem Check we have everything we need, and product an updated json
 @rem ------------------------------------------------------------------
 pushd %MYPATH%\BuildTools
-call matcher.bat "%PUFILES%\Appliances.json" "%PUFILES%\AppliancePicture"
+call matcher.bat "%PU_ACTUAL_FILES%\Appliances.json" "%PU_ACTUAL_FILES%\AppliancePicture"
 popd
 
-rd src\public /s /q
-xcopy %PUFILES% src\public\res\ /s /e /y
+if exist "%MYPATH%\src\public\res" rd "%MYPATH%\src\public\res" /s /q
+mkdir "%MYPATH%\src\public\res" /s /q
+xcopy /s /q %PU_ACTUAL_FILES% %MYPATH%\src\public\res
 
 echo Done...
 endlocal
