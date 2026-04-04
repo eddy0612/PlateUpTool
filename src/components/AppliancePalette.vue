@@ -6,19 +6,6 @@
         <input v-model="state.filterText" placeholder="Filter appliances..." />
       </div>
 
-      <div class="side-controls">
-        <div>
-          <label>W: <input type="number" v-model.number="state.roomWidth" min="2" max="50" style="width:48px" /></label>
-          <label>H: <input type="number" v-model.number="state.roomHeight" min="2" max="50" style="width:48px" /></label>
-        </div>
-        <div class="clipboard-row">
-          <button @click="cutSelected">Cut</button>
-          <button @click="copySelected">Copy</button>
-          <button @click="pasteClipboard">Paste</button>
-          <button @click="removeSelected">Delete</button>
-        </div>
-      </div>
-
       <div class="palette">
         <div
           v-for="item in filteredPalette"
@@ -33,8 +20,22 @@
         </div>
       </div>
 
-      <div class="status">{{ statusText }}</div>
     </div>
+
+    <div class="side-controls">
+      <div>
+        <label>W: <input type="number" v-model.number="state.roomWidth" min="2" max="50" style="width:48px" /></label>
+        <label>H: <input type="number" v-model.number="state.roomHeight" min="2" max="50" style="width:48px" /></label>
+      </div>
+      <div class="clipboard-row">
+        <button @click="cutSelected">Cut</button>
+        <button @click="copySelected">Copy</button>
+        <button @click="pasteClipboard">Paste</button>
+        <button @click="removeSelected">Delete</button>
+      </div>
+    </div>
+
+    <div class="status">{{ statusText }}</div>
   </aside>
 </template>
 
@@ -139,6 +140,7 @@ export default {
   min-width: 220px;
   display: flex;
   flex-direction: column;
+  gap: 8px;
   height: 100%;
 }
 .side-box {
@@ -208,5 +210,5 @@ export default {
 }
 .clipboard-row { display: flex; gap: 6px }
 .clipboard-row button { flex: 1; padding: 7px; border: none; cursor: pointer; border-radius: 4px; background: #1f79ff; color: white }
-.status { margin-top: auto; font-size: 0.92rem; font-weight: 500 }
+.status { font-size: 0.92rem; font-weight: 500 }
 </style>

@@ -25,18 +25,18 @@
             </template>
           </div>
         </div>
+      </div>
 
-        <div class="tabs">
-          <div
-            v-for="tab in state.tabs"
-            :key="tab.id"
-            :class="['tab-postit', { active: state.activeTabId === tab.id }]"
-            @click="state.activeTabId = tab.id"
-          >
-            {{ tab.label }}
-          </div>
-          <div class="tab-postit add" v-if="state.tabs.length < 15" @click="addTab">+</div>
+      <div class="tabs">
+        <div
+          v-for="tab in state.tabs"
+          :key="tab.id"
+          :class="['tab-postit', { active: state.activeTabId === tab.id }]"
+          @click="state.activeTabId = tab.id"
+        >
+          {{ tab.label }}
         </div>
+        <div class="tab-postit add" v-if="state.tabs.length < 15" @click="addTab">+</div>
       </div>
 
       <div class="controls">
