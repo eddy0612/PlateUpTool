@@ -71,9 +71,6 @@ body { margin: 0; font-family: sans-serif; }
   gap: 10px;
   padding-left: 90px;
   overflow: visible;
-  align-items: flex-end;
-  height: 540px;
-  min-height: 540px;
-  max-height: 540px;
+  align-items: flex-start;
 }
 </style>

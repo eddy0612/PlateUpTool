@@ -1,6 +1,6 @@
 <template>
   <section class="left-panel">
-    <div style="position:relative; height:100%; width:100%;">
+    <div style="position:relative; height:70vh; width:100%;">
 
       <div class="viewport-box">
         <div class="grid" :style="gridStyleDynamic">
@@ -39,21 +39,21 @@
         <div class="tab-postit add" v-if="state.tabs.length < 15" @click="addTab">+</div>
       </div>
 
-      <div class="controls">
-        <div class="control-compass">
-          <span class="compass" :style="{ transform: 'rotate(' + state.orientation + 'deg)' }">🧭</span>
-          <span>{{ state.orientation }}°</span>
-        </div>
-        <div class="control-mode">
-          <label><input type="radio" value="2D" v-model="state.viewMode" /> 2D</label>
-          <label><input type="radio" value="3D" v-model="state.viewMode" /> 3D</label>
-        </div>
-        <div class="control-zoom">
-          <label>Zoom {{ (state.zoom * 100).toFixed(0) }}%</label>
-          <input type="range" min="0.3" max="1.3" step="0.05" v-model.number="state.zoom" />
-        </div>
-      </div>
+    </div>
 
+    <div class="controls">
+      <div class="control-compass">
+        <span class="compass" :style="{ transform: 'rotate(' + state.orientation + 'deg)' }">🧭</span>
+        <span>{{ state.orientation }}°</span>
+      </div>
+      <div class="control-mode">
+        <label><input type="radio" value="2D" v-model="state.viewMode" /> 2D</label>
+        <label><input type="radio" value="3D" v-model="state.viewMode" /> 3D</label>
+      </div>
+      <div class="control-zoom">
+        <label>Zoom {{ (state.zoom * 100).toFixed(0) }}%</label>
+        <input type="range" min="0.3" max="1.3" step="0.05" v-model.number="state.zoom" />
+      </div>
     </div>
   </section>
 </template>
@@ -84,14 +84,13 @@ export default {
 .left-panel {
   flex: 1 1 0%;
   min-width: 0;
-  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
   position: relative;
   overflow: visible;
   padding-left: 0;
-  height: 100%;
+  height: auto;
 }
 .viewport-box {
   background: #f7f8fa;
@@ -183,7 +182,7 @@ export default {
 .tab-postit.active { margin-left: 10px; z-index: 20; background: #ffe680; border-color: #f0c542; font-weight: 700 }
 .tab-postit.add { font-weight: 700; background: #c8e7ff; border-color: #7bbbf3; }
 .tab-postit:hover { transform: translateX(-3px) scale(1.02) rotate(0deg) }
-.controls { display: flex; gap: 18px; align-items: center; margin-top: 8px }
+.controls { display: flex; gap: 18px; align-items: center; }
 .control-compass, .control-mode, .control-zoom { display: flex; align-items: center; gap: 6px }
 .compass { display: inline-block; transition: transform 0.2s }
 </style>
