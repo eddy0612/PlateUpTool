@@ -88,6 +88,14 @@ function isImageIcon(icon) {
 }
 
 function addToGrid(item) {
+  if (selectedCells.value.size === 1) {
+    const [key] = selectedCells.value
+    const [x, y] = key.split(',').map(Number)
+    if (!grid.value[y][x]) {
+      grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0 }
+      return
+    }
+  }
   for (let y = 0; y < grid.value.length; ++y) {
     for (let x = 0; x < grid.value[y].length; ++x) {
       if (!grid.value[y][x]) {
@@ -217,6 +225,14 @@ function cancelMoveDrag() {
   moveDragOffset.value = { dx: 0, dy: 0 }
 }
 
+function removeSelected() {
+  for (const key of selectedCells.value) {
+    const [x, y] = key.split(',').map(Number)
+    grid.value[y][x] = null
+  }
+  selectedCells.value = new Set()
+}
+
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected }
 }

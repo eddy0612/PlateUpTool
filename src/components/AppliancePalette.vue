@@ -50,7 +50,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const { palette } = useAppliancePalette()
-    const { addToGrid, viewportBoxHeight } = useGrid()
+    const { addToGrid, viewportBoxHeight, removeSelected } = useGrid()
 
     const filteredPalette = computed(() => {
       const q = state.filterText.trim().toLowerCase()
@@ -119,13 +119,6 @@ export default {
       }))
       tab.items.push(...pasted)
       state.selectedIds = pasted.map(i => i.id)
-    }
-
-    function removeSelected() {
-      const tab = state.tabs.find(t => t.id === state.activeTabId)
-      if (!tab) return
-      tab.items = tab.items.filter(item => !state.selectedIds.includes(item.id))
-      state.selectedIds = []
     }
 
     return { state, filteredPalette, statusText, addToGrid, cutSelected, copySelected, pasteClipboard, removeSelected, viewportBoxHeight }

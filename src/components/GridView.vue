@@ -68,7 +68,7 @@
 </template>
 
 <script>
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRestaurantStore } from '../store/restaurant'
 import { useGrid } from '../composables/useGrid'
 
@@ -80,7 +80,7 @@ export default {
       flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon,
       rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
       moveDragActive, getCellMoveState, getDisplayCell,
-      startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag
+      startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected
     } = useGrid()
 
     function addTab() {
@@ -235,9 +235,21 @@ export default {
       }
     }
 
+    function onKeyDown(e) {
+      const tag = document.activeElement?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault()
+        removeSelected()
+      }
+    }
+
+    onMounted(() => window.addEventListener('keydown', onKeyDown))
+
     onUnmounted(() => {
       window.removeEventListener('mousemove', onWindowMouseMove)
       window.removeEventListener('mouseup', onWindowMouseUp)
+      window.removeEventListener('keydown', onKeyDown)
       cancelMoveDrag()
     })
 
