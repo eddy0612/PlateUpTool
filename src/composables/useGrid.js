@@ -140,6 +140,83 @@ function addCellsToSelection(cells) {
   if (cells.length > 0) anchorCell.value = cells[cells.length - 1]
 }
 
+// --- Move drag state ---
+const moveDragActive = ref(false)
+const moveDragOffset = ref({ dx: 0, dy: 0 })
+
+// Map of "tx,ty" -> "sx,sy" for every selected cell offset by the current drag delta
+const moveDragTargetMap = computed(() => {
+  if (!moveDragActive.value || selectedCells.value.size === 0) return new Map()
+  const map = new Map()
+  for (const srcKey of selectedCells.value) {
+    const [sx, sy] = srcKey.split(',').map(Number)
+    map.set(cellKey(sx + moveDragOffset.value.dx, sy + moveDragOffset.value.dy), srcKey)
+  }
+  return map
+})
+
+const isMoveValid = computed(() => {
+  if (!moveDragActive.value || moveDragTargetMap.value.size === 0) return false
+  for (const [tKey] of moveDragTargetMap.value) {
+    const [tx, ty] = tKey.split(',').map(Number)
+    if (tx < 0 || tx >= state.roomWidth || ty < 0 || ty >= state.roomHeight) return false
+    // Occupied by a cell that is NOT one of the sources being moved
+    if (grid.value[ty]?.[tx]?.applianceId && !selectedCells.value.has(cellKey(tx, ty))) return false
+  }
+  return true
+})
+
+// Returns 'source' | 'preview-valid' | 'preview-invalid' | null
+function getCellMoveState(x, y) {
+  if (!moveDragActive.value) return null
+  const key = cellKey(x, y)
+  if (selectedCells.value.has(key)) return 'source'
+  if (moveDragTargetMap.value.has(key)) return isMoveValid.value ? 'preview-valid' : 'preview-invalid'
+  return null
+}
+
+// What content a cell should visually display (target preview shows source content)
+function getDisplayCell(x, y) {
+  if (moveDragActive.value) {
+    const srcKey = moveDragTargetMap.value.get(cellKey(x, y))
+    if (srcKey !== undefined) {
+      const [sx, sy] = srcKey.split(',').map(Number)
+      return grid.value[sy]?.[sx] || null
+    }
+  }
+  return grid.value[y]?.[x] || null
+}
+
+function startMoveDrag() { moveDragActive.value = true }
+
+function updateMoveDragOffset(dx, dy) { moveDragOffset.value = { dx, dy } }
+
+function commitMoveDrag() {
+  if (!isMoveValid.value) { cancelMoveDrag(); return }
+  const moves = []
+  for (const [tKey, sKey] of moveDragTargetMap.value) {
+    const [tx, ty] = tKey.split(',').map(Number)
+    const [sx, sy] = sKey.split(',').map(Number)
+    moves.push({ tx, ty, content: { ...grid.value[sy][sx] } })
+  }
+  for (const sKey of selectedCells.value) {
+    const [sx, sy] = sKey.split(',').map(Number)
+    grid.value[sy][sx] = null
+  }
+  for (const { tx, ty, content } of moves) {
+    grid.value[ty][tx] = content
+  }
+  selectedCells.value = new Set(moveDragTargetMap.value.keys())
+  anchorCell.value = null
+  moveDragActive.value = false
+  moveDragOffset.value = { dx: 0, dy: 0 }
+}
+
+function cancelMoveDrag() {
+  moveDragActive.value = false
+  moveDragOffset.value = { dx: 0, dy: 0 }
+}
+
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag }
 }
