@@ -14,8 +14,15 @@ window.addEventListener('resize', () => {
   windowHeight.value = window.innerHeight
 })
 
-// Track selected cell for highlighting
-const selectedCell = ref({ x: null, y: null })
+// Track selected cells for highlighting (Set of "x,y" keys)
+const selectedCells = ref(new Set())
+const anchorCell = ref(null)
+
+function cellKey(x, y) { return `${x},${y}` }
+
+function isSelected(x, y) {
+  return selectedCells.value.has(cellKey(x, y))
+}
 
 const grid = ref([])
 
@@ -97,10 +104,42 @@ function rotateCell(x, y) {
   if (cell && cell.applianceId) cell.rotation = (cell.rotation + 1) % 4
 }
 
-function selectCell(x, y) {
-  selectedCell.value = { x, y }
+function selectCell(x, y, shiftKey = false, ctrlKey = false) {
+  if (shiftKey && anchorCell.value) {
+    const x0 = Math.min(anchorCell.value.x, x)
+    const x1 = Math.max(anchorCell.value.x, x)
+    const y0 = Math.min(anchorCell.value.y, y)
+    const y1 = Math.max(anchorCell.value.y, y)
+    const base = ctrlKey ? new Set(selectedCells.value) : new Set()
+    for (let cy = y0; cy <= y1; cy++)
+      for (let cx = x0; cx <= x1; cx++)
+        base.add(cellKey(cx, cy))
+    selectedCells.value = base
+  } else if (ctrlKey) {
+    const key = cellKey(x, y)
+    const next = new Set(selectedCells.value)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    selectedCells.value = next
+    anchorCell.value = { x, y }
+  } else {
+    selectedCells.value = new Set([cellKey(x, y)])
+    anchorCell.value = { x, y }
+  }
+}
+
+function selectCellsInRect(cells) {
+  selectedCells.value = new Set(cells.map(c => cellKey(c.x, c.y)))
+  if (cells.length > 0) anchorCell.value = cells[cells.length - 1]
+}
+
+function addCellsToSelection(cells) {
+  const next = new Set(selectedCells.value)
+  cells.forEach(c => next.add(cellKey(c.x, c.y)))
+  selectedCells.value = next
+  if (cells.length > 0) anchorCell.value = cells[cells.length - 1]
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCell }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection }
 }

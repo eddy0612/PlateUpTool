@@ -3,13 +3,15 @@
     <div style="position:relative; width:100%;">
 
       <div class="viewport-box">
-        <div class="grid" :style="gridStyleDynamic">
+        <div class="grid" ref="gridEl" :style="gridStyleDynamic" @mousedown="onGridMouseDown" @dragstart.prevent>
           <div
             v-for="cellInfo in flatGrid"
             :key="'cell-' + cellInfo.x + '-' + cellInfo.y"
-            :class="['grid-item', { selected: selectedCell.x === cellInfo.x && selectedCell.y === cellInfo.y }]"
+            :class="['grid-item', { selected: isSelected(cellInfo.x, cellInfo.y) }]"
+            :data-x="cellInfo.x"
+            :data-y="cellInfo.y"
             @contextmenu.prevent="rotateCell(cellInfo.x, cellInfo.y)"
-            @click="selectCell(cellInfo.x, cellInfo.y)"
+            @click="(e) => handleCellClick(e, cellInfo.x, cellInfo.y)"
           >
             <div class="cell-label">{{ cellInfo.y }},{{ cellInfo.x }}</div>
             <template v-if="cellInfo.cell && cellInfo.cell.applianceId">
@@ -18,6 +20,7 @@
                   v-if="isImageIcon(getApplianceIcon(cellInfo.cell.applianceId))"
                   :src="getApplianceIcon(cellInfo.cell.applianceId)"
                   :alt="cellInfo.cell.applianceId"
+                  draggable="false"
                   style="max-width:100%;max-height:100%;display:block;"
                 />
                 <template v-else>{{ getApplianceIcon(cellInfo.cell.applianceId) }}</template>
@@ -55,10 +58,17 @@
         <input type="range" min="0.3" max="1.3" step="0.05" v-model.number="state.zoom" />
       </div>
     </div>
+
+    <div
+      v-if="isDragging && dragStart && dragEnd"
+      class="drag-select-overlay"
+      :style="dragRectStyle"
+    />
   </section>
 </template>
 
 <script>
+import { ref, computed, onUnmounted } from 'vue'
 import { useRestaurantStore } from '../store/restaurant'
 import { useGrid } from '../composables/useGrid'
 
@@ -66,7 +76,7 @@ export default {
   name: 'GridView',
   setup() {
     const { state } = useRestaurantStore()
-    const { flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon, rotateCell, selectCell, selectedCell } = useGrid()
+    const { flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection } = useGrid()
 
     function addTab() {
       if (state.tabs.length >= 15) return
@@ -75,7 +85,91 @@ export default {
       state.activeTabId = nextId
     }
 
-    return { state, flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon, rotateCell, selectCell, addTab, selectedCell }
+    // --- Multi-select drag state ---
+    const gridEl = ref(null)
+    const isDragging = ref(false)
+    const wasDragging = ref(false)
+    const dragStart = ref(null)
+    const dragEnd = ref(null)
+
+    const dragRectStyle = computed(() => {
+      if (!dragStart.value || !dragEnd.value) return {}
+      return {
+        left: Math.min(dragStart.value.x, dragEnd.value.x) + 'px',
+        top: Math.min(dragStart.value.y, dragEnd.value.y) + 'px',
+        width: Math.abs(dragEnd.value.x - dragStart.value.x) + 'px',
+        height: Math.abs(dragEnd.value.y - dragStart.value.y) + 'px',
+      }
+    })
+
+    function handleCellClick(e, x, y) {
+      if (wasDragging.value) { wasDragging.value = false; return }
+      selectCell(x, y, e.shiftKey, e.ctrlKey || e.metaKey)
+    }
+
+    function onGridMouseDown(e) {
+      if (e.button !== 0) return
+      dragStart.value = { x: e.clientX, y: e.clientY }
+      dragEnd.value = { x: e.clientX, y: e.clientY }
+      isDragging.value = false
+      window.addEventListener('mousemove', onWindowMouseMove)
+      window.addEventListener('mouseup', onWindowMouseUp)
+    }
+
+    function onWindowMouseMove(e) {
+      if (!dragStart.value) return
+      const dx = e.clientX - dragStart.value.x
+      const dy = e.clientY - dragStart.value.y
+      if (!isDragging.value && Math.sqrt(dx * dx + dy * dy) > 5) {
+        isDragging.value = true
+      }
+      if (isDragging.value) {
+        dragEnd.value = { x: e.clientX, y: e.clientY }
+      }
+    }
+
+    function onWindowMouseUp(e) {
+      window.removeEventListener('mousemove', onWindowMouseMove)
+      window.removeEventListener('mouseup', onWindowMouseUp)
+      if (isDragging.value) {
+        finalizeDragSelection(e.ctrlKey || e.metaKey || e.shiftKey)
+        wasDragging.value = true
+        isDragging.value = false
+      }
+      dragStart.value = null
+      dragEnd.value = null
+    }
+
+    function finalizeDragSelection(addToExisting) {
+      if (!gridEl.value || !dragStart.value || !dragEnd.value) return
+      const rectLeft = Math.min(dragStart.value.x, dragEnd.value.x)
+      const rectRight = Math.max(dragStart.value.x, dragEnd.value.x)
+      const rectTop = Math.min(dragStart.value.y, dragEnd.value.y)
+      const rectBottom = Math.max(dragStart.value.y, dragEnd.value.y)
+
+      const cells = []
+      gridEl.value.querySelectorAll('.grid-item').forEach(el => {
+        const br = el.getBoundingClientRect()
+        const cx = br.left + br.width / 2
+        const cy = br.top + br.height / 2
+        if (cx >= rectLeft && cx <= rectRight && cy >= rectTop && cy <= rectBottom) {
+          cells.push({ x: parseInt(el.dataset.x), y: parseInt(el.dataset.y) })
+        }
+      })
+
+      if (addToExisting) {
+        addCellsToSelection(cells)
+      } else {
+        selectCellsInRect(cells)
+      }
+    }
+
+    onUnmounted(() => {
+      window.removeEventListener('mousemove', onWindowMouseMove)
+      window.removeEventListener('mouseup', onWindowMouseUp)
+    })
+
+    return { state, flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon, rotateCell, selectedCells, isSelected, addTab, gridEl, isDragging, dragStart, dragEnd, dragRectStyle, handleCellClick, onGridMouseDown }
   }
 }
 </script>
@@ -118,6 +212,7 @@ export default {
   min-height: 0;
   min-width: 0;
   flex-shrink: 0;
+  user-select: none;
 }
 .grid::before {
   content: '';
@@ -153,6 +248,13 @@ export default {
   position: relative;
 }
 .grid-item.selected { border: 2px solid #1f79ff; background: #dde9ff }
+.drag-select-overlay {
+  position: fixed;
+  border: 1.5px solid #1f79ff;
+  background: rgba(31, 121, 255, 0.12);
+  pointer-events: none;
+  z-index: 9999;
+}
 .cell-label { font-size: 10px; color: #bbb; position: absolute; top: 2px; left: 2px; }
 .tabs {
   position: absolute;
