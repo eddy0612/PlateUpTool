@@ -189,6 +189,7 @@ export default {
         }
         // Suppress the click event in both cases (drag or plain click on selected cell)
         wasDragging.value = true
+        setTimeout(() => { wasDragging.value = false }, 0)
         pendingMoveCell.value = null
         moveDragStartMouse.value = null
         return
@@ -198,10 +199,8 @@ export default {
       if (isDragging.value) {
         finalizeDragSelection(e.ctrlKey || e.metaKey || e.shiftKey)
         wasDragging.value = true
+        setTimeout(() => { wasDragging.value = false }, 0)
         isDragging.value = false
-      } else {
-        // Plain click — don't leave a stale wasDragging from a previous drag
-        wasDragging.value = false
       }
       dragStart.value = null
       dragEnd.value = null
