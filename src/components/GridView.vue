@@ -216,9 +216,7 @@ export default {
       const cells = []
       gridEl.value.querySelectorAll('.grid-item').forEach(el => {
         const br = el.getBoundingClientRect()
-        const cx = br.left + br.width / 2
-        const cy = br.top + br.height / 2
-        if (cx >= rectLeft && cx <= rectRight && cy >= rectTop && cy <= rectBottom)
+        if (br.left <= rectRight && br.right >= rectLeft && br.top <= rectBottom && br.bottom >= rectTop)
           cells.push({ x: parseInt(el.dataset.x), y: parseInt(el.dataset.y) })
       })
 
