@@ -1,6 +1,6 @@
 <template>
   <aside class="right-panel">
-    <div class="side-box">
+    <div class="side-box" :style="{ maxHeight: viewportBoxHeight + 'px' }">
 
       <div class="filter">
         <input v-model="state.filterText" placeholder="Filter appliances..." />
@@ -50,7 +50,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const { palette } = useAppliancePalette()
-    const { addToGrid } = useGrid()
+    const { addToGrid, viewportBoxHeight } = useGrid()
 
     const filteredPalette = computed(() => {
       const q = state.filterText.trim().toLowerCase()
@@ -128,7 +128,7 @@ export default {
       state.selectedIds = []
     }
 
-    return { state, filteredPalette, statusText, addToGrid, cutSelected, copySelected, pasteClipboard, removeSelected }
+    return { state, filteredPalette, statusText, addToGrid, cutSelected, copySelected, pasteClipboard, removeSelected, viewportBoxHeight }
   }
 }
 </script>
@@ -151,8 +151,6 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 70vh;
-  max-height: 70vh;
   box-sizing: border-box;
   overflow: hidden;
 }

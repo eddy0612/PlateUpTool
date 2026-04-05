@@ -41,25 +41,28 @@ const flatGrid = computed(() => {
   return arr
 })
 
-const gridStyleDynamic = computed(() => {
-  // Approximate space consumed by chrome outside the grid:
-  //   Vertical:   ~20px root padding + ~40px header + ~8px gap + ~16px viewport padding + ~40px controls = 124px
-  //   Horizontal: ~20px root padding + ~90px left tab offset + ~10px gap + ~280px palette + ~16px viewport padding = 416px
-  const H_OVERHEAD = 130
-  const W_OVERHEAD = 420
+// Approximate space consumed by chrome outside the grid:
+//   Vertical:   ~20px root padding + ~40px header + ~8px gap + ~16px viewport padding + ~40px controls = 124px
+//   Horizontal: ~20px root padding + ~90px left tab offset + ~10px gap + ~280px palette + ~16px viewport padding = 416px
+const H_OVERHEAD = 130
+const W_OVERHEAD = 420
 
+const cellSize = computed(() => {
   const availableH = windowHeight.value - H_OVERHEAD
   const availableW = windowWidth.value - W_OVERHEAD
-  const cellSize = Math.max(16, Math.floor(Math.min(availableH / state.roomHeight, availableW / state.roomWidth)))
-
-  return {
-    gridTemplateColumns: `repeat(${state.roomWidth}, 1fr)`,
-    gridTemplateRows: `repeat(${state.roomHeight}, 1fr)`,
-    width: `${state.roomWidth * cellSize}px`,
-    height: `${state.roomHeight * cellSize}px`,
-    transform: `scale(${state.zoom}) rotate(${state.orientation}deg)`
-  }
+  return Math.max(16, Math.floor(Math.min(availableH / state.roomHeight, availableW / state.roomWidth)))
 })
+
+// Height of the .viewport-box element: grid height + 8px padding top/bottom + 1px border top/bottom
+const viewportBoxHeight = computed(() => state.roomHeight * cellSize.value + 18)
+
+const gridStyleDynamic = computed(() => ({
+  gridTemplateColumns: `repeat(${state.roomWidth}, 1fr)`,
+  gridTemplateRows: `repeat(${state.roomHeight}, 1fr)`,
+  width: `${state.roomWidth * cellSize.value}px`,
+  height: `${state.roomHeight * cellSize.value}px`,
+  transform: `scale(${state.zoom}) rotate(${state.orientation}deg)`
+}))
 
 function rotationStyle(rot) {
   return { display: 'inline-block', transform: `rotate(${rot * 90}deg)` }
@@ -96,5 +99,5 @@ function selectCell(x, y) {
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell }
 }
