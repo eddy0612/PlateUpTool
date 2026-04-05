@@ -7,7 +7,7 @@
           <div
             v-for="cellInfo in flatGrid"
             :key="'cell-' + cellInfo.x + '-' + cellInfo.y"
-            class="grid-item"
+            :class="['grid-item', { selected: selectedCell.x === cellInfo.x && selectedCell.y === cellInfo.y }]"
             @contextmenu.prevent="rotateCell(cellInfo.x, cellInfo.y)"
             @click="selectCell(cellInfo.x, cellInfo.y)"
           >
@@ -66,7 +66,7 @@ export default {
   name: 'GridView',
   setup() {
     const { state } = useRestaurantStore()
-    const { flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon, rotateCell, selectCell } = useGrid()
+    const { flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon, rotateCell, selectCell, selectedCell } = useGrid()
 
     function addTab() {
       if (state.tabs.length >= 15) return
@@ -75,7 +75,7 @@ export default {
       state.activeTabId = nextId
     }
 
-    return { state, flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon, rotateCell, selectCell, addTab }
+    return { state, flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon, rotateCell, selectCell, addTab, selectedCell }
   }
 }
 </script>

@@ -14,6 +14,9 @@ window.addEventListener('resize', () => {
   windowHeight.value = window.innerHeight
 })
 
+// Track selected cell for highlighting
+const selectedCell = ref({ x: null, y: null })
+
 const grid = ref([])
 
 function initGrid() {
@@ -95,9 +98,9 @@ function rotateCell(x, y) {
 }
 
 function selectCell(x, y) {
-  // future: highlight/select cell
+  selectedCell.value = { x, y }
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCell }
 }
