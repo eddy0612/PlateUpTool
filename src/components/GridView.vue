@@ -199,6 +199,9 @@ export default {
         finalizeDragSelection(e.ctrlKey || e.metaKey || e.shiftKey)
         wasDragging.value = true
         isDragging.value = false
+      } else {
+        // Plain click — don't leave a stale wasDragging from a previous drag
+        wasDragging.value = false
       }
       dragStart.value = null
       dragEnd.value = null
