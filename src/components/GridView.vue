@@ -1,6 +1,6 @@
 <template>
   <section class="left-panel">
-    <div style="position:relative; height:70vh; width:100%;">
+    <div style="position:relative; width:100%;">
 
       <div class="viewport-box">
         <div class="grid" :style="gridStyleDynamic">
@@ -103,7 +103,7 @@ export default {
   justify-content: center;
   align-items: flex-start;
   width: 100%;
-  height: 100%;
+  height: auto;
   min-width: 0;
   min-height: 0;
 }
@@ -117,10 +117,7 @@ export default {
   transform-origin: center;
   min-height: 0;
   min-width: 0;
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
+  flex-shrink: 0;
 }
 .grid::before {
   content: '';

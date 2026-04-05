@@ -9,7 +9,7 @@ const DEFAULT_STATE = {
   activeTabId: 'main',
   orientation: 0,
   viewMode: '2D',
-  zoom: 0.7,
+  zoom: 1.0,
   roomWidth: 16,
   roomHeight: 12,
   selectedIds: [],

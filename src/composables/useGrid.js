@@ -6,6 +6,14 @@ import { useAppliancePalette } from './useAppliancePalette'
 const { state } = useRestaurantStore()
 const { palette } = useAppliancePalette()
 
+// Track viewport dimensions so the grid can fill the available space
+const windowWidth = ref(window.innerWidth)
+const windowHeight = ref(window.innerHeight)
+window.addEventListener('resize', () => {
+  windowWidth.value = window.innerWidth
+  windowHeight.value = window.innerHeight
+})
+
 const grid = ref([])
 
 function initGrid() {
@@ -33,13 +41,25 @@ const flatGrid = computed(() => {
   return arr
 })
 
-const gridStyleDynamic = computed(() => ({
-  gridTemplateColumns: `repeat(${state.roomWidth}, 1fr)`,
-  gridTemplateRows: `repeat(${state.roomHeight}, 1fr)`,
-  width: `${Math.min(700, state.roomWidth * 32)}px`,
-  height: `${Math.min(540, state.roomHeight * 32)}px`,
-  transform: `scale(${state.zoom}) rotate(${state.orientation}deg)`
-}))
+const gridStyleDynamic = computed(() => {
+  // Approximate space consumed by chrome outside the grid:
+  //   Vertical:   ~20px root padding + ~40px header + ~8px gap + ~16px viewport padding + ~40px controls = 124px
+  //   Horizontal: ~20px root padding + ~90px left tab offset + ~10px gap + ~280px palette + ~16px viewport padding = 416px
+  const H_OVERHEAD = 130
+  const W_OVERHEAD = 420
+
+  const availableH = windowHeight.value - H_OVERHEAD
+  const availableW = windowWidth.value - W_OVERHEAD
+  const cellSize = Math.max(16, Math.floor(Math.min(availableH / state.roomHeight, availableW / state.roomWidth)))
+
+  return {
+    gridTemplateColumns: `repeat(${state.roomWidth}, 1fr)`,
+    gridTemplateRows: `repeat(${state.roomHeight}, 1fr)`,
+    width: `${state.roomWidth * cellSize}px`,
+    height: `${state.roomHeight * cellSize}px`,
+    transform: `scale(${state.zoom}) rotate(${state.orientation}deg)`
+  }
+})
 
 function rotationStyle(rot) {
   return { display: 'inline-block', transform: `rotate(${rot * 90}deg)` }
