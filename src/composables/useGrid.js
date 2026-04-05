@@ -50,7 +50,7 @@ const W_OVERHEAD = 420
 const cellSize = computed(() => {
   const availableH = windowHeight.value - H_OVERHEAD
   const availableW = windowWidth.value - W_OVERHEAD
-  return Math.max(16, Math.floor(Math.min(availableH / state.roomHeight, availableW / state.roomWidth)))
+  return Math.max(16, Math.floor(Math.min(availableH / state.roomHeight, availableW / state.roomWidth) * 0.95))
 })
 
 // Height of the .viewport-box element: grid height + 8px padding top/bottom + 1px border top/bottom
