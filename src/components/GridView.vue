@@ -295,6 +295,11 @@ export default {
         e.preventDefault()
         removeSelected()
       }
+      if (e.key >= '0' && e.key <= '9') {
+        const idx = e.key === '0' ? 9 : parseInt(e.key) - 1
+        const userTabs = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure')
+        if (idx < userTabs.length) state.activeTabId = userTabs[idx].id
+      }
     }
 
     onMounted(() => window.addEventListener('keydown', onKeyDown))
