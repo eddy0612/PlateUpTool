@@ -94,14 +94,14 @@ function addToGrid(item) {
     const [key] = selectedCells.value
     const [x, y] = key.split(',').map(Number)
     if (!grid.value[y][x]) {
-      grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabId }
+      grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabIds: [tabId] }
       return
     }
   }
   for (let y = 0; y < grid.value.length; ++y) {
     for (let x = 0; x < grid.value[y].length; ++x) {
       if (!grid.value[y][x]) {
-        grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabId }
+        grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabIds: [tabId] }
         return
       }
     }
@@ -235,13 +235,41 @@ function removeSelected() {
   selectedCells.value = new Set()
 }
 
+function moveSelectionToTab(targetTabId) {
+  for (const key of selectedCells.value) {
+    const [x, y] = key.split(',').map(Number)
+    const cell = grid.value[y]?.[x]
+    if (cell?.applianceId) {
+      cell.tabIds = [targetTabId]
+    }
+  }
+}
+
+function addSelectionToTab(targetTabId) {
+  for (const key of selectedCells.value) {
+    const [x, y] = key.split(',').map(Number)
+    const cell = grid.value[y]?.[x]
+    if (cell?.applianceId) {
+      if (!Array.isArray(cell.tabIds)) {
+        cell.tabIds = cell.tabId ? [cell.tabId] : []
+      }
+      if (!cell.tabIds.includes(targetTabId)) {
+        cell.tabIds.push(targetTabId)
+      }
+    }
+  }
+}
+
 function isCellGhosted(x, y) {
   const cell = getDisplayCell(x, y)
   if (!cell?.applianceId) return false
   if (state.activeTabId === 'complete') return false
-  return cell.tabId != null && cell.tabId !== state.activeTabId
+  // Support both new tabIds array and legacy tabId string
+  if (Array.isArray(cell.tabIds)) return !cell.tabIds.includes(state.activeTabId)
+  if (cell.tabId != null) return cell.tabId !== state.activeTabId
+  return false
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected }
 }

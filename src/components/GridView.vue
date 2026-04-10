@@ -80,6 +80,15 @@
       class="drag-select-overlay"
       :style="dragRectStyle"
     />
+
+    <template v-if="contextMenuVisible">
+      <div class="context-menu-backdrop" @click="closeContextMenu" @contextmenu.prevent="closeContextMenu" />
+      <div class="context-menu" :style="{ left: contextMenuPos.x + 'px', top: contextMenuPos.y + 'px' }">
+        <div class="context-menu-item" @click="doMoveToThisLevel">Move selection to this level</div>
+        <div class="context-menu-item" @click="doShowInBothLevels">Show selected items in both levels</div>
+        <div class="context-menu-item context-menu-cancel" @click="closeContextMenu">Cancel</div>
+      </div>
+    </template>
   </section>
 </template>
 
@@ -95,7 +104,7 @@ export default {
     const {
       flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon,
       rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
-      moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted,
+      moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected
     } = useGrid()
 
@@ -307,11 +316,30 @@ export default {
         e.preventDefault()
         removeSelected()
       }
+      if (e.key === 'Escape') {
+        closeContextMenu()
+      }
       if (e.key >= '0' && e.key <= '9') {
         const idx = e.key === '0' ? 9 : parseInt(e.key) - 1
         const userTabs = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure')
         if (idx < userTabs.length) state.activeTabId = userTabs[idx].id
       }
+    }
+
+    // --- Context menu for ghosted cells ---
+    const contextMenuVisible = ref(false)
+    const contextMenuPos = ref({ x: 0, y: 0 })
+
+    function closeContextMenu() { contextMenuVisible.value = false }
+
+    function doMoveToThisLevel() {
+      moveSelectionToTab(state.activeTabId)
+      contextMenuVisible.value = false
+    }
+
+    function doShowInBothLevels() {
+      addSelectionToTab(state.activeTabId)
+      contextMenuVisible.value = false
     }
 
     // --- Right-mouse drag to pan ---
@@ -345,6 +373,12 @@ export default {
 
     function handleCellContextMenu(e, x, y) {
       if (wasRightDragging.value) return
+      if (isCellGhosted(x, y)) {
+        if (!isSelected(x, y)) selectCell(x, y)
+        contextMenuPos.value = { x: e.clientX, y: e.clientY }
+        contextMenuVisible.value = true
+        return
+      }
       rotateCell(x, y)
     }
 
@@ -376,7 +410,8 @@ export default {
       rotateCell, selectedCells, isSelected, addTab,
       gridEl, viewportEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
       handleCellClick, handleCellContextMenu, onGridMouseDown, cellClasses, getDisplayCell,
-      editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename
+      editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename,
+      contextMenuVisible, contextMenuPos, closeContextMenu, doMoveToThisLevel, doShowInBothLevels
     }
   }
 }
@@ -525,5 +560,36 @@ export default {
   color: inherit;
   padding: 0;
   display: block;
+}
+.context-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: transparent;
+}
+.context-menu {
+  position: fixed;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid #b0c0d0;
+  border-radius: 6px;
+  box-shadow: 2px 4px 14px rgba(0,0,0,0.18);
+  padding: 4px 0;
+  min-width: 230px;
+  user-select: none;
+}
+.context-menu-item {
+  padding: 9px 18px;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.context-menu-item:hover {
+  background: #e8f0ff;
+}
+.context-menu-cancel {
+  color: #666;
+  border-top: 1px solid #e8e8e8;
+  margin-top: 2px;
 }
 </style>
