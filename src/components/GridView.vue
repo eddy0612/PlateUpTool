@@ -2,7 +2,7 @@
   <section class="left-panel">
     <div style="position:relative; width:100%;">
 
-      <div class="viewport-box" :style="{ height: viewportBoxHeight + 'px' }">
+      <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }">
         <div class="grid-centering-wrapper">
         <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive }" @mousedown="onGridMouseDown" @dragstart.prevent>
           <div
@@ -11,7 +11,7 @@
             :class="cellClasses(cellInfo.x, cellInfo.y)"
             :data-x="cellInfo.x"
             :data-y="cellInfo.y"
-            @contextmenu.prevent="rotateCell(cellInfo.x, cellInfo.y)"
+            @contextmenu.prevent="handleCellContextMenu($event, cellInfo.x, cellInfo.y)"
             @click="(e) => handleCellClick(e, cellInfo.x, cellInfo.y)"
           >
             <div class="cell-label">{{ cellInfo.y }},{{ cellInfo.x }}</div>
@@ -146,6 +146,7 @@ export default {
 
     // --- Shared drag helpers ---
     const gridEl = ref(null)
+    const viewportEl = ref(null)
     const wasDragging = ref(false)
 
     // --- Select-box drag state ---
@@ -176,6 +177,15 @@ export default {
     }
 
     function onGridMouseDown(e) {
+      if (e.button === 2) {
+        if (!viewportEl.value) return
+        rightDragStartMouse.value = { x: e.clientX, y: e.clientY }
+        rightDragScrollStart.value = { left: viewportEl.value.scrollLeft, top: viewportEl.value.scrollTop }
+        isRightDragging = false
+        window.addEventListener('mousemove', onRightDragMouseMove)
+        window.addEventListener('mouseup', onRightDragMouseUp)
+        return
+      }
       if (e.button !== 0) return
 
       // If clicking on an already-selected cell without modifiers → potential move drag
@@ -304,6 +314,40 @@ export default {
       }
     }
 
+    // --- Right-mouse drag to pan ---
+    const rightDragStartMouse = ref(null)
+    const rightDragScrollStart = ref(null)
+    let isRightDragging = false
+    const wasRightDragging = ref(false)
+
+    function onRightDragMouseMove(e) {
+      if (!rightDragStartMouse.value || !viewportEl.value) return
+      const dx = e.clientX - rightDragStartMouse.value.x
+      const dy = e.clientY - rightDragStartMouse.value.y
+      if (!isRightDragging && Math.sqrt(dx * dx + dy * dy) > 5) isRightDragging = true
+      if (isRightDragging) {
+        viewportEl.value.scrollLeft = rightDragScrollStart.value.left + dx
+        viewportEl.value.scrollTop = rightDragScrollStart.value.top - dy
+      }
+    }
+
+    function onRightDragMouseUp() {
+      window.removeEventListener('mousemove', onRightDragMouseMove)
+      window.removeEventListener('mouseup', onRightDragMouseUp)
+      if (isRightDragging) {
+        wasRightDragging.value = true
+        setTimeout(() => { wasRightDragging.value = false }, 0)
+      }
+      rightDragStartMouse.value = null
+      rightDragScrollStart.value = null
+      isRightDragging = false
+    }
+
+    function handleCellContextMenu(e, x, y) {
+      if (wasRightDragging.value) return
+      rotateCell(x, y)
+    }
+
     function onWheel(e) {
       e.preventDefault()
       const delta = e.deltaY > 0 ? -0.05 : 0.05
@@ -312,15 +356,16 @@ export default {
 
     onMounted(() => {
       window.addEventListener('keydown', onKeyDown)
-      const vp = document.querySelector('.viewport-box')
-      if (vp) vp.addEventListener('wheel', onWheel, { passive: false })
+      if (viewportEl.value) viewportEl.value.addEventListener('wheel', onWheel, { passive: false })
     })
 
     onUnmounted(() => {
       window.removeEventListener('mousemove', onWindowMouseMove)
       window.removeEventListener('mouseup', onWindowMouseUp)
       window.removeEventListener('keydown', onKeyDown)
-      const vp = document.querySelector('.viewport-box')
+      window.removeEventListener('mousemove', onRightDragMouseMove)
+      window.removeEventListener('mouseup', onRightDragMouseUp)
+      const vp = viewportEl.value
       if (vp) vp.removeEventListener('wheel', onWheel)
       cancelMoveDrag()
       if (tabRenameTimer) clearTimeout(tabRenameTimer)
@@ -329,8 +374,8 @@ export default {
     return {
       state, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon,
       rotateCell, selectedCells, isSelected, addTab,
-      gridEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
-      handleCellClick, onGridMouseDown, cellClasses, getDisplayCell,
+      gridEl, viewportEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
+      handleCellClick, handleCellContextMenu, onGridMouseDown, cellClasses, getDisplayCell,
       editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename
     }
   }
@@ -365,7 +410,9 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  width: max-content;
   min-width: 100%;
+  height: max-content;
   min-height: 100%;
   box-sizing: border-box;
 }
