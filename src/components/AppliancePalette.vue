@@ -35,7 +35,6 @@
       </div>
     </div>
 
-    <div class="status">{{ statusText }}</div>
   </aside>
 </template>
 
@@ -56,11 +55,6 @@ export default {
       const q = state.filterText.trim().toLowerCase()
       if (!q) return palette.value
       return palette.value.filter(item => item.label.toLowerCase().includes(q))
-    })
-
-    const statusText = computed(() => {
-      if (selectedCells.value.size === 0) return 'No items selected'
-      return `${selectedCells.value.size} cell${selectedCells.value.size === 1 ? '' : 's'} selected`
     })
 
     // Canvas image drawing with top-crop
@@ -96,7 +90,7 @@ export default {
       })
     }, { immediate: true })
 
-    return { state, filteredPalette, statusText, addToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight }
+    return { state, filteredPalette, addToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight }
   }
 }
 </script>
@@ -176,5 +170,5 @@ export default {
 }
 .clipboard-row { display: flex; gap: 6px }
 .clipboard-row button { flex: 1; padding: 7px; border: none; cursor: pointer; border-radius: 4px; background: #1f79ff; color: white }
-.status { font-size: 0.92rem; font-weight: 500 }
+
 </style>
