@@ -223,7 +223,7 @@ export default {
         if (el) {
           const cx = parseInt(el.dataset.x)
           const cy = parseInt(el.dataset.y)
-          if (isSelected(cx, cy)) {
+          if (isSelected(cx, cy) && !isCellGhosted(cx, cy)) {
             pendingMoveCell.value = { x: cx, y: cy }
             moveDragStartMouse.value = { x: e.clientX, y: e.clientY }
             window.addEventListener('mousemove', onWindowMouseMove)
