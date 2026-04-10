@@ -30,7 +30,7 @@
       <div class="clipboard-row">
         <button @click="cutToClipboard">Cut</button>
         <button @click="copyToClipboard">Copy</button>
-        <button @click="pasteFromClipboard">Paste</button>
+        <button @click="startPaste">Paste</button>
         <button @click="removeSelected">Delete</button>
       </div>
     </div>
@@ -50,7 +50,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const { palette } = useAppliancePalette()
-    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, pasteFromClipboard } = useGrid()
+    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste } = useGrid()
 
     const filteredPalette = computed(() => {
       const q = state.filterText.trim().toLowerCase()
@@ -96,7 +96,7 @@ export default {
       })
     }, { immediate: true })
 
-    return { state, filteredPalette, statusText, addToGrid, cutToClipboard, copyToClipboard, pasteFromClipboard, removeSelected, viewportBoxHeight }
+    return { state, filteredPalette, statusText, addToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight }
   }
 }
 </script>

@@ -4,7 +4,7 @@
 
       <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }">
         <div class="grid-centering-wrapper">
-        <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive }" @mousedown="onGridMouseDown" @dragstart.prevent>
+        <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive, 'paste-pending': pastePending }" @mousedown="onGridMouseDown" @dragstart.prevent>
           <div
             v-for="cellInfo in flatGrid"
             :key="'cell-' + cellInfo.x + '-' + cellInfo.y"
@@ -93,7 +93,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRestaurantStore } from '../store/restaurant'
 import { useGrid } from '../composables/useGrid'
 
@@ -106,7 +106,8 @@ export default {
       rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
       moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
-      copyToClipboard, cutToClipboard, pasteFromClipboard
+      copyToClipboard, cutToClipboard,
+      pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste
     } = useGrid()
 
     function addTab() {
@@ -181,12 +182,30 @@ export default {
 
     // ---- Event handlers ----
 
+    // --- Paste pending tracking ---
+    function onPasteMouseMove(e) {
+      const el = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.grid-item')
+      if (el && el.dataset.x !== undefined) {
+        setPasteAnchor(parseInt(el.dataset.x), parseInt(el.dataset.y))
+      }
+    }
+    watch(pastePending, (val) => {
+      if (val) window.addEventListener('mousemove', onPasteMouseMove)
+      else window.removeEventListener('mousemove', onPasteMouseMove)
+    })
+
     function handleCellClick(e, x, y) {
+      if (pastePending.value) {
+        setPasteAnchor(x, y)
+        confirmPaste()
+        return
+      }
       if (wasDragging.value) { wasDragging.value = false; return }
       selectCell(x, y, e.shiftKey, e.ctrlKey || e.metaKey)
     }
 
     function onGridMouseDown(e) {
+      if (pastePending.value) return
       if (e.button === 2) {
         if (!viewportEl.value) return
         rightDragStartMouse.value = { x: e.clientX, y: e.clientY }
@@ -300,12 +319,15 @@ export default {
 
     function cellClasses(x, y) {
       const move = getCellMoveState(x, y)
+      const paste = getCellPasteState(x, y)
       return {
         'grid-item': true,
         selected: isSelected(x, y),
         'move-source': move === 'source',
         'move-preview-valid': move === 'preview-valid',
         'move-preview-invalid': move === 'preview-invalid',
+        'paste-preview-valid': paste === 'paste-preview-valid',
+        'paste-preview-invalid': paste === 'paste-preview-invalid',
         ghosted: isCellGhosted(x, y),
       }
     }
@@ -319,8 +341,9 @@ export default {
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') { e.preventDefault(); copyToClipboard() }
       if ((e.ctrlKey || e.metaKey) && e.key === 'x') { e.preventDefault(); cutToClipboard() }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'v') { e.preventDefault(); pasteFromClipboard() }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') { e.preventDefault(); startPaste() }
       if (e.key === 'Escape') {
+        if (pastePending.value) { cancelPaste(); return }
         closeContextMenu()
       }
       if (e.key >= '0' && e.key <= '9') {
@@ -403,9 +426,11 @@ export default {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('mousemove', onRightDragMouseMove)
       window.removeEventListener('mouseup', onRightDragMouseUp)
+      window.removeEventListener('mousemove', onPasteMouseMove)
       const vp = viewportEl.value
       if (vp) vp.removeEventListener('wheel', onWheel)
       cancelMoveDrag()
+      cancelPaste()
       if (tabRenameTimer) clearTimeout(tabRenameTimer)
     })
 
@@ -415,7 +440,8 @@ export default {
       gridEl, viewportEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
       handleCellClick, handleCellContextMenu, onGridMouseDown, cellClasses, getDisplayCell,
       editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename,
-      contextMenuVisible, contextMenuPos, closeContextMenu, doMoveToThisLevel, doShowInBothLevels
+      contextMenuVisible, contextMenuPos, closeContextMenu, doMoveToThisLevel, doShowInBothLevels,
+      pastePending
     }
   }
 }
@@ -488,6 +514,9 @@ export default {
 .grid-item.move-source { opacity: 0.35; border: 2px dashed #1f79ff; background: #dde9ff }
 .grid-item.move-preview-valid { border: 2px solid #22a355; background: rgba(34, 163, 85, 0.18) }
 .grid-item.move-preview-invalid { border: 2px solid #d93025; background: rgba(217, 48, 37, 0.18) }
+.grid-item.paste-preview-valid { border: 2px solid #22a355; background: rgba(34, 163, 85, 0.25) }
+.grid-item.paste-preview-invalid { border: 2px solid #d93025; background: rgba(217, 48, 37, 0.25) }
+.grid.paste-pending .grid-item { cursor: copy }
 .grid-item.ghosted { opacity: 0.25; filter: grayscale(0.6); }
 .drag-select-overlay {
   position: fixed;

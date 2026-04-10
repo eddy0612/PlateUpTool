@@ -194,6 +194,10 @@ function getDisplayCell(x, y) {
       return grid.value[sy]?.[sx] || null
     }
   }
+  if (pastePending.value) {
+    const cell = pastePendingTargetMap.value.get(cellKey(x, y))
+    if (cell !== undefined) return cell
+  }
   return grid.value[y]?.[x] || null
 }
 
@@ -298,22 +302,68 @@ function cutToClipboard() {
   removeSelected()
 }
 
-function pasteFromClipboard() {
-  if (!clipboard.value.length || !clipboardPasteOrigin.value) return
-  const { x: ox, y: oy } = clipboardPasteOrigin.value
-  const newSelected = new Set()
+// --- Paste pending mode ---
+const pastePending = ref(false)
+const pasteAnchor = ref(null) // { x, y } top-left of paste preview
+
+const pastePendingTargetMap = computed(() => {
+  if (!pastePending.value || !pasteAnchor.value || clipboard.value.length === 0) return new Map()
+  const map = new Map()
   for (const { dx, dy, cell } of clipboard.value) {
-    const tx = ox + dx
-    const ty = oy + dy
-    if (tx >= 0 && tx < state.roomWidth && ty >= 0 && ty < state.roomHeight) {
-      grid.value[ty][tx] = { ...cell }
-      newSelected.add(cellKey(tx, ty))
-    }
+    map.set(cellKey(pasteAnchor.value.x + dx, pasteAnchor.value.y + dy), cell)
+  }
+  return map
+})
+
+const isPasteValid = computed(() => {
+  if (!pastePending.value || pastePendingTargetMap.value.size === 0) return false
+  for (const [tKey] of pastePendingTargetMap.value) {
+    const [tx, ty] = tKey.split(',').map(Number)
+    if (tx < 0 || tx >= state.roomWidth || ty < 0 || ty >= state.roomHeight) return false
+    if (grid.value[ty]?.[tx]?.applianceId) return false
+  }
+  return true
+})
+
+function getCellPasteState(x, y) {
+  if (!pastePending.value) return null
+  const key = cellKey(x, y)
+  if (!pastePendingTargetMap.value.has(key)) return null
+  return isPasteValid.value ? 'paste-preview-valid' : 'paste-preview-invalid'
+}
+
+function startPaste() {
+  if (clipboard.value.length === 0) return
+  pastePending.value = true
+  pasteAnchor.value = clipboardPasteOrigin.value ? { ...clipboardPasteOrigin.value } : { x: 0, y: 0 }
+  selectedCells.value = new Set()
+}
+
+function setPasteAnchor(x, y) {
+  if (pastePending.value) pasteAnchor.value = { x, y }
+}
+
+function confirmPaste() {
+  if (!pastePending.value || !isPasteValid.value) return
+  const newSelected = new Set()
+  for (const [tKey, cell] of pastePendingTargetMap.value) {
+    const [tx, ty] = tKey.split(',').map(Number)
+    grid.value[ty][tx] = { ...cell }
+    newSelected.add(tKey)
   }
   selectedCells.value = newSelected
-  clipboardPasteOrigin.value = { x: ox + 1, y: oy + 1 }
+  if (pasteAnchor.value) {
+    clipboardPasteOrigin.value = { x: pasteAnchor.value.x + 1, y: pasteAnchor.value.y + 1 }
+  }
+  pastePending.value = false
+  pasteAnchor.value = null
+}
+
+function cancelPaste() {
+  pastePending.value = false
+  pasteAnchor.value = null
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pasteFromClipboard }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste }
 }
