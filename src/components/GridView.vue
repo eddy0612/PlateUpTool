@@ -464,25 +464,6 @@ export default {
   flex-shrink: 0;
   user-select: none;
 }
-.grid::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to right, transparent 0%, transparent calc(100%/16 - 2px), #c8d6e4 calc(100%/16 - 2px), #c8d6e4 calc(100%/16));
-  pointer-events: none;
-  z-index: 0;
-}
-.grid::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, transparent 0%, transparent calc(100%/12 - 2px), #c8d6e4 calc(100%/12 - 2px), #c8d6e4 calc(100%/12));
-  pointer-events: none;
-  z-index: 0;
-}
-.grid-item {
-  z-index: 1;
-}
 .grid-item {
   width: 100%;
   height: 100%;
