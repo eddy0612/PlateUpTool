@@ -74,6 +74,10 @@
         <label>Zoom {{ (state.zoom * 100).toFixed(0) }}%</label>
         <input type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom" />
       </div>
+      <div class="control-size">
+        <label>W: <input type="number" v-model.number="state.roomWidth" min="10" max="50" style="width:48px" /></label>
+        <label>H: <input type="number" v-model.number="state.roomHeight" min="7" max="50" style="width:48px" /></label>
+      </div>
     </div>
 
     <div
@@ -656,7 +660,7 @@ export default {
 .tab-postit.add { font-weight: 700; background: #c8e7ff; border-color: #7bbbf3; }
 .tab-postit:hover { transform: translateX(-3px) scale(1.02) rotate(0deg) }
 .controls { display: flex; gap: 18px; align-items: center; }
-.control-compass, .control-mode, .control-zoom { display: flex; align-items: center; gap: 6px }
+.control-compass, .control-mode, .control-zoom, .control-size { display: flex; align-items: center; gap: 6px }
 .compass { display: inline-block; transition: transform 0.2s }
 .tab-rename-input {
   width: 100%;

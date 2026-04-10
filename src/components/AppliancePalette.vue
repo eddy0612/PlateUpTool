@@ -23,10 +23,6 @@
     </div>
 
     <div class="side-controls">
-      <div>
-        <label>W: <input type="number" v-model.number="state.roomWidth" min="2" max="50" style="width:48px" /></label>
-        <label>H: <input type="number" v-model.number="state.roomHeight" min="2" max="50" style="width:48px" /></label>
-      </div>
       <div class="clipboard-row">
         <button @click="cutToClipboard">Cut</button>
         <button @click="copyToClipboard">Copy</button>
