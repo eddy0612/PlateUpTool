@@ -88,7 +88,7 @@ function isImageIcon(icon) {
 }
 
 function addToGrid(item) {
-  if (state.activeTabId === 'complete') return
+  if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
   const tabId = state.activeTabId
   if (selectedCells.value.size === 1) {
     const [key] = selectedCells.value
