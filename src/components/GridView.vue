@@ -3,6 +3,7 @@
     <div style="position:relative; width:100%;">
 
       <div class="viewport-box" :style="{ height: viewportBoxHeight + 'px' }">
+        <div class="grid-centering-wrapper">
         <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive }" @mousedown="onGridMouseDown" @dragstart.prevent>
           <div
             v-for="cellInfo in flatGrid"
@@ -27,6 +28,7 @@
               </span>
             </template>
           </div>
+        </div>
         </div>
       </div>
 
@@ -354,12 +356,18 @@ export default {
   padding: 8px;
   position: relative;
   overflow: auto;
-  display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
   width: 100%;
   min-width: 0;
   min-height: 0;
+  box-sizing: border-box;
+}
+.grid-centering-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 .grid {
   display: grid;
