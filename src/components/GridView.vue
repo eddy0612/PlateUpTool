@@ -34,10 +34,24 @@
         <div
           v-for="tab in state.tabs"
           :key="tab.id"
-          :class="['tab-postit', { active: state.activeTabId === tab.id }]"
-          @click="state.activeTabId = tab.id"
+          :class="['tab-postit', `tab-color-${tab.id}`, { active: state.activeTabId === tab.id }]"
+          @click="editingTabId !== tab.id && (state.activeTabId = tab.id)"
+          @mousedown="onTabMouseDown(tab, $event)"
+          @mouseup="cancelTabRenameTimer"
+          @mouseleave="cancelTabRenameTimer"
         >
-          {{ tab.label }}
+          <input
+            v-if="editingTabId === tab.id"
+            class="tab-rename-input"
+            v-model="editingTabLabel"
+            maxlength="12"
+            @keydown.enter.prevent="commitTabRename"
+            @keydown.escape.prevent="cancelTabRename"
+            @blur="commitTabRename"
+            @click.stop
+            @mousedown.stop
+          />
+          <template v-else>{{ tab.label }}</template>
         </div>
         <div class="tab-postit add" v-if="state.tabs.length < 15" @click="addTab">+</div>
       </div>
@@ -68,7 +82,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRestaurantStore } from '../store/restaurant'
 import { useGrid } from '../composables/useGrid'
 
@@ -89,6 +103,43 @@ export default {
       const userTabCount = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure').length
       state.tabs.push({ id: nextId, label: `Tab ${userTabCount}`, items: [] })
       state.activeTabId = nextId
+    }
+
+    // --- Tab rename (long-press on yellow tabs) ---
+    const editingTabId = ref(null)
+    const editingTabLabel = ref('')
+    let tabRenameTimer = null
+
+    function onTabMouseDown(tab, e) {
+      if (tab.id === 'complete' || tab.id === 'structure') return
+      if (state.activeTabId !== tab.id) return
+      tabRenameTimer = setTimeout(() => {
+        tabRenameTimer = null
+        editingTabId.value = tab.id
+        editingTabLabel.value = tab.label
+        nextTick(() => {
+          const el = document.querySelector('.tab-rename-input')
+          if (el) { el.focus(); el.select() }
+        })
+      }, 500)
+    }
+
+    function cancelTabRenameTimer() {
+      if (tabRenameTimer) { clearTimeout(tabRenameTimer); tabRenameTimer = null }
+    }
+
+    function commitTabRename() {
+      if (!editingTabId.value) return
+      const label = editingTabLabel.value.trim().slice(0, 12)
+      if (label) {
+        const tab = state.tabs.find(t => t.id === editingTabId.value)
+        if (tab) tab.label = label
+      }
+      editingTabId.value = null
+    }
+
+    function cancelTabRename() {
+      editingTabId.value = null
     }
 
     // --- Shared drag helpers ---
@@ -253,13 +304,15 @@ export default {
       window.removeEventListener('mouseup', onWindowMouseUp)
       window.removeEventListener('keydown', onKeyDown)
       cancelMoveDrag()
+      if (tabRenameTimer) clearTimeout(tabRenameTimer)
     })
 
     return {
       state, flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon,
       rotateCell, selectedCells, isSelected, addTab,
       gridEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
-      handleCellClick, onGridMouseDown, cellClasses, getDisplayCell
+      handleCellClick, onGridMouseDown, cellClasses, getDisplayCell,
+      editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename
     }
   }
 }
@@ -380,10 +433,26 @@ export default {
   transition: transform 0.2s, background 0.2s, border-color 0.2s;
   transform: translateX(-3px) rotate(0deg);
 }
-.tab-postit.active { margin-left: 10px; z-index: 20; background: #ffe680; border-color: #f0c542; font-weight: 700 }
+.tab-postit.active { margin-left: 10px; z-index: 20; font-weight: 700 }
+.tab-postit.tab-color-structure { background: #ffd5d5; border-color: #e89090; }
+.tab-postit.tab-color-structure.active { background: #ffb3b3; border-color: #d06060; }
+.tab-postit.tab-color-complete { background: #c8f5c8; border-color: #72c472; }
+.tab-postit.tab-color-complete.active { background: #9eea9e; border-color: #4aaa4a; }
 .tab-postit.add { font-weight: 700; background: #c8e7ff; border-color: #7bbbf3; }
 .tab-postit:hover { transform: translateX(-3px) scale(1.02) rotate(0deg) }
 .controls { display: flex; gap: 18px; align-items: center; }
 .control-compass, .control-mode, .control-zoom { display: flex; align-items: center; gap: 6px }
 .compass { display: inline-block; transition: transform 0.2s }
+.tab-rename-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #888;
+  outline: none;
+  font: inherit;
+  font-weight: inherit;
+  color: inherit;
+  padding: 0;
+  display: block;
+}
 </style>
