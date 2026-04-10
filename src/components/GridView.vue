@@ -41,6 +41,7 @@
           @mousedown="onTabMouseDown(tab, $event)"
           @mouseup="cancelTabRenameTimer"
           @mouseleave="cancelTabRenameTimer"
+          @contextmenu.prevent="onTabContextMenu(tab, $event)"
         >
           <input
             v-if="editingTabId === tab.id"
@@ -55,7 +56,7 @@
           />
           <template v-else>{{ tab.label }}</template>
         </div>
-        <div class="tab-postit add" v-if="state.tabs.length < 15" @click="addTab">+</div>
+        <div class="tab-postit add" v-if="state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure').length < 10" @click="addTab">+</div>
       </div>
 
     </div>
@@ -89,6 +90,24 @@
         <div class="context-menu-item context-menu-cancel" @click="closeContextMenu">Cancel</div>
       </div>
     </template>
+
+    <template v-if="tabContextMenuVisible">
+      <div class="context-menu-backdrop" @click="closeTabContextMenu" @contextmenu.prevent="closeTabContextMenu" />
+      <div class="context-menu" :style="{ left: tabContextMenuPos.x + 'px', top: tabContextMenuPos.y + 'px' }">
+        <div class="context-menu-item" @click="doTabContextRename">Rename tab</div>
+        <div class="context-menu-item" @click="doTabContextDelete">Delete tab</div>
+        <div class="context-menu-item context-menu-cancel" @click="closeTabContextMenu">Cancel</div>
+      </div>
+    </template>
+
+    <template v-if="tabDeleteConfirmVisible">
+      <div class="context-menu-backdrop" @click="cancelTabDeleteConfirm" @contextmenu.prevent="cancelTabDeleteConfirm" />
+      <div class="context-menu" :style="{ left: tabContextMenuPos.x + 'px', top: tabContextMenuPos.y + 'px' }">
+        <div class="context-menu-item context-menu-warn">This tab has items on it. Delete them all?</div>
+        <div class="context-menu-item" @click="confirmTabDelete">Yes, delete all</div>
+        <div class="context-menu-item context-menu-cancel" @click="cancelTabDeleteConfirm">No, cancel</div>
+      </div>
+    </template>
   </section>
 </template>
 
@@ -107,14 +126,15 @@ export default {
       moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
       copyToClipboard, cutToClipboard,
-      pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste
+      pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste,
+      tabHasVisibleItems, deleteTabItems
     } = useGrid()
 
     function addTab() {
-      if (state.tabs.length >= 15) return
+      const userTabs = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure')
+      if (userTabs.length >= 10) return
       const nextId = `tab-${Date.now()}`
-      const userTabCount = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure').length
-      state.tabs.push({ id: nextId, label: `Tab ${userTabCount}`, items: [] })
+      state.tabs.push({ id: nextId, label: `Tab ${userTabs.length + 1}`, items: [] })
       state.activeTabId = nextId
     }
 
@@ -125,6 +145,7 @@ export default {
 
     function onTabMouseDown(tab, e) {
       if (tab.id === 'complete' || tab.id === 'structure') return
+      if (e.button !== 0) return
       if (state.activeTabId !== tab.id) return
       tabRenameTimer = setTimeout(() => {
         tabRenameTimer = null
@@ -153,6 +174,77 @@ export default {
 
     function cancelTabRename() {
       editingTabId.value = null
+    }
+
+    // --- Tab right-click context menu ---
+    const tabContextMenuVisible = ref(false)
+    const tabContextMenuPos = ref({ x: 0, y: 0 })
+    const tabContextMenuTabId = ref(null)
+    const tabDeleteConfirmVisible = ref(false)
+
+    function onTabContextMenu(tab, e) {
+      if (tab.id === 'complete' || tab.id === 'structure') return
+      tabContextMenuTabId.value = tab.id
+      tabContextMenuPos.value = { x: e.clientX, y: e.clientY }
+      tabContextMenuVisible.value = true
+    }
+
+    function closeTabContextMenu() {
+      tabContextMenuVisible.value = false
+      tabContextMenuTabId.value = null
+    }
+
+    function doTabContextRename() {
+      const tabId = tabContextMenuTabId.value
+      tabContextMenuVisible.value = false
+      tabContextMenuTabId.value = null
+      if (state.activeTabId !== tabId) state.activeTabId = tabId
+      editingTabId.value = tabId
+      const tab = state.tabs.find(t => t.id === tabId)
+      editingTabLabel.value = tab ? tab.label : ''
+      nextTick(() => {
+        const el = document.querySelector('.tab-rename-input')
+        if (el) { el.focus(); el.select() }
+      })
+    }
+
+    function doTabContextDelete() {
+      const tabId = tabContextMenuTabId.value
+      tabContextMenuVisible.value = false
+      if (tabHasVisibleItems(tabId)) {
+        tabDeleteConfirmVisible.value = true
+      } else {
+        tabContextMenuTabId.value = null
+        removeTab(tabId)
+      }
+    }
+
+    function cancelTabDeleteConfirm() {
+      tabDeleteConfirmVisible.value = false
+      tabContextMenuTabId.value = null
+    }
+
+    function confirmTabDelete() {
+      const tabId = tabContextMenuTabId.value
+      tabDeleteConfirmVisible.value = false
+      tabContextMenuTabId.value = null
+      deleteTabItems(tabId)
+      removeTab(tabId)
+    }
+
+    function removeTab(tabId) {
+      const tabIdx = state.tabs.findIndex(t => t.id === tabId)
+      if (tabIdx === -1) return
+      const userTabPos = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure').findIndex(t => t.id === tabId)
+      state.tabs.splice(tabIdx, 1)
+      if (state.activeTabId === tabId) {
+        const userTabs = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure')
+        if (userTabs.length > 0) {
+          state.activeTabId = userTabs[Math.max(0, userTabPos - 1)].id
+        } else if (state.tabs.length > 0) {
+          state.activeTabId = state.tabs[0].id
+        }
+      }
     }
 
     // --- Shared drag helpers ---
@@ -441,6 +533,9 @@ export default {
       handleCellClick, handleCellContextMenu, onGridMouseDown, cellClasses, getDisplayCell,
       editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename,
       contextMenuVisible, contextMenuPos, closeContextMenu, doMoveToThisLevel, doShowInBothLevels,
+      tabContextMenuVisible, tabContextMenuPos, tabDeleteConfirmVisible,
+      onTabContextMenu, closeTabContextMenu, doTabContextRename, doTabContextDelete,
+      cancelTabDeleteConfirm, confirmTabDelete,
       pastePending
     }
   }
@@ -605,5 +700,12 @@ export default {
   color: #666;
   border-top: 1px solid #e8e8e8;
   margin-top: 2px;
+}
+.context-menu-warn {
+  font-weight: 600;
+  color: #b03000;
+  pointer-events: none;
+  border-bottom: 1px solid #e8e8e8;
+  margin-bottom: 2px;
 }
 </style>

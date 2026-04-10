@@ -365,6 +365,38 @@ function cancelPaste() {
   pasteAnchor.value = null
 }
 
+function tabHasVisibleItems(tabId) {
+  for (let y = 0; y < grid.value.length; y++) {
+    for (let x = 0; x < grid.value[y].length; x++) {
+      const cell = grid.value[y][x]
+      if (!cell?.applianceId) continue
+      if (Array.isArray(cell.tabIds) && cell.tabIds.includes(tabId)) return true
+      if (cell.tabId != null && cell.tabId === tabId) return true
+    }
+  }
+  return false
+}
+
+function deleteTabItems(tabId) {
+  for (let y = 0; y < grid.value.length; y++) {
+    for (let x = 0; x < grid.value[y].length; x++) {
+      const cell = grid.value[y][x]
+      if (!cell?.applianceId) continue
+      if (Array.isArray(cell.tabIds)) {
+        if (!cell.tabIds.includes(tabId)) continue
+        const remaining = cell.tabIds.filter(id => id !== tabId)
+        if (remaining.length === 0) {
+          grid.value[y][x] = null
+        } else {
+          cell.tabIds = remaining
+        }
+      } else if (cell.tabId === tabId) {
+        grid.value[y][x] = null
+      }
+    }
+  }
+}
+
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems }
 }
