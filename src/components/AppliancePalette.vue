@@ -28,9 +28,9 @@
         <label>H: <input type="number" v-model.number="state.roomHeight" min="2" max="50" style="width:48px" /></label>
       </div>
       <div class="clipboard-row">
-        <button @click="cutSelected">Cut</button>
-        <button @click="copySelected">Copy</button>
-        <button @click="pasteClipboard">Paste</button>
+        <button @click="cutToClipboard">Cut</button>
+        <button @click="copyToClipboard">Copy</button>
+        <button @click="pasteFromClipboard">Paste</button>
         <button @click="removeSelected">Delete</button>
       </div>
     </div>
@@ -50,7 +50,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const { palette } = useAppliancePalette()
-    const { addToGrid, viewportBoxHeight, removeSelected } = useGrid()
+    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, pasteFromClipboard } = useGrid()
 
     const filteredPalette = computed(() => {
       const q = state.filterText.trim().toLowerCase()
@@ -59,8 +59,8 @@ export default {
     })
 
     const statusText = computed(() => {
-      if (state.selectedIds.length === 0) return 'No items selected'
-      return `${state.selectedIds.length} items selected`
+      if (selectedCells.value.size === 0) return 'No items selected'
+      return `${selectedCells.value.size} cell${selectedCells.value.size === 1 ? '' : 's'} selected`
     })
 
     // Canvas image drawing with top-crop
@@ -96,32 +96,7 @@ export default {
       })
     }, { immediate: true })
 
-    // Clipboard operations
-    function cutSelected() { copySelected(); removeSelected() }
-
-    function copySelected() {
-      const tab = state.tabs.find(t => t.id === state.activeTabId)
-      if (!tab) return
-      state.clipboard = tab.items
-        .filter(item => state.selectedIds.includes(item.id))
-        .map(i => ({ ...i }))
-    }
-
-    function pasteClipboard() {
-      if (!state.clipboard?.length) return
-      const tab = state.tabs.find(t => t.id === state.activeTabId)
-      if (!tab) return
-      const pasted = state.clipboard.map(item => ({
-        ...item,
-        id: `${item.sourceId}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        x: Math.min(state.roomWidth - 1, (item.x + 1) % state.roomWidth),
-        y: Math.min(state.roomHeight - 1, (item.y + 1) % state.roomHeight)
-      }))
-      tab.items.push(...pasted)
-      state.selectedIds = pasted.map(i => i.id)
-    }
-
-    return { state, filteredPalette, statusText, addToGrid, cutSelected, copySelected, pasteClipboard, removeSelected, viewportBoxHeight }
+    return { state, filteredPalette, statusText, addToGrid, cutToClipboard, copyToClipboard, pasteFromClipboard, removeSelected, viewportBoxHeight }
   }
 }
 </script>

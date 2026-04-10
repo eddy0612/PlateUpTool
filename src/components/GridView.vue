@@ -105,7 +105,8 @@ export default {
       flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon,
       rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
       moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
-      startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected
+      startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
+      copyToClipboard, cutToClipboard, pasteFromClipboard
     } = useGrid()
 
     function addTab() {
@@ -316,6 +317,9 @@ export default {
         e.preventDefault()
         removeSelected()
       }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') { e.preventDefault(); copyToClipboard() }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'x') { e.preventDefault(); cutToClipboard() }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') { e.preventDefault(); pasteFromClipboard() }
       if (e.key === 'Escape') {
         closeContextMenu()
       }

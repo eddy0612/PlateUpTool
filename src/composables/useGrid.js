@@ -270,6 +270,50 @@ function isCellGhosted(x, y) {
   return false
 }
 
+// --- Clipboard (module-level, not persisted to URL) ---
+const clipboard = ref([])              // [{ dx, dy, cell }] relative to selection top-left
+const clipboardPasteOrigin = ref(null) // { x, y } top-left for next paste
+
+function copyToClipboard() {
+  if (selectedCells.value.size === 0) return
+  let minX = Infinity, minY = Infinity
+  for (const key of selectedCells.value) {
+    const [x, y] = key.split(',').map(Number)
+    if (x < minX) minX = x
+    if (y < minY) minY = y
+  }
+  const entries = []
+  for (const key of selectedCells.value) {
+    const [x, y] = key.split(',').map(Number)
+    const cell = grid.value[y]?.[x]
+    if (cell) entries.push({ dx: x - minX, dy: y - minY, cell: { ...cell } })
+  }
+  clipboard.value = entries
+  clipboardPasteOrigin.value = { x: minX + 1, y: minY + 1 }
+}
+
+function cutToClipboard() {
+  if (selectedCells.value.size === 0) return
+  copyToClipboard()
+  removeSelected()
+}
+
+function pasteFromClipboard() {
+  if (!clipboard.value.length || !clipboardPasteOrigin.value) return
+  const { x: ox, y: oy } = clipboardPasteOrigin.value
+  const newSelected = new Set()
+  for (const { dx, dy, cell } of clipboard.value) {
+    const tx = ox + dx
+    const ty = oy + dy
+    if (tx >= 0 && tx < state.roomWidth && ty >= 0 && ty < state.roomHeight) {
+      grid.value[ty][tx] = { ...cell }
+      newSelected.add(cellKey(tx, ty))
+    }
+  }
+  selectedCells.value = newSelected
+  clipboardPasteOrigin.value = { x: ox + 1, y: oy + 1 }
+}
+
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pasteFromClipboard }
 }
