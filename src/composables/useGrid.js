@@ -265,6 +265,7 @@ function addSelectionToTab(targetTabId) {
 }
 
 function isCellGhosted(x, y) {
+  if (pastePending.value && pastePendingTargetMap.value.has(cellKey(x, y))) return false
   const cell = getDisplayCell(x, y)
   if (!cell?.applianceId) return false
   if (state.activeTabId === 'complete') return false
@@ -348,7 +349,7 @@ function confirmPaste() {
   const newSelected = new Set()
   for (const [tKey, cell] of pastePendingTargetMap.value) {
     const [tx, ty] = tKey.split(',').map(Number)
-    grid.value[ty][tx] = { ...cell }
+    grid.value[ty][tx] = { ...cell, tabIds: [state.activeTabId] }
     newSelected.add(tKey)
   }
   selectedCells.value = newSelected
