@@ -2,7 +2,7 @@
   <section class="left-panel">
     <div style="position:relative; width:100%;">
 
-      <div class="viewport-box">
+      <div class="viewport-box" :style="{ height: viewportBoxHeight + 'px' }">
         <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive }" @mousedown="onGridMouseDown" @dragstart.prevent>
           <div
             v-for="cellInfo in flatGrid"
@@ -69,7 +69,7 @@
       </div>
       <div class="control-zoom">
         <label>Zoom {{ (state.zoom * 100).toFixed(0) }}%</label>
-        <input type="range" min="0.3" max="1.3" step="0.05" v-model.number="state.zoom" />
+        <input type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom" />
       </div>
     </div>
 
@@ -91,7 +91,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const {
-      flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon,
+      flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon,
       rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
       moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected
@@ -302,18 +302,30 @@ export default {
       }
     }
 
-    onMounted(() => window.addEventListener('keydown', onKeyDown))
+    function onWheel(e) {
+      e.preventDefault()
+      const delta = e.deltaY > 0 ? -0.05 : 0.05
+      state.zoom = Math.min(2.5, Math.max(0.3, Math.round((state.zoom + delta) * 100) / 100))
+    }
+
+    onMounted(() => {
+      window.addEventListener('keydown', onKeyDown)
+      const vp = document.querySelector('.viewport-box')
+      if (vp) vp.addEventListener('wheel', onWheel, { passive: false })
+    })
 
     onUnmounted(() => {
       window.removeEventListener('mousemove', onWindowMouseMove)
       window.removeEventListener('mouseup', onWindowMouseUp)
       window.removeEventListener('keydown', onKeyDown)
+      const vp = document.querySelector('.viewport-box')
+      if (vp) vp.removeEventListener('wheel', onWheel)
       cancelMoveDrag()
       if (tabRenameTimer) clearTimeout(tabRenameTimer)
     })
 
     return {
-      state, flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon,
+      state, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon,
       rotateCell, selectedCells, isSelected, addTab,
       gridEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
       handleCellClick, onGridMouseDown, cellClasses, getDisplayCell,
@@ -343,10 +355,9 @@ export default {
   position: relative;
   overflow: auto;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-start;
   width: 100%;
-  height: auto;
   min-width: 0;
   min-height: 0;
 }

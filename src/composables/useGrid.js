@@ -69,9 +69,9 @@ const viewportBoxHeight = computed(() => state.roomHeight * cellSize.value + 18)
 const gridStyleDynamic = computed(() => ({
   gridTemplateColumns: `repeat(${state.roomWidth}, 1fr)`,
   gridTemplateRows: `repeat(${state.roomHeight}, 1fr)`,
-  width: `${state.roomWidth * cellSize.value}px`,
-  height: `${state.roomHeight * cellSize.value}px`,
-  transform: `scale(${state.zoom}) rotate(${state.orientation}deg)`
+  width: `${state.roomWidth * cellSize.value * state.zoom}px`,
+  height: `${state.roomHeight * cellSize.value * state.zoom}px`,
+  transform: `rotate(${state.orientation}deg)`
 }))
 
 function rotationStyle(rot) {
