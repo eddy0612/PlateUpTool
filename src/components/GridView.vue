@@ -14,7 +14,6 @@
             @contextmenu.prevent="handleCellContextMenu($event, cellInfo.x, cellInfo.y)"
             @click="(e) => handleCellClick(e, cellInfo.x, cellInfo.y)"
           >
-            <div class="cell-label">{{ cellInfo.y }},{{ cellInfo.x }}</div>
             <template v-if="getDisplayCell(cellInfo.x, cellInfo.y)?.applianceId">
               <span :style="rotationStyle(getDisplayCell(cellInfo.x, cellInfo.y).rotation)">
                 <img
