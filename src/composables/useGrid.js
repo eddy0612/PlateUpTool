@@ -88,18 +88,20 @@ function isImageIcon(icon) {
 }
 
 function addToGrid(item) {
+  if (state.activeTabId === 'complete') return
+  const tabId = state.activeTabId
   if (selectedCells.value.size === 1) {
     const [key] = selectedCells.value
     const [x, y] = key.split(',').map(Number)
     if (!grid.value[y][x]) {
-      grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0 }
+      grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabId }
       return
     }
   }
   for (let y = 0; y < grid.value.length; ++y) {
     for (let x = 0; x < grid.value[y].length; ++x) {
       if (!grid.value[y][x]) {
-        grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0 }
+        grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabId }
         return
       }
     }
@@ -233,6 +235,13 @@ function removeSelected() {
   selectedCells.value = new Set()
 }
 
+function isCellGhosted(x, y) {
+  const cell = getDisplayCell(x, y)
+  if (!cell?.applianceId) return false
+  if (state.activeTabId === 'complete') return false
+  return cell.tabId != null && cell.tabId !== state.activeTabId
+}
+
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected }
 }

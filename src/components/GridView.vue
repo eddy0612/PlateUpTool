@@ -79,14 +79,15 @@ export default {
     const {
       flatGrid, gridStyleDynamic, rotationStyle, getApplianceIcon, isImageIcon,
       rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
-      moveDragActive, getCellMoveState, getDisplayCell,
+      moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected
     } = useGrid()
 
     function addTab() {
       if (state.tabs.length >= 15) return
       const nextId = `tab-${Date.now()}`
-      state.tabs.push({ id: nextId, label: `Tab ${state.tabs.length + 1}`, items: [] })
+      const userTabCount = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure').length
+      state.tabs.push({ id: nextId, label: `Tab ${userTabCount}`, items: [] })
       state.activeTabId = nextId
     }
 
@@ -232,6 +233,7 @@ export default {
         'move-source': move === 'source',
         'move-preview-valid': move === 'preview-valid',
         'move-preview-invalid': move === 'preview-invalid',
+        ghosted: isCellGhosted(x, y),
       }
     }
 
@@ -342,6 +344,7 @@ export default {
 .grid-item.move-source { opacity: 0.35; border: 2px dashed #1f79ff; background: #dde9ff }
 .grid-item.move-preview-valid { border: 2px solid #22a355; background: rgba(34, 163, 85, 0.18) }
 .grid-item.move-preview-invalid { border: 2px solid #d93025; background: rgba(217, 48, 37, 0.18) }
+.grid-item.ghosted { opacity: 0.25; filter: grayscale(0.6); }
 .drag-select-overlay {
   position: fixed;
   border: 1.5px solid #1f79ff;

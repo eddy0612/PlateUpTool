@@ -2,9 +2,9 @@ import { reactive } from 'vue'
 
 const DEFAULT_STATE = {
   tabs: [
-    { id: 'complete', label: 'Complete', items: [] },
+    { id: 'complete', label: 'Preview', items: [] },
     { id: 'structure', label: 'Structure', items: [] },
-    { id: 'main', label: 'Main', items: [] }
+    { id: 'main', label: 'Base', items: [] }
   ],
   activeTabId: 'main',
   orientation: 0,

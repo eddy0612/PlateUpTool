@@ -32,22 +32,6 @@ export default {
     })
 
     function startAgain() {
-      Object.assign(state, {
-        tabs: [
-          { id: 'complete', label: 'Complete', items: [] },
-          { id: 'structure', label: 'Structure', items: [] },
-          { id: 'main', label: 'Main', items: [] }
-        ],
-        activeTabId: 'main',
-        orientation: 0,
-        viewMode: '2D',
-        zoom: 0.7,
-        roomWidth: 16,
-        roomHeight: 12,
-        selectedIds: [],
-        clipboard: [],
-        filterText: ''
-      })
       resetState()
     }
 
