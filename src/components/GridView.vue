@@ -326,7 +326,7 @@ export default {
       const dy = e.clientY - rightDragStartMouse.value.y
       if (!isRightDragging && Math.sqrt(dx * dx + dy * dy) > 5) isRightDragging = true
       if (isRightDragging) {
-        viewportEl.value.scrollLeft = rightDragScrollStart.value.left + dx
+        viewportEl.value.scrollLeft = rightDragScrollStart.value.left - dx
         viewportEl.value.scrollTop = rightDragScrollStart.value.top - dy
       }
     }
