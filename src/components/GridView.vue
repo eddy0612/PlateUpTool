@@ -4,7 +4,7 @@
 
       <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }">
         <div class="grid-centering-wrapper">
-        <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive, 'paste-pending': pastePending }" @mousedown="onGridMouseDown" @dragstart.prevent>
+        <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive, 'paste-pending': pastePending, 'structure-mode': isStructureMode }" @mousedown="onGridMouseDown" @dragstart.prevent>
           <div
             v-for="cellInfo in flatGrid"
             :key="'cell-' + cellInfo.x + '-' + cellInfo.y"
@@ -25,6 +25,12 @@
                 />
                 <template v-else>{{ getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId) }}</template>
               </span>
+            </template>
+            <template v-if="isStructureMode">
+              <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'top')"    :class="['edge-marker', 'edge-top',    `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'top')}`]" />
+              <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'right')"  :class="['edge-marker', 'edge-right',  `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'right')}`]" />
+              <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'bottom')" :class="['edge-marker', 'edge-bottom', `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'bottom')}`]" />
+              <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'left')"   :class="['edge-marker', 'edge-left',   `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'left')}`]" />
             </template>
           </div>
         </div>
@@ -130,7 +136,8 @@ export default {
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
       copyToClipboard, cutToClipboard,
       pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste,
-      tabHasVisibleItems, deleteTabItems
+      tabHasVisibleItems, deleteTabItems,
+      isStructureMode, selectedStructureTool, getWallEdge, setWallEdge
     } = useGrid()
 
     function selectTab(tab) {
@@ -294,7 +301,24 @@ export default {
       else window.removeEventListener('mousemove', onPasteMouseMove)
     })
 
+    // --- Structure mode edge detection ---
+    function detectEdgeDir(e) {
+      const el = e.target.closest?.('.grid-item') || e.currentTarget
+      if (!el) return null
+      const rect = el.getBoundingClientRect()
+      const relX = (e.clientX - rect.left) / rect.width
+      const relY = (e.clientY - rect.top) / rect.height
+      const d = { top: relY, bottom: 1 - relY, left: relX, right: 1 - relX }
+      const minEntry = Object.entries(d).reduce((a, b) => a[1] < b[1] ? a : b)
+      return minEntry[1] <= 0.38 ? minEntry[0] : null
+    }
+
     function handleCellClick(e, x, y) {
+      if (isStructureMode.value) {
+        const dir = detectEdgeDir(e)
+        if (dir) setWallEdge(x, y, dir, selectedStructureTool.value)
+        return
+      }
       if (pastePending.value) {
         setPasteAnchor(x, y)
         confirmPaste()
@@ -315,6 +339,7 @@ export default {
         window.addEventListener('mouseup', onRightDragMouseUp)
         return
       }
+      if (isStructureMode.value) return  // no drag/selection in structure mode
       if (e.button !== 0) return
 
       // If clicking on an already-selected cell without modifiers → potential move drag
@@ -418,6 +443,9 @@ export default {
     }
 
     function cellClasses(x, y) {
+      if (isStructureMode.value) {
+        return { 'grid-item': true, 'structure-cell': true }
+      }
       const move = getCellMoveState(x, y)
       const paste = getCellPasteState(x, y)
       return {
@@ -435,6 +463,7 @@ export default {
     function onKeyDown(e) {
       const tag = document.activeElement?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if (isStructureMode.value) return
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault()
         removeSelected()
@@ -545,7 +574,8 @@ export default {
       tabContextMenuVisible, tabContextMenuPos, tabDeleteConfirmVisible,
       onTabContextMenu, closeTabContextMenu, doTabContextRename, doTabContextDelete,
       cancelTabDeleteConfirm, confirmTabDelete,
-      pastePending
+      pastePending,
+      isStructureMode, getWallEdge
     }
   }
 }
@@ -717,4 +747,39 @@ export default {
   border-bottom: 1px solid #e8e8e8;
   margin-bottom: 2px;
 }
+
+/* ---- Structure mode ---- */
+.grid.structure-mode .grid-item {
+  opacity: 0.45;
+  filter: grayscale(0.75);
+  cursor: crosshair;
+}
+.grid.structure-mode .grid-item:hover {
+  opacity: 0.6;
+  background: rgba(100, 130, 200, 0.08);
+}
+/* Edge marker overlays */
+.edge-marker {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  border-radius: 2px;
+}
+.edge-marker.edge-top,
+.edge-marker.edge-bottom {
+  left: -1px; right: -1px; height: 5px;
+}
+.edge-marker.edge-left,
+.edge-marker.edge-right {
+  top: -1px; bottom: -1px; width: 5px;
+}
+.edge-marker.edge-top    { top: -2px }
+.edge-marker.edge-bottom { bottom: -2px }
+.edge-marker.edge-left   { left: -2px }
+.edge-marker.edge-right  { right: -2px }
+.edge-marker.edge-type-wall   { background: #1a1a2e }
+.edge-marker.edge-type-hatch  {
+  background: repeating-linear-gradient(45deg, #555 0px, #555 3px, transparent 3px, transparent 7px);
+}
+.edge-marker.edge-type-door   { background: #c8860a }
 </style>

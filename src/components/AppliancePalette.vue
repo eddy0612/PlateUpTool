@@ -2,27 +2,50 @@
   <aside class="right-panel">
     <div class="side-box" :style="{ maxHeight: viewportBoxHeight + 'px' }">
 
-      <div class="filter">
-        <input v-model="state.filterText" placeholder="Filter appliances..." />
-      </div>
-
-      <div class="palette">
-        <div
-          v-for="item in filteredPalette"
-          :key="item.id"
-          class="palette-item"
-          @click="addToGrid(item)"
-        >
-          <div class="item-icon">
-            <canvas :data-icon="item.icon" class="palette-canvas"></canvas>
+      <!-- Structure mode: tool selector -->
+      <template v-if="isStructureMode">
+        <div class="structure-header">Draw structure</div>
+        <div class="structure-tool-list">
+          <div
+            v-for="tool in structureTools"
+            :key="tool.id"
+            :class="['structure-tool-item', { active: selectedStructureTool === tool.id }]"
+            @click="setStructureTool(tool.id)"
+          >
+            <div :class="['tool-swatch', `swatch-${tool.id}`]"></div>
+            <div class="tool-info">
+              <div class="tool-name">{{ tool.label }}</div>
+              <div class="tool-desc">{{ tool.description }}</div>
+            </div>
           </div>
-          <div>{{ item.label }}</div>
         </div>
-      </div>
+        <div class="structure-hint">Click near a cell edge to place or remove.</div>
+      </template>
+
+      <!-- Normal mode: filter + appliance palette -->
+      <template v-else>
+        <div class="filter">
+          <input v-model="state.filterText" placeholder="Filter appliances..." />
+        </div>
+
+        <div class="palette">
+          <div
+            v-for="item in filteredPalette"
+            :key="item.id"
+            class="palette-item"
+            @click="addToGrid(item)"
+          >
+            <div class="item-icon">
+              <canvas :data-icon="item.icon" class="palette-canvas"></canvas>
+            </div>
+            <div>{{ item.label }}</div>
+          </div>
+        </div>
+      </template>
 
     </div>
 
-    <div class="side-controls">
+    <div v-if="!isStructureMode" class="side-controls">
       <div class="clipboard-row">
         <button @click="cutToClipboard">Cut</button>
         <button @click="copyToClipboard">Copy</button>
@@ -45,7 +68,13 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const { palette } = useAppliancePalette()
-    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste } = useGrid()
+    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, isStructureMode, selectedStructureTool, setStructureTool } = useGrid()
+
+    const structureTools = [
+      { id: 'wall',  label: 'Wall',  description: 'Full-height wall',  },
+      { id: 'hatch', label: 'Hatch', description: 'Half-height wall',  },
+      { id: 'door',  label: 'Door',  description: 'Doorway / opening', },
+    ]
 
     const filteredPalette = computed(() => {
       const q = state.filterText.trim().toLowerCase()
@@ -86,7 +115,7 @@ export default {
       })
     }, { immediate: true })
 
-    return { state, filteredPalette, addToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight }
+    return { state, filteredPalette, addToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools }
   }
 }
 </script>
@@ -167,4 +196,62 @@ export default {
 .clipboard-row { display: flex; gap: 6px }
 .clipboard-row button { flex: 1; padding: 7px; border: none; cursor: pointer; border-radius: 4px; background: #1f79ff; color: white }
 
+/* ---- Structure mode palette ---- */
+.structure-header {
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7a3030;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #eecaca;
+}
+.structure-tool-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.structure-tool-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 2px solid #d8dde8;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #f8f9fb;
+  transition: border-color 0.12s, background 0.12s;
+  user-select: none;
+}
+.structure-tool-item.active {
+  border-color: #1f79ff;
+  background: #e8f0ff;
+}
+.structure-tool-item:hover:not(.active) {
+  border-color: #9ab0cc;
+  background: #f0f3f8;
+}
+.tool-swatch {
+  width: 18px;
+  height: 44px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.swatch-wall  { background: #1a1a2e }
+.swatch-hatch {
+  background: repeating-linear-gradient(
+    45deg, #555 0px, #555 4px, transparent 4px, transparent 8px
+  );
+  border: 1px solid #555;
+}
+.swatch-door  { background: #c8860a }
+.tool-name { font-weight: 600; font-size: 15px; color: #222 }
+.tool-desc { font-size: 12px; color: #777; margin-top: 2px }
+.structure-hint {
+  font-size: 11px;
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding-top: 4px;
+}
 </style>

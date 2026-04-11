@@ -14,7 +14,8 @@ const DEFAULT_STATE = {
   roomHeight: 12,
   selectedIds: [],
   clipboard: [],
-  filterText: ''
+  filterText: '',
+  walls: {}
 }
 
 const state = reactive(JSON.parse(JSON.stringify(DEFAULT_STATE)))

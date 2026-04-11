@@ -276,6 +276,42 @@ function isCellGhosted(x, y) {
   return false
 }
 
+// --- Structure mode ---
+const isStructureMode = computed(() => state.activeTabId === 'structure')
+const selectedStructureTool = ref('wall') // 'wall' | 'hatch' | 'door'
+
+function setStructureTool(id) { selectedStructureTool.value = id }
+
+function getEdgeKey(x, y, dir) {
+  if (dir === 'top')    return `h,${x},${y}`
+  if (dir === 'bottom') return `h,${x},${y + 1}`
+  if (dir === 'left')   return `v,${x},${y}`
+  if (dir === 'right')  return `v,${x + 1},${y}`
+  return null
+}
+
+function getWallEdge(x, y, dir) {
+  if (!state.walls) return null
+  return state.walls[getEdgeKey(x, y, dir)] || null
+}
+
+function setWallEdge(x, y, dir, type) {
+  if (!state.walls) state.walls = {}
+  const key = getEdgeKey(x, y, dir)
+  if (!key) return
+  if (state.walls[key] === type) {
+    delete state.walls[key]
+  } else {
+    state.walls[key] = type
+  }
+}
+
+// Clear selection when switching tabs (including to/from structure mode)
+watch(() => state.activeTabId, () => {
+  selectedCells.value = new Set()
+  anchorCell.value = null
+})
+
 // --- Clipboard (module-level, not persisted to URL) ---
 const clipboard = ref([])              // [{ dx, dy, cell }] relative to selection top-left
 const clipboardPasteOrigin = ref(null) // { x, y } top-left for next paste
@@ -400,5 +436,5 @@ function deleteTabItems(tabId) {
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge }
 }
