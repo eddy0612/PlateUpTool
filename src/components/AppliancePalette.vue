@@ -108,12 +108,18 @@ export default {
       img.src = src
     }
 
-    watch(filteredPalette, async () => {
+    async function redrawPaletteCanvases() {
       await nextTick()
       document.querySelectorAll('.palette-item canvas').forEach(canvas => {
         cropAndDrawImage(canvas, canvas.dataset.icon)
       })
-    }, { immediate: true })
+    }
+
+    watch(filteredPalette, redrawPaletteCanvases, { immediate: true })
+
+    watch(isStructureMode, (val) => {
+      if (!val) redrawPaletteCanvases()
+    })
 
     return { state, filteredPalette, addToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools }
   }
