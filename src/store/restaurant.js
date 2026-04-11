@@ -9,14 +9,16 @@ const DEFAULT_STATE = {
   activeTabId: 'main',
   orientation: 0,
   viewMode: '2D',
-  zoom: 1.0,
+  zoom: 1.0,        // kept in state for UI reactivity, not saved to URL
   roomWidth: 16,
   roomHeight: 12,
-  selectedIds: [],
-  clipboard: [],
-  filterText: '',
-  walls: {}
+  filterText: '',   // kept in state for UI reactivity, not saved to URL
+  walls: {},
+  gridCells: []     // flat array of { x, y, applianceId, rotation, extraData, tabIds }
 }
+
+// Only these fields are serialized into the URL
+const URL_FIELDS = ['tabs', 'activeTabId', 'orientation', 'viewMode', 'roomWidth', 'roomHeight', 'walls', 'gridCells']
 
 const state = reactive(JSON.parse(JSON.stringify(DEFAULT_STATE)))
 
@@ -33,7 +35,8 @@ function decodeState(encoded) {
 }
 
 function syncToHash() {
-  const toSave = JSON.parse(JSON.stringify(state))
+  const toSave = {}
+  URL_FIELDS.forEach(k => { toSave[k] = JSON.parse(JSON.stringify(state[k])) })
   const encoded = encodeState(toSave)
   window.history.replaceState(null, '', `${window.location.pathname}#state=${encoded}`)
 }
@@ -44,9 +47,9 @@ function loadFromHash() {
   const raw = hash.slice(7)
   const parsed = decodeState(raw)
   if (parsed && parsed.tabs) {
-    Object.keys(DEFAULT_STATE).forEach((k) => {
+    URL_FIELDS.forEach((k) => {
       if (k in parsed) state[k] = parsed[k]
-      else state[k] = DEFAULT_STATE[k]
+      else state[k] = JSON.parse(JSON.stringify(DEFAULT_STATE[k]))
     })
   }
 }

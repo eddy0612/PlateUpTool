@@ -14,6 +14,7 @@
 <script>
 import { watch, onMounted } from 'vue'
 import { useRestaurantStore } from './store/restaurant'
+import { useGrid } from './composables/useGrid'
 import GridView from './components/GridView.vue'
 import AppliancePalette from './components/AppliancePalette.vue'
 
@@ -22,13 +23,18 @@ export default {
   components: { GridView, AppliancePalette },
   setup() {
     const { state, loadFromHash, syncToHash, resetState } = useRestaurantStore()
+    const { loadGridFromState } = useGrid()
 
     watch(() => ({ ...state }), () => syncToHash(), { deep: true })
 
     onMounted(() => {
       loadFromHash()
+      loadGridFromState()
       if (!window.location.hash.startsWith('#state=')) syncToHash()
-      window.addEventListener('hashchange', loadFromHash)
+      window.addEventListener('hashchange', () => {
+        loadFromHash()
+        loadGridFromState()
+      })
     })
 
     function startAgain() {

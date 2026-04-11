@@ -457,6 +457,29 @@ function deleteTabItems(tabId) {
   }
 }
 
+// Serialize grid to state.gridCells whenever it changes so the URL stays current
+watch(grid, (newGrid) => {
+  const cells = []
+  for (let y = 0; y < newGrid.length; y++) {
+    for (let x = 0; x < newGrid[y].length; x++) {
+      if (newGrid[y][x]) cells.push({ x, y, ...newGrid[y][x] })
+    }
+  }
+  state.gridCells = cells
+}, { deep: true })
+
+// Restore the grid from state.gridCells — call this after loadFromHash()
+function loadGridFromState() {
+  // Resize grid to match the loaded dimensions before populating
+  initGrid()
+  if (!Array.isArray(state.gridCells) || state.gridCells.length === 0) return
+  for (const { x, y, ...cell } of state.gridCells) {
+    if (grid.value[y] && x < grid.value[y].length) {
+      grid.value[y][x] = cell
+    }
+  }
+}
+
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, loadGridFromState }
 }
