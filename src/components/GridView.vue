@@ -181,8 +181,11 @@ export default {
     function addTab() {
       const userTabs = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure')
       if (userTabs.length >= 10) return
+      const existingLabels = new Set(userTabs.map(t => t.label))
+      let n = userTabs.length + 1
+      while (existingLabels.has(`Tab ${n}`)) n++
       const nextId = `tab-${Date.now()}`
-      state.tabs.push({ id: nextId, label: `Tab ${userTabs.length + 1}`, items: [] })
+      state.tabs.push({ id: nextId, label: `Tab ${n}`, items: [] })
       state.activeTabId = nextId
     }
 
