@@ -714,8 +714,8 @@ export default {
   min-width: 100px;
   margin-left: 0;
   padding: 8px 12px;
-  background: #fff4b2;
-  border: 1px solid #e8ce6a;
+  background: #fff7c5;
+  border: 1px solid #eeda8f;
   border-radius: 4px 4px 6px 6px;
   box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
   cursor: pointer;
@@ -724,32 +724,32 @@ export default {
   transform: translateX(-3px) rotate(0deg);
 }
 .tab-postit.active { margin-left: 10px; z-index: 20; font-weight: 700 }
-.tab-postit.tab-color-structure { background: #e0e0e0; border-color: #a0a0a0; }
-.tab-postit.tab-color-structure.active { background: #cccccc; border-color: #888888; }
-.tab-postit.tab-color-complete { background: #e8e8e8; border-color: #b0b0b0; }
-.tab-postit.tab-color-complete.active { background: #d4d4d4; border-color: #909090; }
-.tab-postit.add { font-weight: 700; background: #c8e7ff; border-color: #7bbbf3; }
+.tab-postit.tab-color-structure { background: #e8e8e8; border-color: #b8b8b8; }
+.tab-postit.tab-color-structure.active { background: #d9d9d9; border-color: #a6a6a6; }
+.tab-postit.tab-color-complete { background: #eeeeee; border-color: #c4c4c4; }
+.tab-postit.tab-color-complete.active { background: #dfdfdf; border-color: #acacac; }
+.tab-postit.add { font-weight: 700; background: #d6edff; border-color: #9cccf6; }
 /* User tab colours (10 light, differentiable) */
-.tab-user-0 { background: #fff8a0; border-color: #d0c048; }
-.tab-user-0.active { background: #f0e040; border-color: #b0a020; }
-.tab-user-1 { background: #aad6ff; border-color: #5090d0; }
-.tab-user-1.active { background: #7ab8f0; border-color: #3070b0; }
-.tab-user-2 { background: #a0f0b8; border-color: #48c870; }
-.tab-user-2.active { background: #60d890; border-color: #28a850; }
-.tab-user-3 { background: #ffb0d0; border-color: #d87098; }
-.tab-user-3.active { background: #f080b0; border-color: #b85078; }
-.tab-user-4 { background: #d8b0ff; border-color: #9060d0; }
-.tab-user-4.active { background: #b880f0; border-color: #7040b0; }
-.tab-user-5 { background: #ffd898; border-color: #d09048; }
-.tab-user-5.active { background: #f0b858; border-color: #b07028; }
-.tab-user-6 { background: #80ffe0; border-color: #28c090; }
-.tab-user-6.active { background: #40e0c0; border-color: #08a070; }
-.tab-user-7 { background: #ffb0a8; border-color: #d06858; }
-.tab-user-7.active { background: #f08070; border-color: #b04838; }
-.tab-user-8 { background: #b0e8ff; border-color: #58a8d8; }
-.tab-user-8.active { background: #78ccf8; border-color: #3888b8; }
-.tab-user-9 { background: #ccffb0; border-color: #80c048; }
-.tab-user-9.active { background: #a0f070; border-color: #60a028; }
+.tab-user-0 { background: #fffab8; border-color: #dccc70; }
+.tab-user-0.active { background: #f4e870; border-color: #c0b040; }
+.tab-user-1 { background: #bfe0ff; border-color: #7ab0da; }
+.tab-user-1.active { background: #9bcaf4; border-color: #5898c8; }
+.tab-user-2 { background: #b8f4ca; border-color: #72d890; }
+.tab-user-2.active { background: #88e2ac; border-color: #46c070; }
+.tab-user-3 { background: #ffc4dc; border-color: #e295b0; }
+.tab-user-3.active { background: #f4a0c4; border-color: #cc7098; }
+.tab-user-4 { background: #e2c4ff; border-color: #aa84da; }
+.tab-user-4.active { background: #caa0f4; border-color: #9060c8; }
+.tab-user-5 { background: #ffe2b2; border-color: #daaa6c; }
+.tab-user-5.active { background: #f4ca82; border-color: #c08848; }
+.tab-user-6 { background: #a0ffe8; border-color: #56d0a8; }
+.tab-user-6.active { background: #70e8d0; border-color: #30b890; }
+.tab-user-7 { background: #ffc4be; border-color: #da8878; }
+.tab-user-7.active { background: #f4a094; border-color: #c46858; }
+.tab-user-8 { background: #c4eeff; border-color: #7ec4e2; }
+.tab-user-8.active { background: #9ad9fa; border-color: #58aace; }
+.tab-user-9 { background: #d9ffc4; border-color: #9ad868; }
+.tab-user-9.active { background: #b8f494; border-color: #78b848; }
 .tab-postit:hover { transform: translateX(-3px) scale(1.02) rotate(0deg) }
 .controls { display: flex; gap: 18px; align-items: center; }
 .control-compass, .control-mode, .control-zoom, .control-size { display: flex; align-items: center; gap: 6px }
