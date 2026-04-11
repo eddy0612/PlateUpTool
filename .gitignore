@@ -2,3 +2,4 @@ ai/**
 src/public/**
 src/node_modules/**
 node_modules/**
+Resources/expanded_res/**

@@ -14,7 +14,7 @@ echo Calculated location of code to be : "%MYPATH%"
 for %%i in (%MYPATH%\Resources\*.zip) do set PU_RESOURCE_FILE=%%i
 echo Calculated location of resources  : "%PU_RESOURCE_FILE%"
 
-set PU_EXPANDED_RESOURCES=%MYPATH%\src\public\expanded_res
+set PU_EXPANDED_RESOURCES=%MYPATH%\Resources\expanded_res
 if not exist "%PU_EXPANDED_RESOURCES%" (
     md "%PU_EXPANDED_RESOURCES%"
     echo Expanding provided resources, please wait
@@ -42,14 +42,12 @@ popd
 @rem ------------------------------------------------------------------
 @rem Check we have everything we need, and product an updated json
 @rem ------------------------------------------------------------------
+if exist "%MYPATH%\src\public\res" rd "%MYPATH%\src\public\res" /s /q
+mkdir "%MYPATH%\src\public\res\AppliancePicture"
+
 pushd %MYPATH%\BuildTools
-call matcher.bat "%PU_ACTUAL_FILES%\Appliances.json" "%PU_ACTUAL_FILES%\AppliancePicture"
+call matcher.bat "%PU_ACTUAL_FILES%\Appliances.json" "%PU_ACTUAL_FILES%\AppliancePicture" "%MYPATH%\src\public\res\AppliancePicture"
 popd
 
-if exist "%MYPATH%\src\public\res" rd "%MYPATH%\src\public\res" /s /q
-mkdir "%MYPATH%\src\public\res" /s /q
-xcopy /s /q %PU_ACTUAL_FILES% %MYPATH%\src\public\res
-
-echo Done...
 endlocal
 goto :EOF

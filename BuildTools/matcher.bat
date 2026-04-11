@@ -10,4 +10,4 @@ if '%1'=='' (
     exit /b 1
 )
 
-node matcher.js %1 %2
+node matcher.js %*
