@@ -232,6 +232,7 @@ function cancelMoveDrag() {
 }
 
 function removeSelected() {
+  if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
   for (const key of selectedCells.value) {
     const [x, y] = key.split(',').map(Number)
     grid.value[y][x] = null
