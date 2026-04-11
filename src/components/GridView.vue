@@ -72,8 +72,8 @@
         <input type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom" />
       </div>
       <div class="control-size">
-        <label>W: <input type="number" v-model.number="state.roomWidth" min="10" max="50" style="width:48px" /></label>
-        <label>H: <input type="number" v-model.number="state.roomHeight" min="7" max="50" style="width:48px" /></label>
+        <label>W: <input type="number" :value="state.roomWidth" min="10" max="50" style="width:48px" @change="state.roomWidth = Math.min(50, Math.max(10, parseInt($event.target.value) || 10)); $event.target.value = state.roomWidth" /></label>
+        <label>H: <input type="number" :value="state.roomHeight" min="7" max="50" style="width:48px" @change="state.roomHeight = Math.min(50, Math.max(7, parseInt($event.target.value) || 7)); $event.target.value = state.roomHeight" /></label>
       </div>
     </div>
 
