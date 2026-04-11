@@ -168,6 +168,10 @@ export default {
       if (!val) redrawPaletteCanvases()
     })
 
+    watch(isPreviewTab, (val) => {
+      if (!val) redrawPaletteCanvases()
+    })
+
     return { state, filteredPalette, addToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon }
   }
 }
