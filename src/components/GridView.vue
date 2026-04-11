@@ -14,18 +14,20 @@
             @contextmenu.prevent="handleCellContextMenu($event, cellInfo.x, cellInfo.y)"
             @click="(e) => handleCellClick(e, cellInfo.x, cellInfo.y)"
           >
-            <template v-if="getDisplayCell(cellInfo.x, cellInfo.y)?.applianceId">
-              <span :style="rotationStyle(getDisplayCell(cellInfo.x, cellInfo.y).rotation)">
-                <img
-                  v-if="isImageIcon(getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId))"
-                  :src="getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId)"
-                  :alt="getDisplayCell(cellInfo.x, cellInfo.y).applianceId"
-                  draggable="false"
-                  style="max-width:100%;max-height:100%;display:block;"
-                />
-                <template v-else>{{ getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId) }}</template>
-              </span>
-            </template>
+            <div class="cell-content">
+              <template v-if="getDisplayCell(cellInfo.x, cellInfo.y)?.applianceId">
+                <span :style="rotationStyle(getDisplayCell(cellInfo.x, cellInfo.y).rotation)">
+                  <img
+                    v-if="isImageIcon(getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId))"
+                    :src="getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId)"
+                    :alt="getDisplayCell(cellInfo.x, cellInfo.y).applianceId"
+                    draggable="false"
+                    style="max-width:100%;max-height:100%;display:block;"
+                  />
+                  <template v-else>{{ getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId) }}</template>
+                </span>
+              </template>
+            </div>
             <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'top')"    :class="['edge-marker', 'edge-top',    `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'top')}`]" />
             <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'right')"  :class="['edge-marker', 'edge-right',  `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'right')}`]" />
             <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'bottom')" :class="['edge-marker', 'edge-bottom', `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'bottom')}`]" />
@@ -643,13 +645,14 @@ export default {
 .grid-item.selected { border: 2px solid #1f79ff; background: #dde9ff }
 .grid-item.selected { cursor: grab }
 .grid.move-dragging .grid-item { cursor: grabbing }
-.grid-item.move-source { opacity: 0.35; border: 2px dashed #1f79ff; background: #dde9ff }
+.grid-item.move-source { border: 2px dashed #1f79ff; background: #dde9ff }
+.grid-item.move-source .cell-content { opacity: 0.35; }
 .grid-item.move-preview-valid { border: 2px solid #22a355; background: rgba(34, 163, 85, 0.18) }
 .grid-item.move-preview-invalid { border: 2px solid #d93025; background: rgba(217, 48, 37, 0.18) }
 .grid-item.paste-preview-valid { border: 2px solid #22a355; background: rgba(34, 163, 85, 0.25) }
 .grid-item.paste-preview-invalid { border: 2px solid #d93025; background: rgba(217, 48, 37, 0.25) }
 .grid.paste-pending .grid-item { cursor: copy }
-.grid-item.ghosted { opacity: 0.25; filter: grayscale(0.6); }
+.grid-item.ghosted .cell-content { opacity: 0.25; filter: grayscale(0.6); }
 .drag-select-overlay {
   position: fixed;
   border: 1.5px solid #1f79ff;
@@ -748,13 +751,21 @@ export default {
 
 /* ---- Structure mode ---- */
 .grid.structure-mode .grid-item {
-  opacity: 0.45;
-  filter: grayscale(0.75);
   cursor: crosshair;
 }
-.grid.structure-mode .grid-item:hover {
+.grid.structure-mode .grid-item .cell-content {
+  opacity: 0.45;
+  filter: grayscale(0.75);
+}
+.grid.structure-mode .grid-item:hover .cell-content {
   opacity: 0.6;
-  background: rgba(100, 130, 200, 0.08);
+}
+.cell-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 /* Edge marker overlays */
 .edge-marker {
