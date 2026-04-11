@@ -1,58 +1,86 @@
 <template>
   <aside class="right-panel">
-    <div class="side-box" :style="{ maxHeight: viewportBoxHeight + 'px' }">
 
-      <!-- Structure mode: tool selector -->
-      <template v-if="isStructureMode">
-        <div class="structure-header">Draw structure</div>
-        <div class="structure-tool-list">
-          <div
-            v-for="tool in structureTools"
-            :key="tool.id"
-            :class="['structure-tool-item', { active: selectedStructureTool === tool.id }]"
-            @click="setStructureTool(tool.id)"
-          >
-            <div :class="['tool-swatch', `swatch-${tool.id}`]"></div>
-            <div class="tool-info">
-              <div class="tool-name">{{ tool.label }}</div>
-              <div class="tool-desc">{{ tool.description }}</div>
+    <!-- Inventory panel shown when Preview tab is active -->
+    <template v-if="isPreviewTab">
+      <div class="inventory-panel" :style="{ maxHeight: viewportBoxHeight + 'px' }">
+        <div class="inventory-header">
+          <span class="inventory-title">Inventory</span>
+          <span class="inventory-total-badge">{{ inventoryTotal }} items</span>
+        </div>
+        <div class="inventory-list">
+          <div v-for="item in inventoryList" :key="item.id" class="inventory-row">
+            <div class="inventory-icon">
+              <img v-if="isImageIcon(item.icon)" :src="item.icon" :alt="item.label" />
+              <span v-else class="inventory-icon-emoji">{{ item.icon }}</span>
             </div>
+            <span class="inventory-count-badge">{{ item.count }}</span>
+            <span class="inventory-multiply">×</span>
+            <span class="inventory-name">{{ item.label }}</span>
+          </div>
+          <div v-if="inventoryList.length === 0" class="inventory-empty">
+            No appliances placed yet
           </div>
         </div>
-        <div class="structure-hint">Click near a cell edge to place or remove.</div>
-      </template>
-
-      <!-- Normal mode: filter + appliance palette -->
-      <template v-else>
-        <div class="filter">
-          <input v-model="state.filterText" placeholder="Filter appliances..." />
-        </div>
-
-        <div class="palette">
-          <div
-            v-for="item in filteredPalette"
-            :key="item.id"
-            class="palette-item"
-            @click="addToGrid(item)"
-          >
-            <div class="item-icon">
-              <canvas :data-icon="item.icon" class="palette-canvas"></canvas>
-            </div>
-            <div>{{ item.label }}</div>
-          </div>
-        </div>
-      </template>
-
-    </div>
-
-    <div v-if="!isStructureMode" class="side-controls">
-      <div class="clipboard-row">
-        <button @click="cutToClipboard">Cut</button>
-        <button @click="copyToClipboard">Copy</button>
-        <button @click="startPaste">Paste</button>
-        <button @click="removeSelected">Delete</button>
       </div>
-    </div>
+    </template>
+
+    <!-- Normal / Structure panel -->
+    <template v-else>
+      <div class="side-box" :style="{ maxHeight: viewportBoxHeight + 'px' }">
+
+        <!-- Structure mode: tool selector -->
+        <template v-if="isStructureMode">
+          <div class="structure-header">Draw structure</div>
+          <div class="structure-tool-list">
+            <div
+              v-for="tool in structureTools"
+              :key="tool.id"
+              :class="['structure-tool-item', { active: selectedStructureTool === tool.id }]"
+              @click="setStructureTool(tool.id)"
+            >
+              <div :class="['tool-swatch', `swatch-${tool.id}`]"></div>
+              <div class="tool-info">
+                <div class="tool-name">{{ tool.label }}</div>
+                <div class="tool-desc">{{ tool.description }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="structure-hint">Click near a cell edge to place or remove.</div>
+        </template>
+
+        <!-- Normal mode: filter + appliance palette -->
+        <template v-else>
+          <div class="filter">
+            <input v-model="state.filterText" placeholder="Filter appliances..." />
+          </div>
+
+          <div class="palette">
+            <div
+              v-for="item in filteredPalette"
+              :key="item.id"
+              class="palette-item"
+              @click="addToGrid(item)"
+            >
+              <div class="item-icon">
+                <canvas :data-icon="item.icon" class="palette-canvas"></canvas>
+              </div>
+              <div>{{ item.label }}</div>
+            </div>
+          </div>
+        </template>
+
+      </div>
+
+      <div v-if="!isStructureMode" class="side-controls">
+        <div class="clipboard-row">
+          <button @click="cutToClipboard">Cut</button>
+          <button @click="copyToClipboard">Copy</button>
+          <button @click="startPaste">Paste</button>
+          <button @click="removeSelected">Delete</button>
+        </div>
+      </div>
+    </template>
 
   </aside>
 </template>
@@ -68,7 +96,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const { palette } = useAppliancePalette()
-    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, isStructureMode, selectedStructureTool, setStructureTool } = useGrid()
+    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon } = useGrid()
 
     const structureTools = [
       { id: 'wall',  label: 'Wall',  description: 'Full-height wall',  },
@@ -76,11 +104,30 @@ export default {
       { id: 'door',  label: 'Door',  description: 'Doorway / opening', },
     ]
 
+    const isPreviewTab = computed(() => state.activeTabId === 'complete')
+
     const filteredPalette = computed(() => {
       const q = state.filterText.trim().toLowerCase()
       if (!q) return palette.value
       return palette.value.filter(item => item.label.toLowerCase().includes(q))
     })
+
+    const inventoryList = computed(() => {
+      const counts = {}
+      for (const { cell } of flatGrid.value) {
+        if (cell?.applianceId) {
+          counts[cell.applianceId] = (counts[cell.applianceId] || 0) + 1
+        }
+      }
+      return Object.entries(counts)
+        .map(([id, count]) => {
+          const p = palette.value.find(a => a.id === id)
+          return { id, count, label: p?.label || id, icon: p?.icon || '' }
+        })
+        .sort((a, b) => b.count - a.count)
+    })
+
+    const inventoryTotal = computed(() => inventoryList.value.reduce((s, i) => s + i.count, 0))
 
     // Canvas image drawing with top-crop
     function cropAndDrawImage(canvas, src) {
@@ -121,7 +168,7 @@ export default {
       if (!val) redrawPaletteCanvases()
     })
 
-    return { state, filteredPalette, addToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools }
+    return { state, filteredPalette, addToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon }
   }
 }
 </script>
@@ -259,5 +306,113 @@ export default {
   font-style: italic;
   text-align: center;
   padding-top: 4px;
+}
+
+/* ---- Inventory panel (Preview tab) ---- */
+.inventory-panel {
+  border: 1px solid #c8d1dc;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.inventory-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 9px;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+.inventory-title {
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #3a4a5c;
+}
+.inventory-total-badge {
+  background: #e8f0fe;
+  color: #1a56db;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 12px;
+}
+.inventory-list {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.inventory-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  transition: background 0.1s;
+}
+.inventory-row:hover {
+  background: #f0f4f8;
+}
+.inventory-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dde3ea;
+  border-radius: 5px;
+  background: #f7f9fb;
+  overflow: hidden;
+}
+.inventory-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.inventory-icon-emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+.inventory-count-badge {
+  background: #1f79ff;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 28px;
+  text-align: center;
+  padding: 2px 7px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.inventory-multiply {
+  color: #8a9ab0;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.inventory-name {
+  font-size: 13px;
+  color: #2c3e50;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.inventory-empty {
+  text-align: center;
+  color: #9fadbf;
+  font-style: italic;
+  font-size: 13px;
+  padding: 28px 0;
 }
 </style>
