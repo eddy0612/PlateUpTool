@@ -123,7 +123,7 @@ export default {
     const { state } = useRestaurantStore()
     const {
       flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon,
-      rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
+      rotateCell, rotateGroupAroundCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
       moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
       copyToClipboard, cutToClipboard,
@@ -493,6 +493,7 @@ export default {
         'paste-preview-valid': paste === 'paste-preview-valid',
         'paste-preview-invalid': paste === 'paste-preview-invalid',
         ghosted: isCellGhosted(x, y),
+        'group-flash': groupFlashing.value && isSelected(x, y),
       }
     }
 
@@ -534,6 +535,27 @@ export default {
       contextMenuVisible.value = false
     }
 
+    // --- Group flash (red flash when group rotation is blocked) ---
+    const groupFlashing = ref(false)
+
+    function flashGroupRed() {
+      groupFlashing.value = true
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)()
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.frequency.value = 440
+        osc.type = 'square'
+        gain.gain.setValueAtTime(0.3, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2)
+        osc.start(ctx.currentTime)
+        osc.stop(ctx.currentTime + 0.2)
+      } catch (e) {}
+      setTimeout(() => { groupFlashing.value = false }, 400)
+    }
+
     // --- Right-mouse drag to pan ---
     const rightDragStartMouse = ref(null)
     const rightDragScrollStart = ref(null)
@@ -570,6 +592,12 @@ export default {
         if (!isSelected(x, y)) selectCell(x, y)
         contextMenuPos.value = { x: e.clientX, y: e.clientY }
         contextMenuVisible.value = true
+        return
+      }
+      // Group rotation: right-click on a selected cell in a multi-cell selection
+      if (isSelected(x, y) && selectedCells.value.size > 1) {
+        const success = rotateGroupAroundCell(x, y)
+        if (!success) flashGroupRed()
         return
       }
       rotateCell(x, y)
@@ -850,4 +878,14 @@ export default {
   background: repeating-linear-gradient(45deg, #555 0px, #555 3px, transparent 3px, transparent 7px);
 }
 .edge-marker.edge-type-door   { background: #c8860a }
+
+/* Group rotation blocked: flash cells red */
+@keyframes group-flash-red {
+  0%   { background: rgba(220, 40, 40, 0.80); border-color: #cc2020; }
+  60%  { background: rgba(220, 40, 40, 0.40); border-color: #d04040; }
+  100% { background: #dde9ff; border-color: #1f79ff; }
+}
+.grid-item.group-flash {
+  animation: group-flash-red 0.4s ease-out;
+}
 </style>

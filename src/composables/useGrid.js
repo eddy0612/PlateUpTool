@@ -115,6 +115,48 @@ function rotateCell(x, y) {
   if (cell && cell.applianceId) cell.rotation = (cell.rotation + 1) % 4
 }
 
+// Rotate all selected cells 90° CW around the given pivot cell.
+// The pivot stays in place; every other selected cell moves to its rotated position.
+// Returns true on success, false if the rotation is blocked (out of bounds or collision).
+function rotateGroupAroundCell(pivotX, pivotY) {
+  if (selectedCells.value.size <= 1) return false
+
+  // Compute rotated positions — CW 90° in grid coords (y increases downward):
+  //   new_x = pivotX - (y - pivotY)
+  //   new_y = pivotY + (x - pivotX)
+  const moves = []
+  for (const key of selectedCells.value) {
+    const [x, y] = key.split(',').map(Number)
+    const dx = x - pivotX
+    const dy = y - pivotY
+    moves.push({ sx: x, sy: y, tx: pivotX - dy, ty: pivotY + dx })
+  }
+
+  // Validate: every target must be in-bounds and not occupied by a non-selected cell
+  for (const { tx, ty } of moves) {
+    if (tx < 0 || tx >= state.roomWidth || ty < 0 || ty >= state.roomHeight) return false
+    if (grid.value[ty]?.[tx]?.applianceId && !selectedCells.value.has(cellKey(tx, ty))) return false
+  }
+
+  // Snapshot content (incrementing each appliance's rotation) before any writes
+  const moveData = moves.map(({ sx, sy, tx, ty }) => {
+    const src = grid.value[sy][sx]
+    return {
+      tx, ty,
+      content: src ? { ...src, rotation: ((src.rotation || 0) + 1) % 4 } : null
+    }
+  })
+
+  // Clear sources, then write targets
+  for (const { sx, sy } of moves) grid.value[sy][sx] = null
+  for (const { tx, ty, content } of moveData) grid.value[ty][tx] = content
+
+  // Update selection to the new positions
+  selectedCells.value = new Set(moves.map(({ tx, ty }) => cellKey(tx, ty)))
+  anchorCell.value = null
+  return true
+}
+
 function selectCell(x, y, shiftKey = false, ctrlKey = false) {
   if (shiftKey && anchorCell.value) {
     const x0 = Math.min(anchorCell.value.x, x)
@@ -482,5 +524,5 @@ function loadGridFromState() {
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, loadGridFromState }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateGroupAroundCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, loadGridFromState }
 }
