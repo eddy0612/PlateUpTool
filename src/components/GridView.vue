@@ -26,12 +26,10 @@
                 <template v-else>{{ getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId) }}</template>
               </span>
             </template>
-            <template v-if="isStructureMode">
-              <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'top')"    :class="['edge-marker', 'edge-top',    `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'top')}`]" />
-              <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'right')"  :class="['edge-marker', 'edge-right',  `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'right')}`]" />
-              <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'bottom')" :class="['edge-marker', 'edge-bottom', `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'bottom')}`]" />
-              <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'left')"   :class="['edge-marker', 'edge-left',   `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'left')}`]" />
-            </template>
+            <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'top')"    :class="['edge-marker', 'edge-top',    `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'top')}`]" />
+            <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'right')"  :class="['edge-marker', 'edge-right',  `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'right')}`]" />
+            <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'bottom')" :class="['edge-marker', 'edge-bottom', `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'bottom')}`]" />
+            <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'left')"   :class="['edge-marker', 'edge-left',   `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'left')}`]" />
           </div>
         </div>
         </div>
