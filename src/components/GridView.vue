@@ -776,11 +776,11 @@ export default {
 }
 .edge-marker.edge-top,
 .edge-marker.edge-bottom {
-  left: -1px; right: -1px; height: 5px;
+  left: -3px; right: -3px; height: 5px;
 }
 .edge-marker.edge-left,
 .edge-marker.edge-right {
-  top: -1px; bottom: -1px; width: 5px;
+  top: -3px; bottom: -3px; width: 5px;
 }
 .edge-marker.edge-top    { top: -2px }
 .edge-marker.edge-bottom { bottom: -2px }
