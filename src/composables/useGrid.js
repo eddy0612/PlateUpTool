@@ -290,15 +290,37 @@ function getEdgeKey(x, y, dir) {
   return null
 }
 
+function isBorderEdge(x, y, dir) {
+  if (dir === 'top'    && y === 0)                    return true
+  if (dir === 'bottom' && y === state.roomHeight - 1) return true
+  if (dir === 'left'   && x === 0)                    return true
+  if (dir === 'right'  && x === state.roomWidth - 1)  return true
+  return false
+}
+
 function getWallEdge(x, y, dir) {
-  if (!state.walls) return null
-  return state.walls[getEdgeKey(x, y, dir)] || null
+  if (!state.walls) return isBorderEdge(x, y, dir) ? 'wall' : null
+  const key = getEdgeKey(x, y, dir)
+  if (state.walls[key]) return state.walls[key]
+  // Border edges always show as wall unless overridden by a stored door
+  if (isBorderEdge(x, y, dir)) return 'wall'
+  return null
 }
 
 function setWallEdge(x, y, dir, type) {
   if (!state.walls) state.walls = {}
   const key = getEdgeKey(x, y, dir)
   if (!key) return
+  if (isBorderEdge(x, y, dir)) {
+    // Only doors can be toggled on border edges; all other tools are ignored
+    if (type !== 'door') return
+    if (state.walls[key] === 'door') {
+      delete state.walls[key]
+    } else {
+      state.walls[key] = 'door'
+    }
+    return
+  }
   if (state.walls[key] === type) {
     delete state.walls[key]
   } else {

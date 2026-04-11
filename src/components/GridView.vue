@@ -613,7 +613,7 @@ export default {
   background: #e8eef8;
   border: 2px solid #b0c7dd;
   position: relative;
-  overflow: auto;
+  overflow: hidden;
   transform-origin: center;
   min-height: 0;
   min-width: 0;
