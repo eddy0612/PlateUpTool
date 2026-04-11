@@ -63,8 +63,9 @@ const cellSize = computed(() => {
   return Math.max(16, Math.floor(Math.min(availableH / state.roomHeight, availableW / state.roomWidth) * 0.95))
 })
 
-// Height of the .viewport-box element: grid height + 8px padding top/bottom + 1px border top/bottom
-const viewportBoxHeight = computed(() => state.roomHeight * cellSize.value + 18)
+// Height of the .viewport-box element: based on available vertical space so it stays
+// consistent when only roomWidth changes (which affects cellSize but not vertical space).
+const viewportBoxHeight = computed(() => Math.floor((windowHeight.value - H_OVERHEAD) * 0.95) + 18)
 
 const gridStyleDynamic = computed(() => ({
   gridTemplateColumns: `repeat(${state.roomWidth}, 1fr)`,
