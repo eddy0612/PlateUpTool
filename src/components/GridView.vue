@@ -14,7 +14,7 @@
             @contextmenu.prevent="handleCellContextMenu($event, cellInfo.x, cellInfo.y)"
             @click="(e) => handleCellClick(e, cellInfo.x, cellInfo.y)"
           >
-            <div class="cell-content">
+            <div class="cell-content" :style="getApplianceBgStyle(cellInfo.x, cellInfo.y)">
               <template v-if="getDisplayCell(cellInfo.x, cellInfo.y)?.applianceId">
                 <span :style="rotationStyle(getDisplayCell(cellInfo.x, cellInfo.y).rotation)">
                   <img
@@ -41,7 +41,7 @@
         <div
           v-for="tab in state.tabs"
           :key="tab.id"
-          :class="['tab-postit', `tab-color-${tab.id}`, { active: state.activeTabId === tab.id }]"
+          :class="['tab-postit', getTabColorClass(tab), { active: state.activeTabId === tab.id }]"
           @click="selectTab(tab)"
           @mousedown="onTabMouseDown(tab, $event)"
           @mouseup="cancelTabRenameTimer"
@@ -131,6 +131,47 @@ export default {
       tabHasVisibleItems, deleteTabItems,
       isStructureMode, selectedStructureTool, getWallEdge, setWallEdge
     } = useGrid()
+
+    // --- Tab colours (10 light, differentiable) ---
+    const TAB_COLORS = [
+      { bg: '#fff8a0', border: '#d0c048' }, // 0 yellow
+      { bg: '#aad6ff', border: '#5090d0' }, // 1 sky blue
+      { bg: '#a0f0b8', border: '#48c870' }, // 2 green
+      { bg: '#ffb0d0', border: '#d87098' }, // 3 pink
+      { bg: '#d8b0ff', border: '#9060d0' }, // 4 lavender
+      { bg: '#ffd898', border: '#d09048' }, // 5 orange
+      { bg: '#80ffe0', border: '#28c090' }, // 6 teal
+      { bg: '#ffb0a8', border: '#d06858' }, // 7 salmon
+      { bg: '#b0e8ff', border: '#58a8d8' }, // 8 cyan
+      { bg: '#ccffb0', border: '#80c048' }, // 9 lime
+    ]
+
+    const userTabColorMap = computed(() => {
+      const map = {}
+      state.tabs
+        .filter(t => t.id !== 'complete' && t.id !== 'structure')
+        .forEach((tab, idx) => { map[tab.id] = idx % TAB_COLORS.length })
+      return map
+    })
+
+    function getTabColorClass(tab) {
+      if (tab.id === 'complete') return 'tab-color-complete'
+      if (tab.id === 'structure') return 'tab-color-structure'
+      const idx = userTabColorMap.value[tab.id] ?? 0
+      return `tab-user-${idx}`
+    }
+
+    function getApplianceBgStyle(x, y) {
+      if (state.activeTabId === 'complete') return {}
+      const cell = getDisplayCell(x, y)
+      if (!cell?.applianceId) return {}
+      const firstTabId = Array.isArray(cell.tabIds) ? cell.tabIds[0] : cell.tabId
+      if (!firstTabId) return {}
+      const idx = userTabColorMap.value[firstTabId]
+      if (idx === undefined) return {}
+      return { background: TAB_COLORS[idx].bg }
+    }
+    // --- End tab colours ---
 
     function selectTab(tab) {
       if (pastePending.value && (tab.id === 'complete' || tab.id === 'structure')) return
@@ -567,7 +608,8 @@ export default {
       onTabContextMenu, closeTabContextMenu, doTabContextRename, doTabContextDelete,
       cancelTabDeleteConfirm, confirmTabDelete,
       pastePending,
-      isStructureMode, getWallEdge
+      isStructureMode, getWallEdge,
+      getTabColorClass, getApplianceBgStyle
     }
   }
 }
@@ -644,7 +686,8 @@ export default {
 .grid-item.paste-preview-valid { border: 2px solid #22a355; background: rgba(34, 163, 85, 0.25) }
 .grid-item.paste-preview-invalid { border: 2px solid #d93025; background: rgba(217, 48, 37, 0.25) }
 .grid.paste-pending .grid-item { cursor: copy }
-.grid-item.ghosted .cell-content { opacity: 0.25; filter: grayscale(0.6); }
+.grid-item.ghosted .cell-content { opacity: 0.7; }
+.grid-item.ghosted .cell-content > span { opacity: 0.3; filter: grayscale(0.7); }
 .drag-select-overlay {
   position: fixed;
   border: 1.5px solid #1f79ff;
@@ -681,11 +724,32 @@ export default {
   transform: translateX(-3px) rotate(0deg);
 }
 .tab-postit.active { margin-left: 10px; z-index: 20; font-weight: 700 }
-.tab-postit.tab-color-structure { background: #ffd5d5; border-color: #e89090; }
-.tab-postit.tab-color-structure.active { background: #ffb3b3; border-color: #d06060; }
-.tab-postit.tab-color-complete { background: #c8f5c8; border-color: #72c472; }
-.tab-postit.tab-color-complete.active { background: #9eea9e; border-color: #4aaa4a; }
+.tab-postit.tab-color-structure { background: #e0e0e0; border-color: #a0a0a0; }
+.tab-postit.tab-color-structure.active { background: #cccccc; border-color: #888888; }
+.tab-postit.tab-color-complete { background: #e8e8e8; border-color: #b0b0b0; }
+.tab-postit.tab-color-complete.active { background: #d4d4d4; border-color: #909090; }
 .tab-postit.add { font-weight: 700; background: #c8e7ff; border-color: #7bbbf3; }
+/* User tab colours (10 light, differentiable) */
+.tab-user-0 { background: #fff8a0; border-color: #d0c048; }
+.tab-user-0.active { background: #f0e040; border-color: #b0a020; }
+.tab-user-1 { background: #aad6ff; border-color: #5090d0; }
+.tab-user-1.active { background: #7ab8f0; border-color: #3070b0; }
+.tab-user-2 { background: #a0f0b8; border-color: #48c870; }
+.tab-user-2.active { background: #60d890; border-color: #28a850; }
+.tab-user-3 { background: #ffb0d0; border-color: #d87098; }
+.tab-user-3.active { background: #f080b0; border-color: #b85078; }
+.tab-user-4 { background: #d8b0ff; border-color: #9060d0; }
+.tab-user-4.active { background: #b880f0; border-color: #7040b0; }
+.tab-user-5 { background: #ffd898; border-color: #d09048; }
+.tab-user-5.active { background: #f0b858; border-color: #b07028; }
+.tab-user-6 { background: #80ffe0; border-color: #28c090; }
+.tab-user-6.active { background: #40e0c0; border-color: #08a070; }
+.tab-user-7 { background: #ffb0a8; border-color: #d06858; }
+.tab-user-7.active { background: #f08070; border-color: #b04838; }
+.tab-user-8 { background: #b0e8ff; border-color: #58a8d8; }
+.tab-user-8.active { background: #78ccf8; border-color: #3888b8; }
+.tab-user-9 { background: #ccffb0; border-color: #80c048; }
+.tab-user-9.active { background: #a0f070; border-color: #60a028; }
 .tab-postit:hover { transform: translateX(-3px) scale(1.02) rotate(0deg) }
 .controls { display: flex; gap: 18px; align-items: center; }
 .control-compass, .control-mode, .control-zoom, .control-size { display: flex; align-items: center; gap: 6px }
