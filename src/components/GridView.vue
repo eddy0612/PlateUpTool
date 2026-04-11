@@ -67,14 +67,6 @@
     </div>
 
     <div class="controls">
-      <div class="control-compass">
-        <span class="compass" :style="{ transform: 'rotate(' + state.orientation + 'deg)' }">🧭</span>
-        <span>{{ state.orientation }}°</span>
-      </div>
-      <div class="control-mode">
-        <label><input type="radio" value="2D" v-model="state.viewMode" /> 2D</label>
-        <label><input type="radio" value="3D" v-model="state.viewMode" /> 3D</label>
-      </div>
       <div class="control-zoom">
         <label>Zoom {{ (state.zoom * 100).toFixed(0) }}%</label>
         <input type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom" />
