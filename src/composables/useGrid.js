@@ -334,6 +334,7 @@ function getCellPasteState(x, y) {
 }
 
 function startPaste() {
+  if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
   if (clipboard.value.length === 0) return
   pastePending.value = true
   pasteAnchor.value = clipboardPasteOrigin.value ? { ...clipboardPasteOrigin.value } : { x: 0, y: 0 }

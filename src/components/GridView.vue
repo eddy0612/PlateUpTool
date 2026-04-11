@@ -36,7 +36,7 @@
           v-for="tab in state.tabs"
           :key="tab.id"
           :class="['tab-postit', `tab-color-${tab.id}`, { active: state.activeTabId === tab.id }]"
-          @click="editingTabId !== tab.id && (state.activeTabId = tab.id)"
+          @click="selectTab(tab)"
           @mousedown="onTabMouseDown(tab, $event)"
           @mouseup="cancelTabRenameTimer"
           @mouseleave="cancelTabRenameTimer"
@@ -132,6 +132,11 @@ export default {
       pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste,
       tabHasVisibleItems, deleteTabItems
     } = useGrid()
+
+    function selectTab(tab) {
+      if (pastePending.value && (tab.id === 'complete' || tab.id === 'structure')) return
+      if (editingTabId.value !== tab.id) state.activeTabId = tab.id
+    }
 
     function addTab() {
       const userTabs = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure')
@@ -531,7 +536,7 @@ export default {
 
     return {
       state, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon,
-      rotateCell, selectedCells, isSelected, addTab,
+      rotateCell, selectedCells, isSelected, addTab, selectTab,
       gridEl, viewportEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
       handleCellClick, handleCellContextMenu, onGridMouseDown, cellClasses, getDisplayCell,
       editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename,
