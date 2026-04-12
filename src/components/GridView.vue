@@ -2,7 +2,7 @@
   <section class="left-panel">
     <div style="position:relative; width:100%;">
 
-      <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }">
+      <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }" @mousemove="onViewportMouseMove" @mouseleave="onViewportMouseLeave">
         <div class="grid-centering-wrapper">
         <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive, 'paste-pending': pastePending, 'structure-mode': isStructureMode }" @mousedown="onGridMouseDown" @dragstart.prevent>
           <div
@@ -67,15 +67,18 @@
 
     </div>
 
-    <div class="controls">
-      <div class="control-zoom">
-        <label>Zoom {{ (state.zoom * 100).toFixed(0) }}%</label>
-        <input type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom" />
+    <div class="controls-with-status">
+      <div class="controls">
+        <div class="control-zoom">
+          <label>Zoom {{ (state.zoom * 100).toFixed(0) }}%</label>
+          <input type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom" />
+        </div>
+        <div class="control-size">
+          <label>W: <input type="number" :value="state.roomWidth" min="10" max="50" style="width:48px" @change="state.roomWidth = Math.min(50, Math.max(10, parseInt($event.target.value) || 10)); $event.target.value = state.roomWidth" /></label>
+          <label>H: <input type="number" :value="state.roomHeight" min="7" max="50" style="width:48px" @change="state.roomHeight = Math.min(50, Math.max(7, parseInt($event.target.value) || 7)); $event.target.value = state.roomHeight" /></label>
+        </div>
       </div>
-      <div class="control-size">
-        <label>W: <input type="number" :value="state.roomWidth" min="10" max="50" style="width:48px" @change="state.roomWidth = Math.min(50, Math.max(10, parseInt($event.target.value) || 10)); $event.target.value = state.roomWidth" /></label>
-        <label>H: <input type="number" :value="state.roomHeight" min="7" max="50" style="width:48px" @change="state.roomHeight = Math.min(50, Math.max(7, parseInt($event.target.value) || 7)); $event.target.value = state.roomHeight" /></label>
-      </div>
+      <div class="grid-status-bar">{{ hoverLabel }}</div>
     </div>
 
     <div
@@ -123,7 +126,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const {
-      flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, get2DApplianceIcon, isImageIcon,
+      flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon,
       rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
       moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
@@ -573,6 +576,22 @@ export default {
       setTimeout(() => { groupFlashing.value = false }, 400)
     }
 
+    // --- Grid hover status bar ---
+    const hoverLabel = ref('')
+
+    function onViewportMouseMove(e) {
+      const el = e.target.closest?.('.grid-item')
+      if (!el) { hoverLabel.value = ''; return }
+      const x = parseInt(el.dataset.x)
+      const y = parseInt(el.dataset.y)
+      const cell = getDisplayCell(x, y)
+      hoverLabel.value = cell?.applianceId ? getApplianceLabel(cell.applianceId) : ''
+    }
+
+    function onViewportMouseLeave() {
+      hoverLabel.value = ''
+    }
+
     // --- Right-mouse drag to pan ---
     const rightDragStartMouse = ref(null)
     const rightDragScrollStart = ref(null)
@@ -658,7 +677,8 @@ export default {
       cancelTabDeleteConfirm, confirmTabDelete,
       pastePending,
       isStructureMode, getWallEdge,
-      getTabColorClass, getApplianceBgStyle
+      getTabColorClass, getApplianceBgStyle,
+      hoverLabel, onViewportMouseMove, onViewportMouseLeave
     }
   }
 }
@@ -800,7 +820,21 @@ export default {
 .tab-user-9 { background: #d9ffc4; border-color: #9ad868; }
 .tab-user-9.active { background: #b8f494; border-color: #78b848; }
 .tab-postit:hover { transform: translateX(-3px) scale(1.02) rotate(0deg) }
+.controls-with-status { display: flex; flex-direction: column; align-items: stretch; width: fit-content; gap: 5px; }
 .controls { display: flex; gap: 18px; align-items: center; }
+.size-status-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.grid-status-bar {
+  min-height: 1.4em;
+  font-size: 0.82rem;
+  color: #3a5070;
+  padding: 2px 6px;
+  background: #eef3fa;
+  border: 1px solid #c8d6e8;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .control-compass, .control-mode, .control-zoom, .control-size { display: flex; align-items: center; gap: 6px }
 .compass { display: inline-block; transition: transform 0.2s }
 .tab-rename-input {
