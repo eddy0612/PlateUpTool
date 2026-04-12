@@ -459,12 +459,8 @@ export default {
           // Suppress click after an actual drag
           wasDragging.value = true
           setTimeout(() => { wasDragging.value = false }, 0)
-        } else if (!pendingMoveCell.value.needsSelect) {
-          // Was a selected-cell mousedown with no drag: suppress click (no-op move)
-          wasDragging.value = true
-          setTimeout(() => { wasDragging.value = false }, 0)
         }
-        // If needsSelect and no drag: don't suppress click — let handleCellClick select it
+        // If no drag: let handleCellClick fire to collapse the selection to just this cell
         pendingMoveCell.value = null
         moveDragStartMouse.value = null
         return
