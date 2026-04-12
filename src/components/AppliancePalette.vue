@@ -79,6 +79,7 @@
           <button @click="startPaste">Paste</button>
           <button @click="removeSelected">Delete</button>
         </div>
+        <button class="fill-all-button" @click="addAllToGrid">Fill All (Testing)</button>
       </div>
     </template>
 
@@ -172,7 +173,13 @@ export default {
       if (!val) redrawPaletteCanvases()
     })
 
-    return { state, filteredPalette, addToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon }
+    function addAllToGrid() {
+      for (const item of palette.value) {
+        addToGrid(item)
+      }
+    }
+
+    return { state, filteredPalette, addToGrid, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon }
   }
 }
 </script>
@@ -203,6 +210,16 @@ export default {
   flex-direction: column;
   gap: 10px;
   align-items: stretch;
+}
+.fill-all-button {
+  width: 100%;
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 4px;
+  background: #5a7fc2;
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
 }
 .filter input {
   width: 100%;
