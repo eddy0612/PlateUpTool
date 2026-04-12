@@ -356,6 +356,7 @@ export default {
         if (dir) setWallEdge(x, y, dir, selectedStructureTool.value)
         return
       }
+      if (state.activeTabId === 'complete') return  // no selection on preview tab
       if (pastePending.value) {
         setPasteAnchor(x, y)
         confirmPaste()
@@ -377,6 +378,7 @@ export default {
         return
       }
       if (isStructureMode.value) return  // no drag/selection in structure mode
+      if (state.activeTabId === 'complete') return  // no drag/selection on preview tab
       if (e.button !== 0) return
 
       // If clicking on an already-selected cell without modifiers → potential move drag
