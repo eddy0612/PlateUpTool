@@ -88,6 +88,12 @@ function isImageIcon(icon) {
   return /\.(png|jpg|jpeg|webp)$/i.test(icon)
 }
 
+function get2DApplianceIcon(applianceId) {
+  const icon = getApplianceIcon(applianceId)
+  if (!isImageIcon(icon)) return icon
+  return icon.replace(/([^\/]*)$/, '2D_$1')
+}
+
 function addToGrid(item) {
   if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
   const tabId = state.activeTabId
@@ -524,5 +530,5 @@ function loadGridFromState() {
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateGroupAroundCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, loadGridFromState }
+  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, get2DApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateGroupAroundCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, loadGridFromState }
 }

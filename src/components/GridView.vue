@@ -19,10 +19,11 @@
                 <span :style="rotationStyle(getDisplayCell(cellInfo.x, cellInfo.y).rotation)">
                   <img
                     v-if="isImageIcon(getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId))"
-                    :src="getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId)"
+                    :src="get2DApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId)"
                     :alt="getDisplayCell(cellInfo.x, cellInfo.y).applianceId"
                     draggable="false"
                     style="max-width:100%;max-height:100%;display:block;"
+                    @error="$event.target.onerror=null; $event.target.src=getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId)"
                   />
                   <template v-else>{{ getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId) }}</template>
                 </span>
@@ -122,7 +123,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const {
-      flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon,
+      flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, get2DApplianceIcon, isImageIcon,
       rotateCell, rotateGroupAroundCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
       moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
@@ -629,7 +630,7 @@ export default {
     })
 
     return {
-      state, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, isImageIcon,
+      state, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, get2DApplianceIcon, isImageIcon,
       rotateCell, selectedCells, isSelected, addTab, selectTab,
       gridEl, viewportEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
       handleCellClick, handleCellContextMenu, onGridMouseDown, cellClasses, getDisplayCell,

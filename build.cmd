@@ -48,6 +48,10 @@ mkdir "%MYPATH%\src\public\res\AppliancePicture"
 pushd %MYPATH%\BuildTools
 call matcher.bat "%PU_ACTUAL_FILES%\Appliances.json" "%PU_ACTUAL_FILES%\AppliancePicture" "%MYPATH%\src\public\res\AppliancePicture"
 popd
+copy "%PU_ACTUAL_FILES%\ApplianceMap.json" "%MYPATH%\src\public\res"
+
+rem ------- Temporary for testing
+xcopy %MYPATH%\..\PlateUpTool_images_backup\output\2D* "%MYPATH%\src\public\res\AppliancePicture"
 
 endlocal
 goto :EOF
