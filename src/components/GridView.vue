@@ -395,10 +395,19 @@ export default {
         }
       }
 
-      // Normal select-box drag
-      dragStart.value = { x: e.clientX, y: e.clientY }
-      dragEnd.value = { x: e.clientX, y: e.clientY }
-      isDragging.value = false
+      const clickedCell = e.target.closest('.grid-item')
+      if (clickedCell && !e.shiftKey && !(e.ctrlKey || e.metaKey) && !isCellGhosted(parseInt(clickedCell.dataset.x), parseInt(clickedCell.dataset.y))) {
+        // Non-selected cell, no modifiers: track for potential drag-to-move.
+        // If user drags, we select this cell and start move drag.
+        // If user just clicks (no drag), the click event fires normally.
+        pendingMoveCell.value = { x: parseInt(clickedCell.dataset.x), y: parseInt(clickedCell.dataset.y), needsSelect: true }
+        moveDragStartMouse.value = { x: e.clientX, y: e.clientY }
+      } else {
+        // Empty space, or modifier key: start box-select drag
+        dragStart.value = { x: e.clientX, y: e.clientY }
+        dragEnd.value = { x: e.clientX, y: e.clientY }
+        isDragging.value = false
+      }
       window.addEventListener('mousemove', onWindowMouseMove)
       window.addEventListener('mouseup', onWindowMouseUp)
     }
@@ -409,6 +418,10 @@ export default {
         const dx = e.clientX - moveDragStartMouse.value.x
         const dy = e.clientY - moveDragStartMouse.value.y
         if (!isMoveDragging.value && Math.sqrt(dx * dx + dy * dy) > 5) {
+          if (pendingMoveCell.value.needsSelect) {
+            selectCell(pendingMoveCell.value.x, pendingMoveCell.value.y, false, false)
+            pendingMoveCell.value = { x: pendingMoveCell.value.x, y: pendingMoveCell.value.y }
+          }
           isMoveDragging.value = true
           startMoveDrag()
         }
@@ -441,10 +454,15 @@ export default {
         if (isMoveDragging.value) {
           commitMoveDrag()
           isMoveDragging.value = false
+          // Suppress click after an actual drag
+          wasDragging.value = true
+          setTimeout(() => { wasDragging.value = false }, 0)
+        } else if (!pendingMoveCell.value.needsSelect) {
+          // Was a selected-cell mousedown with no drag: suppress click (no-op move)
+          wasDragging.value = true
+          setTimeout(() => { wasDragging.value = false }, 0)
         }
-        // Suppress the click event in both cases (drag or plain click on selected cell)
-        wasDragging.value = true
-        setTimeout(() => { wasDragging.value = false }, 0)
+        // If needsSelect and no drag: don't suppress click — let handleCellClick select it
         pendingMoveCell.value = null
         moveDragStartMouse.value = null
         return
