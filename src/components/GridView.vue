@@ -124,7 +124,7 @@ export default {
     const { state } = useRestaurantStore()
     const {
       flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, get2DApplianceIcon, isImageIcon,
-      rotateCell, rotateGroupAroundCell, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
+      rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
       moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
       copyToClipboard, cutToClipboard,
@@ -611,13 +611,14 @@ export default {
         contextMenuVisible.value = true
         return
       }
+      const ccw = e.shiftKey
       // Group rotation: right-click on a selected cell in a multi-cell selection
       if (isSelected(x, y) && selectedCells.value.size > 1) {
-        const success = rotateGroupAroundCell(x, y)
+        const success = ccw ? rotateGroupAroundCellCCW(x, y) : rotateGroupAroundCell(x, y)
         if (!success) flashGroupRed()
         return
       }
-      rotateCell(x, y)
+      ccw ? rotateCellCCW(x, y) : rotateCell(x, y)
     }
 
     function onWheel(e) {
