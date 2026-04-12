@@ -163,6 +163,17 @@ function rotateGroupAroundCell(pivotX, pivotY) {
   return true
 }
 
+// Returns false if the cell has an appliance belonging to a different tab (i.e. would appear ghosted).
+// Empty cells are always selectable.
+function isCellOnActiveTab(x, y) {
+  const cell = grid.value[y]?.[x]
+  if (!cell?.applianceId) return false
+  if (state.activeTabId === 'complete') return true
+  if (Array.isArray(cell.tabIds)) return cell.tabIds.includes(state.activeTabId)
+  if (cell.tabId != null) return cell.tabId === state.activeTabId
+  return true
+}
+
 function selectCell(x, y, shiftKey = false, ctrlKey = false) {
   if (shiftKey && anchorCell.value) {
     const x0 = Math.min(anchorCell.value.x, x)
@@ -172,9 +183,10 @@ function selectCell(x, y, shiftKey = false, ctrlKey = false) {
     const base = ctrlKey ? new Set(selectedCells.value) : new Set()
     for (let cy = y0; cy <= y1; cy++)
       for (let cx = x0; cx <= x1; cx++)
-        base.add(cellKey(cx, cy))
+        if (isCellOnActiveTab(cx, cy)) base.add(cellKey(cx, cy))
     selectedCells.value = base
   } else if (ctrlKey) {
+    if (!isCellOnActiveTab(x, y)) return
     const key = cellKey(x, y)
     const next = new Set(selectedCells.value)
     if (next.has(key)) next.delete(key)
@@ -182,21 +194,24 @@ function selectCell(x, y, shiftKey = false, ctrlKey = false) {
     selectedCells.value = next
     anchorCell.value = { x, y }
   } else {
+    if (!isCellOnActiveTab(x, y)) return
     selectedCells.value = new Set([cellKey(x, y)])
     anchorCell.value = { x, y }
   }
 }
 
 function selectCellsInRect(cells) {
-  selectedCells.value = new Set(cells.map(c => cellKey(c.x, c.y)))
-  if (cells.length > 0) anchorCell.value = cells[cells.length - 1]
+  const filtered = cells.filter(c => isCellOnActiveTab(c.x, c.y))
+  selectedCells.value = new Set(filtered.map(c => cellKey(c.x, c.y)))
+  if (filtered.length > 0) anchorCell.value = filtered[filtered.length - 1]
 }
 
 function addCellsToSelection(cells) {
   const next = new Set(selectedCells.value)
-  cells.forEach(c => next.add(cellKey(c.x, c.y)))
+  cells.forEach(c => { if (isCellOnActiveTab(c.x, c.y)) next.add(cellKey(c.x, c.y)) })
   selectedCells.value = next
-  if (cells.length > 0) anchorCell.value = cells[cells.length - 1]
+  const last = [...cells].reverse().find(c => isCellOnActiveTab(c.x, c.y))
+  if (last) anchorCell.value = last
 }
 
 // --- Move drag state ---
