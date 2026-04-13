@@ -190,7 +190,7 @@ export default {
       let n = userTabs.length + 1
       while (existingLabels.has(`Tab ${n}`)) n++
       const nextId = `tab-${Date.now()}`
-      state.tabs.push({ id: nextId, label: `Tab ${n}`, items: [] })
+      state.tabs.push({ id: nextId, label: `Tab ${n}` })
       state.activeTabId = nextId
     }
 
