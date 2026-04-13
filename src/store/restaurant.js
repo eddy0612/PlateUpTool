@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import LZString from 'lz-string'
 
 const DEFAULT_STATE = {
   tabs: [
@@ -19,15 +20,78 @@ const DEFAULT_STATE = {
 // Only these fields are serialized into the URL
 const URL_FIELDS = ['tabs', 'activeTabId', 'orientation', 'roomWidth', 'roomHeight', 'walls', 'gridCells']
 
+// Wall type string ↔ compact integer code
+const WALL_TYPE_TO_CODE = { wall: 1, hatch: 2, door: 3 }
+const WALL_CODE_TO_TYPE = { 1: 'wall', 2: 'hatch', 3: 'door' }
+
 const state = reactive(JSON.parse(JSON.stringify(DEFAULT_STATE)))
 
+// Walls: { "h,3,0": "wall" } → [[0,3,0,1], ...]  (orient 0=h 1=v, x, y, typeCode)
+function compactWalls(walls) {
+  return Object.entries(walls ?? {}).map(([key, type]) => {
+    const [orient, x, y] = key.split(',')
+    return [orient === 'h' ? 0 : 1, parseInt(x), parseInt(y), WALL_TYPE_TO_CODE[type] ?? 1]
+  })
+}
+
+function expandWalls(arr) {
+  const walls = {}
+  for (const [orient, x, y, code] of (arr ?? [])) {
+    walls[`${orient === 0 ? 'h' : 'v'},${x},${y}`] = WALL_CODE_TO_TYPE[code] ?? 'wall'
+  }
+  return walls
+}
+
+// gridCells: { x, y, applianceId, rotation, extraData, tabIds } → [x, y, applianceId, tabMask, rotation?, extraData?]
+// rotation and extraData are omitted when both are 0 (option 5: skip defaults)
+function compactCells(cells, tabs) {
+  const tabBits = {}
+  tabs.forEach((tab, i) => { tabBits[tab.id] = 1 << i })
+  return cells.map(({ x, y, applianceId, rotation, extraData, tabIds }) => {
+    const tabMask = Array.isArray(tabIds) ? tabIds.reduce((m, id) => m | (tabBits[id] ?? 0), 0) : 0
+    const rot = rotation ?? 0
+    const extra = extraData ?? 0
+    return (rot === 0 && extra === 0)
+      ? [x, y, applianceId, tabMask]
+      : [x, y, applianceId, tabMask, rot, extra]
+  })
+}
+
+function expandCells(cells, tabs) {
+  return (cells ?? []).map((cell) => {
+    const [x, y, applianceId, tabMask, rotation = 0, extraData = 0] = cell
+    const tabIds = tabs.filter((_, i) => tabMask & (1 << i)).map(t => t.id)
+    return { x, y, applianceId, rotation, extraData, tabIds }
+  })
+}
+
 function encodeState(stateObj) {
-  return btoa(unescape(encodeURIComponent(JSON.stringify(stateObj))))
+  const compact = {
+    tabs: stateObj.tabs,
+    activeTabId: stateObj.activeTabId,
+    orientation: stateObj.orientation,
+    roomWidth: stateObj.roomWidth,
+    roomHeight: stateObj.roomHeight,
+    walls: compactWalls(stateObj.walls),
+    gridCells: compactCells(stateObj.gridCells ?? [], stateObj.tabs)
+  }
+  return LZString.compressToEncodedURIComponent(JSON.stringify(compact))
 }
 
 function decodeState(encoded) {
   try {
-    return JSON.parse(decodeURIComponent(escape(atob(encoded))))
+    const json = LZString.decompressFromEncodedURIComponent(encoded)
+    if (!json) return null
+    const compact = JSON.parse(json)
+    return {
+      tabs: compact.tabs,
+      activeTabId: compact.activeTabId,
+      orientation: compact.orientation,
+      roomWidth: compact.roomWidth,
+      roomHeight: compact.roomHeight,
+      walls: expandWalls(compact.walls),
+      gridCells: expandCells(compact.gridCells, compact.tabs)
+    }
   } catch {
     return null
   }
