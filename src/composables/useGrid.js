@@ -294,8 +294,8 @@ const isMoveValid = computed(() => {
 function getCellMoveState(x, y) {
   if (!moveDragActive.value) return null
   const key = cellKey(x, y)
-  if (selectedCells.value.has(key)) return 'source'
   if (moveDragTargetMap.value.has(key)) return isMoveValid.value ? 'preview-valid' : 'preview-invalid'
+  if (selectedCells.value.has(key)) return 'source'
   return null
 }
 
