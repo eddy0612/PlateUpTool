@@ -571,6 +571,48 @@ function deleteTabItems(tabId) {
   }
 }
 
+// --- Palette drag (drag from palette and drop onto an empty grid cell) ---
+const paletteDragActive = ref(false)
+const paletteDragItem = ref(null)
+const paletteDragPos = ref({ x: 0, y: 0 })
+const paletteDragHoverCell = ref(null)
+
+function startPaletteDrag(item) {
+  paletteDragActive.value = true
+  paletteDragItem.value = item
+}
+
+function updatePaletteDrag(clientX, clientY) {
+  paletteDragPos.value = { x: clientX, y: clientY }
+  const el = document.elementFromPoint(clientX, clientY)?.closest?.('.grid-item')
+  if (el && el.dataset.x !== undefined) {
+    paletteDragHoverCell.value = { x: parseInt(el.dataset.x), y: parseInt(el.dataset.y) }
+  } else {
+    paletteDragHoverCell.value = null
+  }
+}
+
+function isPaletteDragDropValid(x, y) {
+  if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return false
+  return !grid.value[y]?.[x]?.applianceId
+}
+
+function commitPaletteDrag() {
+  if (paletteDragActive.value && paletteDragItem.value && paletteDragHoverCell.value) {
+    const { x, y } = paletteDragHoverCell.value
+    if (isPaletteDragDropValid(x, y)) {
+      grid.value[y][x] = { applianceId: paletteDragItem.value.id, rotation: 0, extraData: 0, tabIds: [state.activeTabId] }
+    }
+  }
+  cancelPaletteDrag()
+}
+
+function cancelPaletteDrag() {
+  paletteDragActive.value = false
+  paletteDragItem.value = null
+  paletteDragHoverCell.value = null
+}
+
 // Serialize grid to state.gridCells whenever it changes so the URL stays current
 watch(grid, (newGrid) => {
   const cells = []
@@ -595,5 +637,5 @@ function loadGridFromState() {
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, loadGridFromState }
+  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid }
 }

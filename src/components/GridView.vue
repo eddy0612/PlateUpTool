@@ -133,7 +133,8 @@ export default {
       copyToClipboard, cutToClipboard,
       pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste,
       tabHasVisibleItems, deleteTabItems,
-      isStructureMode, selectedStructureTool, getWallEdge, setWallEdge
+      isStructureMode, selectedStructureTool, getWallEdge, setWallEdge,
+      paletteDragActive, paletteDragHoverCell, isPaletteDragDropValid
     } = useGrid()
 
     // --- Tab colours (10 light, differentiable) ---
@@ -501,6 +502,8 @@ export default {
         'paste-preview-invalid': paste === 'paste-preview-invalid',
         ghosted: isCellGhosted(x, y),
         'group-flash': groupFlashing.value && isSelected(x, y),
+        'palette-drop-valid': paletteDragActive.value && paletteDragHoverCell.value?.x === x && paletteDragHoverCell.value?.y === y && isPaletteDragDropValid(x, y),
+        'palette-drop-invalid': paletteDragActive.value && paletteDragHoverCell.value?.x === x && paletteDragHoverCell.value?.y === y && !isPaletteDragDropValid(x, y),
       }
     }
 
@@ -741,6 +744,8 @@ export default {
 .grid-item.move-preview-invalid { border: 2px solid #d93025; background: rgba(217, 48, 37, 0.18) }
 .grid-item.paste-preview-valid { border: 2px solid #22a355; background: rgba(34, 163, 85, 0.25) }
 .grid-item.paste-preview-invalid { border: 2px solid #d93025; background: rgba(217, 48, 37, 0.25) }
+.grid-item.palette-drop-valid { border: 2px solid #22a355; background: rgba(34, 163, 85, 0.25) }
+.grid-item.palette-drop-invalid { border: 2px solid #d93025; background: rgba(217, 48, 37, 0.25) }
 .grid.paste-pending .grid-item { cursor: copy }
 .grid-item.ghosted .cell-content { opacity: 0.7; }
 .grid-item.ghosted .cell-content > span { opacity: 0.3; filter: grayscale(0.7); }

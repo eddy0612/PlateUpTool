@@ -60,7 +60,8 @@
               v-for="item in filteredPalette"
               :key="item.id"
               class="palette-item"
-              @click="addToGrid(item)"
+              @click="onPaletteItemClick(item)"
+              @mousedown="onPaletteItemMouseDown(item, $event)"
             >
               <div class="item-icon">
                 <canvas :data-icon="item.icon" class="palette-canvas"></canvas>
@@ -87,7 +88,7 @@
 </template>
 
 <script>
-import { computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useRestaurantStore } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
 import { useGrid } from '../composables/useGrid'
@@ -97,7 +98,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const { palette } = useAppliancePalette()
-    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon } = useGrid()
+    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, startPaletteDrag, updatePaletteDrag, commitPaletteDrag } = useGrid()
 
     const structureTools = [
       { id: 'wall',  label: 'Wall',  description: 'Full-height wall',  },
@@ -179,7 +180,45 @@ export default {
       }
     }
 
-    return { state, filteredPalette, addToGrid, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon }
+    const suppressNextClick = ref(false)
+
+    function onPaletteItemClick(item) {
+      if (suppressNextClick.value) { suppressNextClick.value = false; return }
+      addToGrid(item)
+    }
+
+    function onPaletteItemMouseDown(item, e) {
+      if (e.button !== 0) return
+      if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
+      const startX = e.clientX, startY = e.clientY
+      let dragStarted = false
+
+      function onMove(e) {
+        if (!dragStarted) {
+          const dx = e.clientX - startX
+          const dy = e.clientY - startY
+          if (Math.sqrt(dx * dx + dy * dy) > 5) {
+            dragStarted = true
+            startPaletteDrag(item)
+          }
+        }
+        if (dragStarted) updatePaletteDrag(e.clientX, e.clientY)
+      }
+
+      function onUp() {
+        window.removeEventListener('mousemove', onMove)
+        window.removeEventListener('mouseup', onUp)
+        if (dragStarted) {
+          suppressNextClick.value = true
+          commitPaletteDrag()
+        }
+      }
+
+      window.addEventListener('mousemove', onMove)
+      window.addEventListener('mouseup', onUp)
+    }
+
+    return { state, filteredPalette, addToGrid, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemMouseDown }
   }
 }
 </script>
