@@ -400,19 +400,10 @@ export default {
         }
       }
 
-      const clickedCell = e.target.closest('.grid-item')
-      if (clickedCell && !e.shiftKey && !(e.ctrlKey || e.metaKey) && !isCellGhosted(parseInt(clickedCell.dataset.x), parseInt(clickedCell.dataset.y))) {
-        // Non-selected cell, no modifiers: track for potential drag-to-move.
-        // If user drags, we select this cell and start move drag.
-        // If user just clicks (no drag), the click event fires normally.
-        pendingMoveCell.value = { x: parseInt(clickedCell.dataset.x), y: parseInt(clickedCell.dataset.y), needsSelect: true }
-        moveDragStartMouse.value = { x: e.clientX, y: e.clientY }
-      } else {
-        // Empty space, or modifier key: start box-select drag
-        dragStart.value = { x: e.clientX, y: e.clientY }
-        dragEnd.value = { x: e.clientX, y: e.clientY }
-        isDragging.value = false
-      }
+      // Empty space, unselected cell, or modifier key: start box-select drag
+      dragStart.value = { x: e.clientX, y: e.clientY }
+      dragEnd.value = { x: e.clientX, y: e.clientY }
+      isDragging.value = false
       window.addEventListener('mousemove', onWindowMouseMove)
       window.addEventListener('mouseup', onWindowMouseUp)
     }
@@ -423,10 +414,6 @@ export default {
         const dx = e.clientX - moveDragStartMouse.value.x
         const dy = e.clientY - moveDragStartMouse.value.y
         if (!isMoveDragging.value && Math.sqrt(dx * dx + dy * dy) > 5) {
-          if (pendingMoveCell.value.needsSelect) {
-            selectCell(pendingMoveCell.value.x, pendingMoveCell.value.y, false, false)
-            pendingMoveCell.value = { x: pendingMoveCell.value.x, y: pendingMoveCell.value.y }
-          }
           isMoveDragging.value = true
           startMoveDrag()
         }
