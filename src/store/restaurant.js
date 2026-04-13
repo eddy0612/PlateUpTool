@@ -8,7 +8,6 @@ const DEFAULT_STATE = {
   ],
   activeTabId: 'main',
   orientation: 0,
-  viewMode: '2D',
   zoom: 1.0,        // kept in state for UI reactivity, not saved to URL
   roomWidth: 16,
   roomHeight: 12,
@@ -18,7 +17,7 @@ const DEFAULT_STATE = {
 }
 
 // Only these fields are serialized into the URL
-const URL_FIELDS = ['tabs', 'activeTabId', 'orientation', 'viewMode', 'roomWidth', 'roomHeight', 'walls', 'gridCells']
+const URL_FIELDS = ['tabs', 'activeTabId', 'orientation', 'roomWidth', 'roomHeight', 'walls', 'gridCells']
 
 const state = reactive(JSON.parse(JSON.stringify(DEFAULT_STATE)))
 
