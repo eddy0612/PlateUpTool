@@ -68,17 +68,26 @@
     </div>
 
     <div class="controls-with-status">
-      <div class="controls">
-        <div class="control-zoom">
-          <label>Zoom {{ (state.zoom * 100).toFixed(0) }}%</label>
-          <input type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom" />
-        </div>
-        <div class="control-size">
-          <label>W: <input type="number" :value="state.roomWidth" min="10" max="50" style="width:48px" @change="state.roomWidth = Math.min(50, Math.max(10, parseInt($event.target.value) || 10)); $event.target.value = state.roomWidth" /></label>
-          <label>H: <input type="number" :value="state.roomHeight" min="7" max="50" style="width:48px" @change="state.roomHeight = Math.min(50, Math.max(7, parseInt($event.target.value) || 7)); $event.target.value = state.roomHeight" /></label>
-        </div>
+      <div class="hover-icon-box">
+        <img
+          v-if="hoverApplianceId && isImageIcon(getApplianceIcon(hoverApplianceId))"
+          :src="getApplianceIcon(hoverApplianceId)"
+          class="hover-icon-img"
+        />
       </div>
-      <div class="grid-status-bar">{{ hoverLabel }}</div>
+      <div class="controls-right">
+        <div class="controls">
+          <div class="control-zoom">
+            <label>Zoom {{ (state.zoom * 100).toFixed(0) }}%</label>
+            <input type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom" />
+          </div>
+          <div class="control-size">
+            <label>W: <input type="number" :value="state.roomWidth" min="10" max="50" style="width:48px" @change="state.roomWidth = Math.min(50, Math.max(10, parseInt($event.target.value) || 10)); $event.target.value = state.roomWidth" /></label>
+            <label>H: <input type="number" :value="state.roomHeight" min="7" max="50" style="width:48px" @change="state.roomHeight = Math.min(50, Math.max(7, parseInt($event.target.value) || 7)); $event.target.value = state.roomHeight" /></label>
+          </div>
+        </div>
+        <div class="grid-status-bar">{{ hoverLabel }}</div>
+      </div>
     </div>
 
     <div
@@ -568,18 +577,21 @@ export default {
 
     // --- Grid hover status bar ---
     const hoverLabel = ref('')
+    const hoverApplianceId = ref('')
 
     function onViewportMouseMove(e) {
       const el = e.target.closest?.('.grid-item')
-      if (!el) { hoverLabel.value = ''; return }
+      if (!el) { hoverLabel.value = ''; hoverApplianceId.value = ''; return }
       const x = parseInt(el.dataset.x)
       const y = parseInt(el.dataset.y)
       const cell = getDisplayCell(x, y)
       hoverLabel.value = cell?.applianceId ? getApplianceLabel(cell.applianceId) : ''
+      hoverApplianceId.value = cell?.applianceId ?? ''
     }
 
     function onViewportMouseLeave() {
       hoverLabel.value = ''
+      hoverApplianceId.value = ''
     }
 
     // --- Right-mouse drag to pan ---
@@ -668,7 +680,8 @@ export default {
       pastePending,
       isStructureMode, getWallEdge,
       getTabColorClass, getApplianceBgStyle,
-      hoverLabel, onViewportMouseMove, onViewportMouseLeave
+      hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
+      getApplianceIcon, isImageIcon
     }
   }
 }
@@ -812,7 +825,21 @@ export default {
 .tab-user-9 { background: #d9ffc4; border-color: #9ad868; }
 .tab-user-9.active { background: #b8f494; border-color: #78b848; }
 .tab-postit:hover { transform: translateX(-3px) scale(1.02) rotate(0deg) }
-.controls-with-status { display: flex; flex-direction: column; align-items: stretch; width: fit-content; gap: 5px; }
+.controls-with-status { display: flex; flex-direction: row; align-items: center; gap: 8px; }
+.hover-icon-box {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  background: #eef3fa;
+  border: 1px solid #c8d6e8;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.hover-icon-img { width: 100%; height: 100%; object-fit: contain; }
+.controls-right { display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
 .controls { display: flex; gap: 18px; align-items: center; }
 .size-status-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .grid-status-bar {
