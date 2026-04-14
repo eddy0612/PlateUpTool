@@ -122,6 +122,7 @@ export default {
 
     function startAgain() {
       resetState()
+      loadGridFromState()
     }
 
     return { startAgain, showHelp, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state }

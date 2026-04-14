@@ -626,7 +626,10 @@ watch(grid, (newGrid) => {
 
 // Restore the grid from state.gridCells — call this after loadFromHash()
 function loadGridFromState() {
-  // Resize grid to match the loaded dimensions before populating
+  // Clear first so initGrid starts with a blank slate (no stale cells carried over)
+  grid.value = []
+  selectedCells.value = new Set()
+  anchorCell.value = null
   initGrid()
   if (!Array.isArray(state.gridCells) || state.gridCells.length === 0) return
   for (const { x, y, ...cell } of state.gridCells) {
