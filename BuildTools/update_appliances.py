@@ -68,14 +68,13 @@ remaining = base_pngs - all_excluded
 count_restored = 0
 added_count = 0
 
-# Find next available 2-character ID
-import string
+# Find next available integer ID
 def next_id(existing_ids):
-    chars = string.ascii_uppercase
-    for i in range(26*26):
-        id_ = chars[i // 26] + chars[i % 26]
-        if id_ not in existing_ids:
-            yield id_
+    i = 0
+    while True:
+        if i not in existing_ids:
+            yield i
+        i += 1
 existing_ids = set(obj["ID"] for obj in data)
 id_gen = next_id(existing_ids)
 
