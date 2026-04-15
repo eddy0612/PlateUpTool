@@ -94,9 +94,8 @@ function getApplianceLabel(applianceId) {
 }
 
 function get2DApplianceIcon(applianceId) {
-  const icon = getApplianceIcon(applianceId)
-  if (!isImageIcon(icon)) return icon
-  return icon.replace(/([^\/]*)$/, '2D_$1')
+  const found = palette.value.find(a => a.id === applianceId)
+  return found && found.icon2D ? found.icon2D : getApplianceIcon(applianceId)
 }
 
 function addToGrid(item) {
