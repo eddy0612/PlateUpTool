@@ -1,5 +1,5 @@
 <template>
-  <aside class="right-panel">
+  <aside class="right-panel" :style="rightPanelStyle">
 
     <!-- Inventory panel shown when Preview tab is active -->
     <template v-if="isPreviewTab">
@@ -27,7 +27,8 @@
 
     <!-- Normal / Structure panel -->
     <template v-else>
-      <div class="side-box" :style="{ maxHeight: viewportBoxHeight + 'px' }">
+      <div class="side-panel-wrapper" :style="{ height: viewportBoxHeight + 'px' }">
+      <div class="side-box">
 
         <!-- Structure mode: tool selector -->
         <template v-if="isStructureMode">
@@ -55,7 +56,7 @@
             <input v-model="state.filterText" placeholder="Filter appliances..." />
           </div>
 
-          <div class="palette">
+          <div class="palette" :style="paletteGridStyle">
             <div
               v-for="item in filteredPalette"
               :key="item.id"
@@ -82,13 +83,14 @@
         </div>
         <button class="fill-all-button" @click="addAllToGrid">Fill All (Testing)</button>
       </div>
+      </div>
     </template>
 
   </aside>
 </template>
 
 <script>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRestaurantStore } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
 import { useGrid } from '../composables/useGrid'
@@ -180,6 +182,31 @@ export default {
       }
     }
 
+    // Responsive palette columns: ~30% of screen width, snapping 1-3 cols, icon size fixed at 120px
+    const ICON_SIZE = 120
+    const ICON_GAP = 8
+    const SIDE_BOX_INSET = 22  // 10px padding + 1px border, each side = 22 total
+
+    const windowWidth = ref(window.innerWidth)
+    function onWindowResize() { windowWidth.value = window.innerWidth }
+    onMounted(() => window.addEventListener('resize', onWindowResize))
+    onUnmounted(() => window.removeEventListener('resize', onWindowResize))
+
+    const paletteColumns = computed(() => {
+      const available = windowWidth.value * 0.20
+      return Math.max(1, Math.min(3, Math.floor(available / (ICON_SIZE + ICON_GAP))))
+    })
+
+    const rightPanelStyle = computed(() => {
+      const cols = paletteColumns.value
+      const w = cols * ICON_SIZE + (cols - 1) * ICON_GAP + SIDE_BOX_INSET
+      return { flex: `0 0 ${w}px`, width: `${w}px`, maxWidth: 'none', minWidth: '0' }
+    })
+
+    const paletteGridStyle = computed(() => ({
+      gridTemplateColumns: `repeat(${paletteColumns.value}, ${ICON_SIZE}px)`
+    }))
+
     const suppressNextClick = ref(false)
 
     function onPaletteItemClick(item) {
@@ -218,20 +245,24 @@ export default {
       window.addEventListener('mouseup', onUp)
     }
 
-    return { state, filteredPalette, addToGrid, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemMouseDown }
+    return { state, filteredPalette, addToGrid, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemMouseDown, rightPanelStyle, paletteGridStyle }
   }
 }
 </script>
 
 <style scoped>
 .right-panel {
-  flex: 0 0 320px;
-  max-width: 340px;
-  min-width: 220px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   height: 100%;
+  flex-shrink: 0;
+}
+.side-panel-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
 }
 .side-box {
   border: 1px solid #c8d1dc;
@@ -243,6 +274,8 @@ export default {
   gap: 10px;
   box-sizing: border-box;
   overflow: hidden;
+  flex: 1;
+  min-height: 0;
 }
 .side-controls {
   display: flex;
@@ -269,7 +302,7 @@ export default {
 }
 .palette {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(2, 120px);
   gap: 8px;
   overflow-y: auto;
   align-content: start;
