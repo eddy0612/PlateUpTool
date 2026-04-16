@@ -27,13 +27,36 @@
                   />
                   <template v-else>{{ getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId) }}</template>
                 </span>
+                <span
+                  v-if="getDisplayCell(cellInfo.x, cellInfo.y).applianceId === TELEPORTER_APPLIANCE_ID && (getDisplayCell(cellInfo.x, cellInfo.y).extraData || 0) > 0"
+                  class="teleporter-pair-number"
+                >{{ getDisplayCell(cellInfo.x, cellInfo.y).extraData }}</span>
               </template>
             </div>
             <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'top')"    :class="['edge-marker', 'edge-top',    `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'top')}`]" />
+
             <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'right')"  :class="['edge-marker', 'edge-right',  `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'right')}`]" />
             <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'bottom')" :class="['edge-marker', 'edge-bottom', `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'bottom')}`]" />
             <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'left')"   :class="['edge-marker', 'edge-left',   `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'left')}`]" />
           </div>
+          <svg
+            v-if="teleporterPairLines.length > 0"
+            class="teleporter-pair-overlay"
+            :width="state.roomWidth * cellSize * state.zoom"
+            :height="state.roomHeight * cellSize * state.zoom"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <line
+              v-for="(line, i) in teleporterPairLines"
+              :key="'tpline-' + i"
+              :x1="line.x1" :y1="line.y1" :x2="line.x2" :y2="line.y2"
+              stroke="#4dbb5f"
+              stroke-width="2"
+              stroke-dasharray="7,4"
+              stroke-linecap="round"
+              opacity="0.85"
+            />
+          </svg>
         </div>
         </div>
       </div>
@@ -128,14 +151,13 @@
 <script>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRestaurantStore } from '../store/restaurant'
-import { useGrid } from '../composables/useGrid'
-
+    import { useGrid, TELEPORTER_APPLIANCE_ID } from '../composables/useGrid'
 export default {
   name: 'GridView',
   setup() {
     const { state } = useRestaurantStore()
     const {
-      flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon,
+      flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon,
       rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
       moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
@@ -143,7 +165,8 @@ export default {
       pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste,
       tabHasVisibleItems, deleteTabItems,
       isStructureMode, selectedStructureTool, getWallEdge, setWallEdge,
-      paletteDragActive, paletteDragHoverCell, isPaletteDragDropValid
+      paletteDragActive, paletteDragHoverCell, isPaletteDragDropValid,
+      getTeleporterPairPos
     } = useGrid()
 
     // --- Tab colours (10 light, differentiable) ---
@@ -591,6 +614,29 @@ export default {
       setTimeout(() => { groupFlashing.value = false }, 400)
     }
 
+    // --- Teleporter pair line overlay ---
+    // Returns an array of { x1, y1, x2, y2 } in grid-pixel coordinates for each
+    // selected paired teleporter, so GridView can draw a dashed connector line.
+    const teleporterPairLines = computed(() => {
+      const lines = []
+      const cs = cellSize.value * state.zoom
+      const W = state.roomWidth
+      const H = state.roomHeight
+      const tw = (W * cs - (W - 1) * 2) / W
+      const th = (H * cs - (H - 1) * 2) / H
+      const cx = x => x * (tw + 2) + tw / 2
+      const cy = y => y * (th + 2) + th / 2
+      for (const key of selectedCells.value) {
+        const [x, y] = key.split(',').map(Number)
+        const cell = getDisplayCell(x, y)
+        if (cell?.applianceId === TELEPORTER_APPLIANCE_ID && (cell.extraData || 0) > 0) {
+          const partner = getTeleporterPairPos(x, y)
+          if (partner) lines.push({ x1: cx(x), y1: cy(y), x2: cx(partner.x), y2: cy(partner.y) })
+        }
+      }
+      return lines
+    })
+
     // --- Grid hover status bar ---
     const hoverLabel = ref('')
     const hoverApplianceId = ref('')
@@ -685,7 +731,7 @@ export default {
     })
 
     return {
-      state, flatGrid, gridStyleDynamic, viewportBoxHeight, rotationStyle, getApplianceIcon, get2DApplianceIcon, isImageIcon,
+      state, flatGrid, gridStyleDynamic, viewportBoxHeight, cellSize, rotationStyle, getApplianceIcon, get2DApplianceIcon, isImageIcon,
       rotateCell, selectedCells, isSelected, addTab, selectTab,
       gridEl, viewportEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
       handleCellClick, handleCellContextMenu, onGridMouseDown, cellClasses, getDisplayCell,
@@ -698,7 +744,8 @@ export default {
       isStructureMode, getWallEdge,
       getTabColorClass, getApplianceBgStyle,
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
-      getApplianceIcon, isImageIcon
+      getApplianceIcon, isImageIcon,
+      TELEPORTER_APPLIANCE_ID, teleporterPairLines
     }
   }
 }
@@ -787,6 +834,27 @@ export default {
   z-index: 9999;
 }
 .cell-label { font-size: 10px; color: #bbb; position: absolute; top: 2px; left: 2px; }
+.teleporter-pair-number {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 3px #000, 0 0 6px #000;
+  pointer-events: none;
+  z-index: 5;
+}
+.teleporter-pair-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 20;
+  overflow: visible;
+}
 .tabs {
   position: absolute;
   bottom: 16px;

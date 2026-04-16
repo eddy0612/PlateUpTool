@@ -98,6 +98,61 @@ function get2DApplianceIcon(applianceId) {
   return found && found.icon2D ? found.icon2D : getApplianceIcon(applianceId)
 }
 
+// ── Teleporter pairing ───────────────────────────────────────────────────────
+export const TELEPORTER_APPLIANCE_ID = 315
+
+function isTeleporter(cell) {
+  return cell?.applianceId === TELEPORTER_APPLIANCE_ID
+}
+
+// Returns the lowest positive integer not already used as an extraData pair number
+// by any teleporter in the grid.
+function _getLowestAvailablePairNumber() {
+  const usedNums = new Set()
+  for (let y = 0; y < grid.value.length; y++) {
+    for (let x = 0; x < grid.value[y].length; x++) {
+      const cell = grid.value[y][x]
+      if (isTeleporter(cell) && (cell.extraData || 0) > 0) usedNums.add(cell.extraData)
+    }
+  }
+  let n = 1
+  while (usedNums.has(n)) n++
+  return n
+}
+
+// If the cell at (x, y) is an unpaired teleporter, find the first other unpaired
+// teleporter in the grid and pair both with the lowest available number.
+function _autoTeleporterPair(x, y) {
+  const cell = grid.value[y]?.[x]
+  if (!isTeleporter(cell) || (cell.extraData || 0) !== 0) return
+  for (let py = 0; py < grid.value.length; py++) {
+    for (let px = 0; px < grid.value[py].length; px++) {
+      if (px === x && py === y) continue
+      const c = grid.value[py][px]
+      if (isTeleporter(c) && (c.extraData || 0) === 0) {
+        const pairNum = _getLowestAvailablePairNumber()
+        c.extraData = pairNum
+        cell.extraData = pairNum
+        return
+      }
+    }
+  }
+}
+
+// Scan the grid and clear extraData on the paired partner of the teleporter that
+// was at (excludeX, excludeY) with the given pairNum (the cell itself is already
+// gone or about to be removed).
+function _unpairTeleporterPartner(pairNum) {
+  for (let y = 0; y < grid.value.length; y++) {
+    for (let x = 0; x < grid.value[y].length; x++) {
+      const cell = grid.value[y][x]
+      if (isTeleporter(cell) && cell.extraData === pairNum) {
+        cell.extraData = 0
+      }
+    }
+  }
+}
+
 function addToGrid(item) {
   if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
   const tabId = state.activeTabId
@@ -106,6 +161,7 @@ function addToGrid(item) {
     const [x, y] = key.split(',').map(Number)
     if (!grid.value[y][x]) {
       grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabIds: [tabId] }
+      _autoTeleporterPair(x, y)
       return
     }
   }
@@ -113,6 +169,7 @@ function addToGrid(item) {
     for (let x = 0; x < grid.value[y].length; ++x) {
       if (!grid.value[y][x]) {
         grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabIds: [tabId] }
+        _autoTeleporterPair(x, y)
         return
       }
     }
@@ -346,10 +403,29 @@ function cancelMoveDrag() {
 
 function removeSelected() {
   if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
+
+  // Track how many of each teleporter pair number are being deleted.
+  // If count < 2 the remaining partner must be unpaired.
+  const deletingPairNums = new Map()
+  for (const key of selectedCells.value) {
+    const [x, y] = key.split(',').map(Number)
+    const cell = grid.value[y][x]
+    if (isTeleporter(cell) && (cell.extraData || 0) > 0) {
+      const n = cell.extraData
+      deletingPairNums.set(n, (deletingPairNums.get(n) || 0) + 1)
+    }
+  }
+
   for (const key of selectedCells.value) {
     const [x, y] = key.split(',').map(Number)
     grid.value[y][x] = null
   }
+
+  // Unpair the surviving partner when only one of a pair was deleted.
+  for (const [pairNum, count] of deletingPairNums) {
+    if (count < 2) _unpairTeleporterPartner(pairNum)
+  }
+
   selectedCells.value = new Set()
 }
 
@@ -465,6 +541,25 @@ function copyToClipboard() {
     const cell = grid.value[y]?.[x]
     if (cell) entries.push({ dx: x - minX, dy: y - minY, cell: { ...cell } })
   }
+
+  // Strip teleporter pair numbers when only ONE of a pair is being copied —
+  // that teleporter will be unpaired on paste and may re-pair with an existing
+  // unpaired teleporter in the grid.
+  const pairNumCount = new Map()
+  for (const entry of entries) {
+    if (isTeleporter(entry.cell) && (entry.cell.extraData || 0) > 0) {
+      const n = entry.cell.extraData
+      pairNumCount.set(n, (pairNumCount.get(n) || 0) + 1)
+    }
+  }
+  for (const entry of entries) {
+    if (isTeleporter(entry.cell) && (entry.cell.extraData || 0) > 0) {
+      if ((pairNumCount.get(entry.cell.extraData) || 0) < 2) {
+        entry.cell = { ...entry.cell, extraData: 0 }
+      }
+    }
+  }
+
   clipboard.value = entries
   clipboardPasteOrigin.value = { x: minX + 1, y: minY + 1 }
 }
@@ -519,12 +614,58 @@ function setPasteAnchor(x, y) {
 
 function confirmPaste() {
   if (!pastePending.value || !isPasteValid.value) return
+
+  // ── Teleporter pair handling ──────────────────────────────────────────────
+  // Count how many times each pair number appears in the clipboard.
+  const clipboardPairCount = new Map()
+  for (const { cell } of clipboard.value) {
+    if (isTeleporter(cell) && (cell.extraData || 0) > 0) {
+      const n = cell.extraData
+      clipboardPairCount.set(n, (clipboardPairCount.get(n) || 0) + 1)
+    }
+  }
+
+  // For pair numbers where BOTH halves are being pasted, remap to a new
+  // number that doesn't clash with existing teleporters in the grid.
+  const pasteTargetSet = new Set(pastePendingTargetMap.value.keys())
+  const usedNums = new Set()
+  for (let y = 0; y < grid.value.length; y++) {
+    for (let x = 0; x < grid.value[y].length; x++) {
+      if (pasteTargetSet.has(cellKey(x, y))) continue
+      const cell = grid.value[y][x]
+      if (isTeleporter(cell) && (cell.extraData || 0) > 0) usedNums.add(cell.extraData)
+    }
+  }
+  const pairNumRemap = new Map()
+  for (const [oldNum, count] of clipboardPairCount) {
+    if (count === 2) {
+      let n = 1
+      while (usedNums.has(n)) n++
+      pairNumRemap.set(oldNum, n)
+      usedNums.add(n)
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   const newSelected = new Set()
   for (const [tKey, cell] of pastePendingTargetMap.value) {
     const [tx, ty] = tKey.split(',').map(Number)
-    grid.value[ty][tx] = { ...cell, tabIds: [state.activeTabId] }
+    let pastedCell = { ...cell, tabIds: [state.activeTabId] }
+    if (isTeleporter(pastedCell)) {
+      const oldNum = pastedCell.extraData || 0
+      // Keep pairing only when the clipboard contained both halves of this pair.
+      pastedCell = { ...pastedCell, extraData: (oldNum > 0 && pairNumRemap.has(oldNum)) ? pairNumRemap.get(oldNum) : 0 }
+    }
+    grid.value[ty][tx] = pastedCell
     newSelected.add(tKey)
   }
+
+  // Auto-pair any newly placed unpaired teleporters with existing unpaired ones.
+  for (const tKey of pasteTargetSet) {
+    const [tx, ty] = tKey.split(',').map(Number)
+    _autoTeleporterPair(tx, ty)
+  }
+
   selectedCells.value = newSelected
   if (pasteAnchor.value) {
     clipboardPasteOrigin.value = { x: pasteAnchor.value.x + 1, y: pasteAnchor.value.y + 1 }
@@ -551,6 +692,27 @@ function tabHasVisibleItems(tabId) {
 }
 
 function deleteTabItems(tabId) {
+  // Pre-pass: count how many paired teleporters will be FULLY deleted per pair number.
+  const deletingPairNums = new Map()
+  for (let y = 0; y < grid.value.length; y++) {
+    for (let x = 0; x < grid.value[y].length; x++) {
+      const cell = grid.value[y][x]
+      if (!cell?.applianceId) continue
+      let willBeFullyDeleted = false
+      if (Array.isArray(cell.tabIds)) {
+        if (cell.tabIds.includes(tabId)) {
+          willBeFullyDeleted = cell.tabIds.filter(id => id !== tabId).length === 0
+        }
+      } else if (cell.tabId === tabId) {
+        willBeFullyDeleted = true
+      }
+      if (willBeFullyDeleted && isTeleporter(cell) && (cell.extraData || 0) > 0) {
+        const n = cell.extraData
+        deletingPairNums.set(n, (deletingPairNums.get(n) || 0) + 1)
+      }
+    }
+  }
+
   for (let y = 0; y < grid.value.length; y++) {
     for (let x = 0; x < grid.value[y].length; x++) {
       const cell = grid.value[y][x]
@@ -567,6 +729,11 @@ function deleteTabItems(tabId) {
         grid.value[y][x] = null
       }
     }
+  }
+
+  // Unpair surviving partners where only one of a pair was deleted.
+  for (const [pairNum, count] of deletingPairNums) {
+    if (count < 2) _unpairTeleporterPartner(pairNum)
   }
 }
 
@@ -601,6 +768,7 @@ function commitPaletteDrag() {
     const { x, y } = paletteDragHoverCell.value
     if (isPaletteDragDropValid(x, y)) {
       grid.value[y][x] = { applianceId: paletteDragItem.value.id, rotation: 0, extraData: 0, tabIds: [state.activeTabId] }
+      _autoTeleporterPair(x, y)
     }
   }
   cancelPaletteDrag()
@@ -638,6 +806,22 @@ function loadGridFromState() {
   }
 }
 
+// Returns the {x, y} of the partner teleporter for the cell at (x, y),
+// or null if not paired or no partner exists yet.
+function getTeleporterPairPos(x, y) {
+  const cell = grid.value[y]?.[x]
+  if (!isTeleporter(cell) || (cell.extraData || 0) === 0) return null
+  const pairNum = cell.extraData
+  for (let py = 0; py < grid.value.length; py++) {
+    for (let px = 0; px < grid.value[py].length; px++) {
+      if (px === x && py === y) continue
+      const c = grid.value[py][px]
+      if (isTeleporter(c) && c.extraData === pairNum) return { x: px, y: py }
+    }
+  }
+  return null
+}
+
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid }
+  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos }
 }
