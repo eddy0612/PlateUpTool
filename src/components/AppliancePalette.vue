@@ -3,6 +3,10 @@
 
     <!-- Inventory panel shown when Preview tab is active -->
     <template v-if="isPreviewTab">
+      <div class="preview-info-banner">
+        <span class="preview-info-icon">👁</span>
+        <span>Preview mode — to make changes, select a coloured tab on the left.</span>
+      </div>
       <div class="inventory-panel" :style="{ maxHeight: viewportBoxHeight + 'px' }">
         <div class="inventory-header">
           <span class="inventory-title">Inventory</span>
@@ -399,6 +403,27 @@ export default {
   font-style: italic;
   text-align: center;
   padding-top: 4px;
+}
+
+/* ---- Preview info banner ---- */
+.preview-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fffbe6;
+  border: 1px solid #f0d070;
+  border-radius: 7px;
+  padding: 9px 12px;
+  font-size: 12px;
+  color: #6b5600;
+  line-height: 1.45;
+  flex-shrink: 0;
+}
+.preview-info-icon {
+  flex-shrink: 0;
+  font-size: 15px;
+  line-height: 1;
+  margin-top: 1px;
 }
 
 /* ---- Inventory panel (Preview tab) ---- */

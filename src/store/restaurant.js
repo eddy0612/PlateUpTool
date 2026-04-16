@@ -21,7 +21,7 @@ const DEFAULT_STATE = {
 }
 
 // Only these fields are serialized into the URL
-const URL_FIELDS = ['tabs', 'activeTabId', 'orientation', 'roomWidth', 'roomHeight', 'walls', 'gridCells']
+const URL_FIELDS = ['tabs', 'orientation', 'roomWidth', 'roomHeight', 'walls', 'gridCells']
 
 // Wall type string ↔ compact integer code
 const WALL_TYPE_TO_CODE = { wall: 1, hatch: 2, door: 3 }
@@ -93,7 +93,7 @@ class BitReader {
 //     [0]  roomWidth
 //     [1]  roomHeight
 //     [2]  orientation
-//     [3]  flags  (bit0=customTabs, bit1=customActiveTab)
+//     [3]  flags  (bit0=customTabs, bit1=legacy customActiveTab — consumed but ignored on load)
 //     [4]  defaultTabMask
 //     [5-6] numCells  (uint16 LE)
 //     [7-8] numWalls  (uint16 LE)
@@ -131,8 +131,7 @@ function encodeState(stateObj) {
   }
 
   const customTabs = JSON.stringify(tabs) !== DEFAULT_TABS_JSON
-  const customActiveTab = stateObj.activeTabId !== DEFAULT_ACTIVE_TAB
-  const flags = (customTabs ? 1 : 0) | (customActiveTab ? 2 : 0)
+  const flags = (customTabs ? 1 : 0)
 
   const xyIdxBits = Math.max(1, Math.ceil(Math.log2(roomWidth * roomHeight + 1)))
   const xBits = Math.max(1, Math.ceil(Math.log2(roomWidth + 2)))
@@ -156,11 +155,6 @@ function encodeState(stateObj) {
       w.write(tab.label.length, 8)
       for (const c of tab.label) w.write(c.charCodeAt(0), 8)
     }
-  }
-
-  // Optional custom activeTabId
-  if (customActiveTab) {
-    w.write(Math.max(0, tabs.findIndex(t => t.id === stateObj.activeTabId)), 8)
   }
 
   // Cells
@@ -224,8 +218,7 @@ function decodeState(encoded) {
       }
     }
 
-    let activeTabId = DEFAULT_ACTIVE_TAB
-    if (flags & 2) activeTabId = tabs[r.read(8)]?.id ?? DEFAULT_ACTIVE_TAB
+    if (flags & 2) r.read(8) // consume legacy activeTab byte (ignored)
 
     const tabFromMask = (mask) => tabs.filter((_, i) => mask & (1 << i)).map(t => t.id)
 
@@ -251,7 +244,7 @@ function decodeState(encoded) {
       walls[`${orient},${x},${y}`] = WALL_CODE_TO_TYPE[r.read(2)] ?? 'wall'
     }
 
-    return { tabs, activeTabId, orientation, roomWidth, roomHeight, walls, gridCells }
+    return { tabs, orientation, roomWidth, roomHeight, walls, gridCells }
   } catch {
     return null
   }
@@ -274,6 +267,7 @@ function loadFromHash() {
       if (k in parsed) state[k] = parsed[k]
       else state[k] = JSON.parse(JSON.stringify(DEFAULT_STATE[k]))
     })
+    state.activeTabId = 'complete'
   }
 }
 
