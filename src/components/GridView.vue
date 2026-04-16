@@ -158,11 +158,11 @@ export default {
     const { state } = useRestaurantStore()
     const {
       flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon,
-      rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection,
+      rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection,
       moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
       copyToClipboard, cutToClipboard,
-      pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste,
+      pastePending, getCellPasteState, startPaste, startDuplicate, setPasteAnchor, confirmPaste, cancelPaste,
       tabHasVisibleItems, deleteTabItems,
       isStructureMode, selectedStructureTool, getWallEdge, setWallEdge,
       paletteDragActive, paletteDragHoverCell, isPaletteDragDropValid,
@@ -563,9 +563,12 @@ export default {
         e.preventDefault()
         removeSelected()
       }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') { e.preventDefault(); selectAll() }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'i') { e.preventDefault(); invertSelection() }
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') { e.preventDefault(); copyToClipboard() }
       if ((e.ctrlKey || e.metaKey) && e.key === 'x') { e.preventDefault(); cutToClipboard() }
       if ((e.ctrlKey || e.metaKey) && e.key === 'v') { e.preventDefault(); startPaste() }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') { e.preventDefault(); startDuplicate() }
       if (e.key === 'Escape') {
         if (pastePending.value) { cancelPaste(); return }
         closeContextMenu()

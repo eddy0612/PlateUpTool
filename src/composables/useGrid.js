@@ -312,6 +312,27 @@ function selectCellsInRect(cells) {
   if (filtered.length > 0) anchorCell.value = filtered[filtered.length - 1]
 }
 
+function selectAll() {
+  if (state.activeTabId === 'complete') return
+  const all = []
+  for (let y = 0; y < grid.value.length; y++)
+    for (let x = 0; x < grid.value[y].length; x++)
+      if (isCellOnActiveTab(x, y)) all.push({ x, y })
+  selectedCells.value = new Set(all.map(c => cellKey(c.x, c.y)))
+  if (all.length > 0) anchorCell.value = all[all.length - 1]
+}
+
+function invertSelection() {
+  if (state.activeTabId === 'complete') return
+  const next = []
+  for (let y = 0; y < grid.value.length; y++)
+    for (let x = 0; x < grid.value[y].length; x++)
+      if (isCellOnActiveTab(x, y) && !selectedCells.value.has(cellKey(x, y))) next.push({ x, y })
+  selectedCells.value = new Set(next.map(c => cellKey(c.x, c.y)))
+  if (next.length > 0) anchorCell.value = next[next.length - 1]
+  else anchorCell.value = null
+}
+
 function addCellsToSelection(cells) {
   const next = new Set(selectedCells.value)
   cells.forEach(c => { if (isCellOnActiveTab(c.x, c.y)) next.add(cellKey(c.x, c.y)) })
@@ -527,6 +548,10 @@ watch(() => state.activeTabId, () => {
 const clipboard = ref([])              // [{ dx, dy, cell }] relative to selection top-left
 const clipboardPasteOrigin = ref(null) // { x, y } top-left for next paste
 
+// --- Duplicate buffer (Ctrl+D) — separate from clipboard so clipboard is preserved ---
+const duplicateBuffer = ref([])        // same format as clipboard
+const duplicateMode = ref(false)       // true when paste is sourced from duplicateBuffer
+
 function copyToClipboard() {
   if (selectedCells.value.size === 0) return
   let minX = Infinity, minY = Infinity
@@ -575,9 +600,10 @@ const pastePending = ref(false)
 const pasteAnchor = ref(null) // { x, y } top-left of paste preview
 
 const pastePendingTargetMap = computed(() => {
-  if (!pastePending.value || !pasteAnchor.value || clipboard.value.length === 0) return new Map()
+  const buf = duplicateMode.value ? duplicateBuffer : clipboard
+  if (!pastePending.value || !pasteAnchor.value || buf.value.length === 0) return new Map()
   const map = new Map()
-  for (const { dx, dy, cell } of clipboard.value) {
+  for (const { dx, dy, cell } of buf.value) {
     map.set(cellKey(pasteAnchor.value.x + dx, pasteAnchor.value.y + dy), cell)
   }
   return map
@@ -603,8 +629,50 @@ function getCellPasteState(x, y) {
 function startPaste() {
   if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
   if (clipboard.value.length === 0) return
+  duplicateMode.value = false
+  duplicateBuffer.value = []
   pastePending.value = true
   pasteAnchor.value = clipboardPasteOrigin.value ? { ...clipboardPasteOrigin.value } : { x: 0, y: 0 }
+  selectedCells.value = new Set()
+}
+
+function startDuplicate() {
+  if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
+  if (selectedCells.value.size === 0) return
+
+  // Build buffer relative to selection top-left (same format as clipboard)
+  let minX = Infinity, minY = Infinity
+  for (const key of selectedCells.value) {
+    const [x, y] = key.split(',').map(Number)
+    if (x < minX) minX = x
+    if (y < minY) minY = y
+  }
+  const entries = []
+  for (const key of selectedCells.value) {
+    const [x, y] = key.split(',').map(Number)
+    const cell = grid.value[y]?.[x]
+    if (cell) entries.push({ dx: x - minX, dy: y - minY, cell: { ...cell } })
+  }
+
+  // Strip teleporter pair number when only one of a pair is being moved
+  const pairNumCount = new Map()
+  for (const entry of entries) {
+    if (isTeleporter(entry.cell) && (entry.cell.extraData || 0) > 0) {
+      const n = entry.cell.extraData
+      pairNumCount.set(n, (pairNumCount.get(n) || 0) + 1)
+    }
+  }
+  for (const entry of entries) {
+    if (isTeleporter(entry.cell) && (entry.cell.extraData || 0) > 0) {
+      if ((pairNumCount.get(entry.cell.extraData) || 0) < 2)
+        entry.cell = { ...entry.cell, extraData: 0 }
+    }
+  }
+
+  duplicateBuffer.value = entries
+  duplicateMode.value = true
+  pastePending.value = true
+  pasteAnchor.value = { x: minX, y: minY }
   selectedCells.value = new Set()
 }
 
@@ -667,16 +735,20 @@ function confirmPaste() {
   }
 
   selectedCells.value = newSelected
-  if (pasteAnchor.value) {
+  if (!duplicateMode.value && pasteAnchor.value) {
     clipboardPasteOrigin.value = { x: pasteAnchor.value.x + 1, y: pasteAnchor.value.y + 1 }
   }
   pastePending.value = false
   pasteAnchor.value = null
+  duplicateMode.value = false
+  duplicateBuffer.value = []
 }
 
 function cancelPaste() {
   pastePending.value = false
   pasteAnchor.value = null
+  duplicateMode.value = false
+  duplicateBuffer.value = []
 }
 
 function tabHasVisibleItems(tabId) {
@@ -823,5 +895,5 @@ function getTeleporterPairPos(x, y) {
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos }
+  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos }
 }

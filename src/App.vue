@@ -28,6 +28,8 @@
             <section>
               <h3>Selection</h3>
               <dl>
+                <div><dt>Ctrl+A</dt><dd>Select all items on the current tab</dd></div>
+                <div><dt>Ctrl+I</dt><dd>Invert selection</dd></div>
                 <div><dt>Click cell</dt><dd>Select that cell</dd></div>
                 <div><dt>Shift+Click</dt><dd>Select rectangular range from anchor</dd></div>
                 <div><dt>Ctrl+Click</dt><dd>Toggle cell in/out of selection</dd></div>
@@ -47,6 +49,7 @@
                 <div><dt>Ctrl+C</dt><dd>Copy selected cells</dd></div>
                 <div><dt>Ctrl+X</dt><dd>Cut selected cells</dd></div>
                 <div><dt>Ctrl+V</dt><dd>Start paste (move mouse to desired position, click to confirm)</dd></div>
+                <div><dt>Ctrl+D</dt><dd>Duplicate (copy &amp; start paste without affecting clipboard)</dd></div>
                 <div><dt>Escape</dt><dd>Cancel pending paste</dd></div>
               </dl>
             </section>
