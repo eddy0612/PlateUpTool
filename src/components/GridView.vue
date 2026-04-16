@@ -626,6 +626,7 @@ export default {
     function handleCellContextMenu(e, x, y) {
       if (wasRightDragging.value) return
       if (state.activeTabId === 'structure') return
+      if (state.activeTabId === 'complete') return
       if (isCellGhosted(x, y)) {
         if (!isSelected(x, y)) selectCell(x, y)
         contextMenuPos.value = { x: e.clientX, y: e.clientY }
