@@ -125,8 +125,8 @@ export default {
       }
       return Object.entries(counts)
         .map(([id, count]) => {
-          const p = palette.value.find(a => a.id === id)
-          return { id, count, label: p?.label || id, icon: p?.icon || '' }
+          const p = palette.value.find(a => a.id === Number(id))
+          return { id, count, label: p?.label || id, icon: p?.icon2D || p?.icon || '' }
         })
         .sort((a, b) => b.count - a.count)
     })
