@@ -394,23 +394,39 @@ export default {
       if (state.activeTabId === 'complete') return  // no drag/selection on preview tab
       if (e.button !== 0) return
 
-      // If clicking on an already-selected cell without modifiers → potential move drag
+      // Without modifiers: move-drag behaviour
       if (!e.shiftKey && !(e.ctrlKey || e.metaKey)) {
         const el = e.target.closest('.grid-item')
         if (el) {
           const cx = parseInt(el.dataset.x)
           const cy = parseInt(el.dataset.y)
           if (isSelected(cx, cy) && !isCellGhosted(cx, cy)) {
+            // Already-selected cell → potential move drag
             pendingMoveCell.value = { x: cx, y: cy }
             moveDragStartMouse.value = { x: e.clientX, y: e.clientY }
             window.addEventListener('mousemove', onWindowMouseMove)
             window.addEventListener('mouseup', onWindowMouseUp)
             return
           }
+          // Unselected cell → clear selection, select this cell, start potential move drag
+          selectedCells.value = new Set()
+          selectCell(cx, cy, false, false)
+          if (isSelected(cx, cy)) {
+            pendingMoveCell.value = { x: cx, y: cy }
+            moveDragStartMouse.value = { x: e.clientX, y: e.clientY }
+            window.addEventListener('mousemove', onWindowMouseMove)
+            window.addEventListener('mouseup', onWindowMouseUp)
+            return
+          }
+          // Empty or ghosted cell: selection cleared, no drag
+          return
         }
+        // Clicked on grid background (not a cell): clear selection
+        selectedCells.value = new Set()
+        return
       }
 
-      // Empty space, unselected cell, or modifier key: start box-select drag
+      // Shift or Ctrl held: start box-select drag
       dragStart.value = { x: e.clientX, y: e.clientY }
       dragEnd.value = { x: e.clientX, y: e.clientY }
       isDragging.value = false

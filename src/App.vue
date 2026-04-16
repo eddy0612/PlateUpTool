@@ -31,8 +31,7 @@
                 <div><dt>Click cell</dt><dd>Select that cell</dd></div>
                 <div><dt>Shift+Click</dt><dd>Select rectangular range from anchor</dd></div>
                 <div><dt>Ctrl+Click</dt><dd>Toggle cell in/out of selection</dd></div>
-                <div><dt>Click+Drag</dt><dd>Box-select cells</dd></div>
-                <div><dt>Shift/Ctrl+Drag</dt><dd>Add box selection to existing</dd></div>
+                <div><dt>Shift/Ctrl+Drag</dt><dd>Box-select cells</dd></div>
               </dl>
             </section>
             <section>
