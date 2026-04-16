@@ -3,11 +3,12 @@
 
     <!-- Inventory panel shown when Preview tab is active -->
     <template v-if="isPreviewTab">
-      <div class="preview-info-banner">
-        <span class="preview-info-icon">👁</span>
-        <span>Preview mode — to make changes, select a coloured tab on the left.</span>
-      </div>
-      <div class="inventory-panel" :style="{ maxHeight: viewportBoxHeight + 'px' }">
+      <div class="preview-wrapper" :style="{ height: viewportBoxHeight + 'px' }">
+        <div class="preview-info-banner">
+          <span class="preview-info-icon">👁</span>
+          <span>Preview mode — to make changes, select a coloured tab on the left.</span>
+        </div>
+        <div class="inventory-panel">
         <div class="inventory-header">
           <span class="inventory-title">Inventory</span>
           <span class="inventory-total-badge">{{ inventoryTotal }} items</span>
@@ -26,6 +27,7 @@
             No appliances placed yet
           </div>
         </div>
+      </div>
       </div>
     </template>
 
@@ -403,6 +405,14 @@ export default {
   font-style: italic;
   text-align: center;
   padding-top: 4px;
+}
+
+/* ---- Preview wrapper (banner + inventory, fixed to viewport height) ---- */
+.preview-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
 }
 
 /* ---- Preview info banner ---- */
