@@ -24,9 +24,8 @@ copy "%MYPATH%\Graphics\appliances.json" "%MYPATH%\src\public\res"
 echo Copying in appliances 3D icons
 xcopy /q "%MYPATH%\Graphics\3D\*.*" "%MYPATH%\src\public\res\3D\"
 
-rem ------- Temporary for testing
 echo Copying in appliances 2D icons
-xcopy /q "C:\temp\plateup\2D\2D*" "%MYPATH%\src\public\res\2D\"
+xcopy /q "%MYPATH%\Graphics\2D\*.*" "%MYPATH%\src\public\res\2D\"
 
 endlocal
 goto :EOF
