@@ -684,9 +684,12 @@ function confirmPaste() {
   if (!pastePending.value || !isPasteValid.value) return
 
   // ── Teleporter pair handling ──────────────────────────────────────────────
-  // Count how many times each pair number appears in the clipboard.
+  // Count how many times each pair number appears in the active paste buffer.
+  // When duplicating or pasting from a blueprint/design, the buffer is duplicateBuffer,
+  // not clipboard — using the wrong one caused pairs to never remap and get zeroed out.
+  const activeBuf = duplicateMode.value ? duplicateBuffer.value : clipboard.value
   const clipboardPairCount = new Map()
-  for (const { cell } of clipboard.value) {
+  for (const { cell } of activeBuf) {
     if (isTeleporter(cell) && (cell.extraData || 0) > 0) {
       const n = cell.extraData
       clipboardPairCount.set(n, (clipboardPairCount.get(n) || 0) + 1)
