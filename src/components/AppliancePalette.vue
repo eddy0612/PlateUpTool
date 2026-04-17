@@ -279,7 +279,7 @@ export default {
     // Responsive palette columns: ~30% of screen width, snapping 1-3 cols, icon size fixed at 120px
     const ICON_SIZE = 120
     const ICON_GAP = 8
-    const SIDE_BOX_INSET = 22  // 10px padding + 1px border, each side = 22 total
+    const SIDE_BOX_INSET = 22 + 15  // 10px padding + 1px border each side = 22, +15 for scrollbar-gutter
 
     const windowWidth = ref(window.innerWidth)
     function onWindowResize() { windowWidth.value = window.innerWidth }
@@ -790,6 +790,8 @@ export default {
   grid-template-columns: repeat(2, 120px);
   gap: 8px;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
   align-content: start;
   flex: 1 1 auto;
   min-height: 0;
