@@ -8,6 +8,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/dompurify": "^3.0.5",
+    "@types/marked": "^5.0.2",
+    "dompurify": "^3.4.0",
+    "marked": "^18.0.1",
     "vue": "^3.4.0"
   },
   "devDependencies": {
