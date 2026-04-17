@@ -528,7 +528,7 @@ export default {
       const bytes = dataUrlToBytes(previewDataUrl)
       const modified = writePngText(bytes, 'plateup-blueprint', payload)
       const safeName = bp.name.replace(/[^a-z0-9_-]/gi, '_').slice(0, 40) || 'blueprint'
-      downloadDataUrl(bytesToDataUrl(modified), `blueprint_${safeName}.png`)
+      downloadDataUrl(bytesToDataUrl(modified), `plateup-blueprint-${safeName}-${exportTimestamp()}.png`)
     }
 
     async function handleBlueprintImport(event) {
@@ -616,13 +616,24 @@ export default {
       return offscreen.toDataURL('image/png')
     }
 
+    function exportTimestamp() {
+      const d = new Date()
+      const yy = String(d.getFullYear()).slice(-2)
+      const mm = String(d.getMonth() + 1).padStart(2, '0')
+      const dd = String(d.getDate()).padStart(2, '0')
+      const hh = String(d.getHours()).padStart(2, '0')
+      const min = String(d.getMinutes()).padStart(2, '0')
+      const ss = String(d.getSeconds()).padStart(2, '0')
+      return `${yy}${mm}${dd}-${hh}${min}${ss}`
+    }
+
     async function exportDesign() {
       const hash = window.location.hash
       if (!hash.startsWith('#state=')) { alert('No design to export.'); return }
       const preview = await generateDesignPreview()
       const bytes = dataUrlToBytes(preview)
       const modified = writePngText(bytes, 'plateup-design', hash.slice(7))
-      downloadDataUrl(bytesToDataUrl(modified), 'plateup-design.png')
+      downloadDataUrl(bytesToDataUrl(modified), `plateup-design-${exportTimestamp()}.png`)
     }
 
     async function handleDesignImport(event) {
@@ -706,7 +717,7 @@ export default {
       const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
       const bytes = dataUrlToBytes(preview)
       const modified = writePngText(bytes, 'plateup-structure', payload)
-      downloadDataUrl(bytesToDataUrl(modified), `plateup-structure_${state.roomWidth}x${state.roomHeight}.png`)
+      downloadDataUrl(bytesToDataUrl(modified), `plateup-structure-${exportTimestamp()}.png`)
     }
 
     async function handleStructureImport(event) {
