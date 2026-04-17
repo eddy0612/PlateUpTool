@@ -4,6 +4,7 @@
     <!-- Hidden file inputs for PNG import -->
     <input ref="blueprintImportInput" type="file" accept="image/png" style="display:none" @change="handleBlueprintImport" />
     <input ref="designImportInput" type="file" accept="image/png" style="display:none" @change="handleDesignImport" />
+    <input ref="structureImportInput" type="file" accept="image/png" style="display:none" @change="handleStructureImport" />
 
     <!-- Inventory panel shown when Preview tab is active -->
     <template v-if="isPreviewTab">
@@ -146,7 +147,13 @@
 
       </div>
 
-      <div v-if="!isStructureMode" class="side-controls">
+      <div v-if="isStructureMode" class="side-controls">
+        <div class="io-row">
+          <button @click="exportStructure" title="Export room structure as a PNG with embedded wall data">⬇ Export Structure</button>
+          <button @click="triggerStructureImport" title="Import room structure from a PNG file">⬆ Import Structure</button>
+        </div>
+      </div>
+      <div v-else class="side-controls">
         <div class="clipboard-row">
           <button @click="cutToClipboard">Cut</button>
           <button @click="copyToClipboard">Copy</button>
@@ -533,6 +540,7 @@ export default {
         const raw = readPngText(bytes, 'plateup-blueprint')
         if (!raw) {
           if (readPngText(bytes, 'plateup-design')) alert('This is a design file — use \u2b06 Import Design to load it.')
+          else if (readPngText(bytes, 'plateup-structure')) alert('This is a structure file — use \u2b06 Import Structure to load it.')
           else alert('No blueprint data found in this image.')
           return
         }
@@ -630,6 +638,7 @@ export default {
         const encoded = readPngText(bytes, 'plateup-design')
         if (!encoded) {
           if (readPngText(bytes, 'plateup-blueprint')) alert('This is a blueprint file — use \u2b06 Import Blueprint to load it.')
+          else if (readPngText(bytes, 'plateup-structure')) alert('This is a structure file — use \u2b06 Import Structure to load it.')
           else alert('No design data found in this image.')
           return
         }
@@ -647,11 +656,90 @@ export default {
       }
     }
 
+    // ── Structure export / import ───────────────────────────────────────────
+    const structureImportInput = ref(null)
+    function triggerStructureImport() { structureImportInput.value?.click() }
+
+    async function generateStructurePreview() {
+      const CELL_PX = 24, PAD = 6
+      const canvasW = state.roomWidth * CELL_PX + PAD * 2
+      const canvasH = state.roomHeight * CELL_PX + PAD * 2
+      const offscreen = document.createElement('canvas')
+      offscreen.width = canvasW; offscreen.height = canvasH
+      const ctx = offscreen.getContext('2d')
+      ctx.fillStyle = '#f8f9fb'
+      ctx.fillRect(0, 0, canvasW, canvasH)
+      // cell grid
+      ctx.strokeStyle = '#d0d8e8'; ctx.lineWidth = 0.5
+      for (let y = 0; y <= state.roomHeight; y++) {
+        ctx.beginPath(); ctx.moveTo(PAD, PAD + y * CELL_PX); ctx.lineTo(PAD + state.roomWidth * CELL_PX, PAD + y * CELL_PX); ctx.stroke()
+      }
+      for (let x = 0; x <= state.roomWidth; x++) {
+        ctx.beginPath(); ctx.moveTo(PAD + x * CELL_PX, PAD); ctx.lineTo(PAD + x * CELL_PX, PAD + state.roomHeight * CELL_PX); ctx.stroke()
+      }
+      // interior walls
+      for (const [key, type] of Object.entries(state.walls || {})) {
+        const [orient, xStr, yStr] = key.split(',')
+        const wx = parseInt(xStr), wy = parseInt(yStr)
+        if (type === 'wall')       { ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 3; ctx.setLineDash([]) }
+        else if (type === 'hatch') { ctx.strokeStyle = '#555555'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]) }
+        else if (type === 'door')  { ctx.strokeStyle = '#c8860a'; ctx.lineWidth = 3; ctx.setLineDash([]) }
+        ctx.beginPath()
+        if (orient === 'h') {
+          ctx.moveTo(PAD + wx * CELL_PX, PAD + wy * CELL_PX)
+          ctx.lineTo(PAD + (wx + 1) * CELL_PX, PAD + wy * CELL_PX)
+        } else {
+          ctx.moveTo(PAD + wx * CELL_PX, PAD + wy * CELL_PX)
+          ctx.lineTo(PAD + wx * CELL_PX, PAD + (wy + 1) * CELL_PX)
+        }
+        ctx.stroke()
+      }
+      // border
+      ctx.setLineDash([]); ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 3
+      ctx.strokeRect(PAD, PAD, state.roomWidth * CELL_PX, state.roomHeight * CELL_PX)
+      return offscreen.toDataURL('image/png')
+    }
+
+    async function exportStructure() {
+      const preview = await generateStructurePreview()
+      const json = JSON.stringify({ roomWidth: state.roomWidth, roomHeight: state.roomHeight, walls: state.walls || {} })
+      const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
+      const bytes = dataUrlToBytes(preview)
+      const modified = writePngText(bytes, 'plateup-structure', payload)
+      downloadDataUrl(bytesToDataUrl(modified), `plateup-structure_${state.roomWidth}x${state.roomHeight}.png`)
+    }
+
+    async function handleStructureImport(event) {
+      const file = event.target.files?.[0]
+      if (!file) return
+      event.target.value = ''
+      try {
+        const bytes = await readFileAsBytes(file)
+        const raw = readPngText(bytes, 'plateup-structure')
+        if (!raw) {
+          if (readPngText(bytes, 'plateup-design')) alert('This is a design file — use \u2b06 Import Design to load it.')
+          else if (readPngText(bytes, 'plateup-blueprint')) alert('This is a blueprint file — use \u2b06 Import Blueprint to load it.')
+          else alert('No structure data found in this image.')
+          return
+        }
+        const { roomWidth, roomHeight, walls } = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0))))
+        if (!roomWidth || !roomHeight) { alert('Invalid structure data.'); return }
+        if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) {
+          alert(`Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.\nResize the room to match before importing.`)
+          return
+        }
+        state.walls = walls || {}
+      } catch (e) {
+        alert('Failed to read structure: ' + e.message)
+      }
+    }
+
     return { state, filteredPalette, addToGrid, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemMouseDown, rightPanelStyle, paletteGridStyle,
       // blueprints
       paletteTab, blueprintFilter, filteredBlueprints, createBlueprint, applyBlueprint, deleteBlueprint, onBlueprintMouseDown,
       exportBlueprint, handleBlueprintImport, triggerBlueprintImport, blueprintImportInput,
       exportDesign, handleDesignImport, triggerDesignImport, designImportInput,
+      exportStructure, handleStructureImport, triggerStructureImport, structureImportInput,
     }
   }
 }
