@@ -808,6 +808,7 @@ export default {
   aspect-ratio: 1 / 1;
   width: 100%;
   box-sizing: border-box;
+  text-align: center;
 }
 .item-icon {
   width: 100%;
