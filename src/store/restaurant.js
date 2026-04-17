@@ -279,3 +279,5 @@ function resetState() {
 export function useRestaurantStore() {
   return { state, loadFromHash, syncToHash, resetState }
 }
+
+export { encodeState, decodeState }

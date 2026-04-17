@@ -1,6 +1,10 @@
 <template>
   <aside class="right-panel" :style="rightPanelStyle">
 
+    <!-- Hidden file inputs for PNG import -->
+    <input ref="blueprintImportInput" type="file" accept="image/png" style="display:none" @change="handleBlueprintImport" />
+    <input ref="designImportInput" type="file" accept="image/png" style="display:none" @change="handleDesignImport" />
+
     <!-- Inventory panel shown when Preview tab is active -->
     <template v-if="isPreviewTab">
       <div class="preview-wrapper" :style="{ height: viewportBoxHeight + 'px' }">
@@ -96,6 +100,7 @@
             <div class="filter">
               <input v-model="blueprintFilter" placeholder="Filter blueprints..." />
             </div>
+            <button class="bp-import-btn" @click="triggerBlueprintImport" title="Import a blueprint from a PNG file">⬆ Import Blueprint</button>
             <div class="palette" :style="paletteGridStyle">
 
               <!-- "+" new blueprint button -->
@@ -121,7 +126,7 @@
                 @dragstart.prevent
                 @contextmenu.prevent="deleteBlueprint(bp)"
               >
-                <div class="item-icon">
+                <div class="item-icon" style="position:relative">
                   <img
                     v-if="bp.preview"
                     :src="bp.preview"
@@ -130,6 +135,7 @@
                     draggable="false"
                   />
                   <span v-else class="blueprint-placeholder">📋</span>
+                  <button class="bp-export-btn" @click.stop="exportBlueprint(bp)" title="Export blueprint as PNG">⬇</button>
                 </div>
                 <div class="blueprint-name">{{ bp.name }}</div>
               </div>
@@ -146,8 +152,12 @@
           <button @click="copyToClipboard">Copy</button>
           <button @click="startPaste">Paste</button>
           <button @click="removeSelected">Delete</button>
+          <button class="fill-all-btn" @click="addAllToGrid" title="Fill All (Testing)">Fill</button>
         </div>
-        <button class="fill-all-button" @click="addAllToGrid">Fill All (Testing)</button>
+        <div class="io-row">
+          <button @click="exportDesign" title="Export full design as a PNG with embedded layout data">⬇ Export Design</button>
+          <button @click="triggerDesignImport" title="Import a design from a PNG file and place it as a draggable group">⬆ Import Design</button>
+        </div>
       </div>
       </div>
     </template>
@@ -157,9 +167,10 @@
 
 <script>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { useRestaurantStore } from '../store/restaurant'
+import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
 import { useGrid } from '../composables/useGrid'
+import { readPngText, writePngText, dataUrlToBytes, bytesToDataUrl, downloadDataUrl, readFileAsBytes } from '../composables/usePngMetadata'
 
 const LS_BLUEPRINTS_KEY = 'plateup-blueprints'
 
@@ -497,9 +508,150 @@ export default {
       saveBlueprintsToStorage()
     }
 
+    // ── Blueprint export / import ────────────────────────────────────────────
+    const blueprintImportInput = ref(null)
+    function triggerBlueprintImport() { blueprintImportInput.value?.click() }
+
+    async function exportBlueprint(bp) {
+      let previewDataUrl = bp.preview
+      if (!previewDataUrl) previewDataUrl = await generateBlueprintPreview(bp.cells)
+      if (!previewDataUrl) { alert('Could not generate preview image.'); return }
+      const json = JSON.stringify({ name: bp.name, cells: bp.cells })
+      const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
+      const bytes = dataUrlToBytes(previewDataUrl)
+      const modified = writePngText(bytes, 'plateup-blueprint', payload)
+      const safeName = bp.name.replace(/[^a-z0-9_-]/gi, '_').slice(0, 40) || 'blueprint'
+      downloadDataUrl(bytesToDataUrl(modified), `blueprint_${safeName}.png`)
+    }
+
+    async function handleBlueprintImport(event) {
+      const file = event.target.files?.[0]
+      if (!file) return
+      event.target.value = ''
+      try {
+        const bytes = await readFileAsBytes(file)
+        const raw = readPngText(bytes, 'plateup-blueprint')
+        if (!raw) {
+          if (readPngText(bytes, 'plateup-design')) alert('This is a design file — use \u2b06 Import Design to load it.')
+          else alert('No blueprint data found in this image.')
+          return
+        }
+        const json = new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0)))
+        const { name, cells } = JSON.parse(json)
+        if (!name || !Array.isArray(cells) || cells.length === 0) { alert('Invalid blueprint data.'); return }
+        blueprints.value.push({ id: Date.now().toString(), name, preview: bytesToDataUrl(bytes), cells })
+        saveBlueprintsToStorage()
+        paletteTab.value = 'blueprints'
+      } catch (e) {
+        alert('Failed to read blueprint: ' + e.message)
+      }
+    }
+
+    // ── Design export / import ───────────────────────────────────────────────
+    const designImportInput = ref(null)
+    function triggerDesignImport() { designImportInput.value?.click() }
+
+    async function generateDesignPreview() {
+      const CELL_PX = 28
+      const PAD = 4
+      const canvasW = state.roomWidth * CELL_PX + PAD * 2
+      const canvasH = state.roomHeight * CELL_PX + PAD * 2
+      const offscreen = document.createElement('canvas')
+      offscreen.width = canvasW
+      offscreen.height = canvasH
+      const ctx = offscreen.getContext('2d')
+      ctx.fillStyle = '#e8eef8'
+      ctx.fillRect(0, 0, canvasW, canvasH)
+      ctx.strokeStyle = '#c8d4e4'
+      ctx.lineWidth = 0.5
+      for (let x = 0; x <= state.roomWidth; x++) {
+        ctx.beginPath(); ctx.moveTo(PAD + x * CELL_PX, PAD); ctx.lineTo(PAD + x * CELL_PX, PAD + state.roomHeight * CELL_PX); ctx.stroke()
+      }
+      for (let y = 0; y <= state.roomHeight; y++) {
+        ctx.beginPath(); ctx.moveTo(PAD, PAD + y * CELL_PX); ctx.lineTo(PAD + state.roomWidth * CELL_PX, PAD + y * CELL_PX); ctx.stroke()
+      }
+      const cells = []
+      for (let y = 0; y < grid.value.length; y++)
+        for (let x = 0; x < grid.value[y].length; x++)
+          if (grid.value[y][x]?.applianceId) cells.push({ x, y, cell: grid.value[y][x] })
+      await Promise.all(cells.map(({ x, y, cell }) => new Promise(resolve => {
+        const entry = palette.value.find(a => a.id === cell.applianceId)
+        const iconSrc = entry?.icon2D || entry?.icon
+        const cx = PAD + x * CELL_PX, cy = PAD + y * CELL_PX
+        if (!iconSrc || !isImageIcon(iconSrc)) {
+          ctx.fillStyle = '#dde3ea'
+          ctx.fillRect(cx + 1, cy + 1, CELL_PX - 2, CELL_PX - 2)
+          ctx.fillStyle = '#555'
+          ctx.font = `${Math.floor(CELL_PX * 0.4)}px sans-serif`
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+          ctx.fillText((entry?.label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
+          return resolve()
+        }
+        const img = new window.Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => {
+          const rot = cell.rotation || 0
+          ctx.save()
+          if (rot > 0) {
+            ctx.translate(cx + CELL_PX / 2, cy + CELL_PX / 2)
+            ctx.rotate(rot * Math.PI / 2)
+            ctx.drawImage(img, 0, 50, img.width, Math.max(img.height - 50, 1), -CELL_PX / 2, -CELL_PX / 2, CELL_PX, CELL_PX)
+          } else {
+            ctx.drawImage(img, 0, 50, img.width, Math.max(img.height - 50, 1), cx, cy, CELL_PX, CELL_PX)
+          }
+          ctx.restore()
+          resolve()
+        }
+        img.onerror = () => resolve()
+        img.src = iconSrc
+      })))
+      return offscreen.toDataURL('image/png')
+    }
+
+    async function exportDesign() {
+      const hash = window.location.hash
+      if (!hash.startsWith('#state=')) { alert('No design to export.'); return }
+      const preview = await generateDesignPreview()
+      const bytes = dataUrlToBytes(preview)
+      const modified = writePngText(bytes, 'plateup-design', hash.slice(7))
+      downloadDataUrl(bytesToDataUrl(modified), 'plateup-design.png')
+    }
+
+    async function handleDesignImport(event) {
+      const file = event.target.files?.[0]
+      if (!file) return
+      event.target.value = ''
+      if (state.activeTabId === 'complete' || state.activeTabId === 'structure') {
+        alert('Switch to a coloured tab before importing a design.')
+        return
+      }
+      try {
+        const bytes = await readFileAsBytes(file)
+        const encoded = readPngText(bytes, 'plateup-design')
+        if (!encoded) {
+          if (readPngText(bytes, 'plateup-blueprint')) alert('This is a blueprint file — use \u2b06 Import Blueprint to load it.')
+          else alert('No design data found in this image.')
+          return
+        }
+        const parsed = decodeState(encoded)
+        if (!parsed?.gridCells?.length) { alert('Invalid or empty design data.'); return }
+        let minX = Infinity, minY = Infinity
+        for (const c of parsed.gridCells) { if (c.x < minX) minX = c.x; if (c.y < minY) minY = c.y }
+        const cells = parsed.gridCells.map(c => ({
+          dx: c.x - minX, dy: c.y - minY,
+          cell: { applianceId: c.applianceId, rotation: c.rotation ?? 0, extraData: c.extraData ?? 0, tabIds: [] }
+        }))
+        startPasteFromCells(cells)
+      } catch (e) {
+        alert('Failed to read design: ' + e.message)
+      }
+    }
+
     return { state, filteredPalette, addToGrid, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemMouseDown, rightPanelStyle, paletteGridStyle,
       // blueprints
       paletteTab, blueprintFilter, filteredBlueprints, createBlueprint, applyBlueprint, deleteBlueprint, onBlueprintMouseDown,
+      exportBlueprint, handleBlueprintImport, triggerBlueprintImport, blueprintImportInput,
+      exportDesign, handleDesignImport, triggerDesignImport, designImportInput,
     }
   }
 }
@@ -537,16 +689,6 @@ export default {
   flex-direction: column;
   gap: 10px;
   align-items: stretch;
-}
-.fill-all-button {
-  width: 100%;
-  padding: 0.4rem 0.8rem;
-  border: none;
-  border-radius: 4px;
-  background: #5a7fc2;
-  color: white;
-  cursor: pointer;
-  font-size: 0.85rem;
 }
 .filter input {
   width: 100%;
@@ -596,6 +738,64 @@ export default {
 }
 .clipboard-row { display: flex; gap: 6px }
 .clipboard-row button { flex: 1; padding: 7px; border: none; cursor: pointer; border-radius: 4px; background: #1f79ff; color: white }
+.fill-all-btn {
+  flex: 0 0 auto;
+  padding: 7px 8px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  background: #5a7fc2;
+  color: white;
+  font-size: 0.78rem;
+}
+.fill-all-btn:hover { background: #4a6fb2 }
+.io-row { display: flex; gap: 6px }
+.io-row button {
+  flex: 1;
+  padding: 6px 4px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  background: #4a6fa5;
+  color: white;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.io-row button:hover { background: #3a5f95 }
+.bp-import-btn {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px dashed #9ab0cc;
+  border-radius: 4px;
+  background: #f5f8ff;
+  color: #2a5db0;
+  cursor: pointer;
+  font-size: 0.82rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+.bp-import-btn:hover { background: #e8f0ff; border-color: #1f79ff }
+.bp-export-btn {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+.blueprint-item:hover .bp-export-btn { opacity: 1 }
 
 /* ── Palette tabs ─────────────────────────────────────────────────────────── */
 .palette-tabs {
