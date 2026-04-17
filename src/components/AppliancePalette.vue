@@ -56,26 +56,86 @@
           <div class="structure-hint">Click near a cell edge to place or remove.</div>
         </template>
 
-        <!-- Normal mode: filter + appliance palette -->
+        <!-- Normal mode: tabbed panel (Appliances | Blueprints) -->
         <template v-else>
-          <div class="filter">
-            <input v-model="state.filterText" placeholder="Filter appliances..." />
+          <!-- Tab bar -->
+          <div class="palette-tabs">
+            <button
+              :class="['palette-tab', { active: paletteTab === 'appliances' }]"
+              @click="paletteTab = 'appliances'"
+            >Appliances</button>
+            <button
+              :class="['palette-tab', { active: paletteTab === 'blueprints' }]"
+              @click="paletteTab = 'blueprints'"
+            >Blueprints</button>
           </div>
 
-          <div class="palette" :style="paletteGridStyle">
-            <div
-              v-for="item in filteredPalette"
-              :key="item.id"
-              class="palette-item"
-              @click="onPaletteItemClick(item)"
-              @mousedown="onPaletteItemMouseDown(item, $event)"
-            >
-              <div class="item-icon">
-                <canvas :data-icon="item.icon" class="palette-canvas"></canvas>
-              </div>
-              <div>{{ item.label }}</div>
+          <!-- Appliances tab -->
+          <template v-if="paletteTab === 'appliances'">
+            <div class="filter">
+              <input v-model="state.filterText" placeholder="Filter appliances..." />
             </div>
-          </div>
+            <div class="palette" :style="paletteGridStyle">
+              <div
+                v-for="item in filteredPalette"
+                :key="item.id"
+                class="palette-item"
+                @click="onPaletteItemClick(item)"
+                @mousedown="onPaletteItemMouseDown(item, $event)"
+              >
+                <div class="item-icon">
+                  <canvas :data-icon="item.icon" class="palette-canvas"></canvas>
+                </div>
+                <div>{{ item.label }}</div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Blueprints tab -->
+          <template v-else>
+            <div class="filter">
+              <input v-model="blueprintFilter" placeholder="Filter blueprints..." />
+            </div>
+            <div class="palette" :style="paletteGridStyle">
+
+              <!-- "+" new blueprint button -->
+              <div
+                class="palette-item blueprint-add-item"
+                title="Create blueprint from selection"
+                @click="createBlueprint"
+              >
+                <div class="item-icon blueprint-plus-icon">
+                  <span class="blueprint-plus">+</span>
+                </div>
+                <div>New</div>
+              </div>
+
+              <!-- Saved blueprints -->
+              <div
+                v-for="bp in filteredBlueprints"
+                :key="bp.id"
+                class="palette-item blueprint-item"
+                :title="bp.name + '\n(right-click to delete)'"
+                @click="applyBlueprint(bp)"
+                @mousedown="onBlueprintMouseDown(bp, $event)"
+                @dragstart.prevent
+                @contextmenu.prevent="deleteBlueprint(bp)"
+              >
+                <div class="item-icon">
+                  <img
+                    v-if="bp.preview"
+                    :src="bp.preview"
+                    :alt="bp.name"
+                    class="blueprint-preview-img"
+                    draggable="false"
+                  />
+                  <span v-else class="blueprint-placeholder">📋</span>
+                </div>
+                <div class="blueprint-name">{{ bp.name }}</div>
+              </div>
+
+            </div>
+          </template>
         </template>
 
       </div>
@@ -101,12 +161,22 @@ import { useRestaurantStore } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
 import { useGrid } from '../composables/useGrid'
 
+const LS_BLUEPRINTS_KEY = 'plateup-blueprints'
+
+function loadBlueprintsFromStorage() {
+  try {
+    const raw = localStorage.getItem(LS_BLUEPRINTS_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return []
+}
+
 export default {
   name: 'AppliancePalette',
   setup() {
     const { state } = useRestaurantStore()
     const { palette } = useAppliancePalette()
-    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, startPaletteDrag, updatePaletteDrag, commitPaletteDrag } = useGrid()
+    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag } = useGrid()
 
     const structureTools = [
       { id: 'wall',  label: 'Wall',  description: 'Full-height wall',  },
@@ -251,7 +321,171 @@ export default {
       window.addEventListener('mouseup', onUp)
     }
 
-    return { state, filteredPalette, addToGrid, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemMouseDown, rightPanelStyle, paletteGridStyle }
+    // ── Blueprints ───────────────────────────────────────────────────────────
+    const paletteTab = ref('appliances')
+    watch(paletteTab, (val) => { if (val === 'appliances') redrawPaletteCanvases() })
+    const blueprintFilter = ref('')
+    const blueprints = ref(loadBlueprintsFromStorage())
+
+    function saveBlueprintsToStorage() {
+      try { localStorage.setItem(LS_BLUEPRINTS_KEY, JSON.stringify(blueprints.value)) } catch {}
+    }
+
+    const filteredBlueprints = computed(() => {
+      const q = blueprintFilter.value.trim().toLowerCase()
+      if (!q) return blueprints.value
+      return blueprints.value.filter(bp => bp.name.toLowerCase().includes(q))
+    })
+
+    // Generate a small thumbnail image for a set of blueprint cells.
+    async function generateBlueprintPreview(cells) {
+      if (!cells.length) return null
+      const maxDx = Math.max(...cells.map(c => c.dx))
+      const maxDy = Math.max(...cells.map(c => c.dy))
+      const CELL_PX = 40
+      const PAD = 3
+      const canvasW = (maxDx + 1) * CELL_PX + PAD * 2
+      const canvasH = (maxDy + 1) * CELL_PX + PAD * 2
+
+      const offscreen = document.createElement('canvas')
+      offscreen.width  = canvasW
+      offscreen.height = canvasH
+      const ctx = offscreen.getContext('2d')
+      ctx.fillStyle = '#f0f4ff'
+      ctx.fillRect(0, 0, canvasW, canvasH)
+
+      await Promise.all(cells.map(({ dx, dy, cell }) => new Promise(resolve => {
+        const entry = palette.value.find(a => a.id === cell.applianceId)
+        const iconSrc = entry?.icon2D || entry?.icon
+        const cx = PAD + dx * CELL_PX
+        const cy = PAD + dy * CELL_PX
+
+        if (!iconSrc || !isImageIcon(iconSrc)) {
+          ctx.fillStyle = '#dde3ea'
+          ctx.fillRect(cx + 1, cy + 1, CELL_PX - 2, CELL_PX - 2)
+          ctx.fillStyle = '#555'
+          ctx.font = `${Math.floor(CELL_PX * 0.45)}px sans-serif`
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText((entry?.label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
+          return resolve()
+        }
+
+        const img = new window.Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => {
+          const cropTop = 50
+          const sx = 0, sy = cropTop, sw = img.width, sh = Math.max(img.height - cropTop, 1)
+          const rot = cell.rotation || 0
+          ctx.save()
+          if (rot > 0) {
+            ctx.translate(cx + CELL_PX / 2, cy + CELL_PX / 2)
+            ctx.rotate(rot * Math.PI / 2)
+            ctx.drawImage(img, sx, sy, sw, sh, -CELL_PX / 2, -CELL_PX / 2, CELL_PX, CELL_PX)
+          } else {
+            ctx.drawImage(img, sx, sy, sw, sh, cx, cy, CELL_PX, CELL_PX)
+          }
+          ctx.restore()
+          resolve()
+        }
+        img.onerror = () => resolve()
+        img.src = iconSrc
+      })))
+
+      return offscreen.toDataURL('image/png')
+    }
+
+    async function createBlueprint() {
+      if (selectedCells.value.size === 0) {
+        alert('Select some appliances on the grid first, then click New.')
+        return
+      }
+
+      // Collect non-ghosted selected cells with appliances
+      let minX = Infinity, minY = Infinity
+      const valid = []
+      for (const key of selectedCells.value) {
+        const [x, y] = key.split(',').map(Number)
+        if (!isCellGhosted(x, y)) {
+          const cell = grid.value[y]?.[x]
+          if (cell?.applianceId) {
+            if (x < minX) minX = x
+            if (y < minY) minY = y
+            valid.push({ x, y, cell })
+          }
+        }
+      }
+
+      if (valid.length === 0) {
+        alert('No visible appliances are selected. Select appliances on the current tab first.')
+        return
+      }
+
+      const name = window.prompt('Blueprint name:', 'My Blueprint')
+      if (name === null) return
+      const trimmedName = name.trim() || 'Blueprint'
+
+      const cells = valid.map(({ x, y, cell }) => ({
+        dx: x - minX,
+        dy: y - minY,
+        cell: { ...cell }
+      }))
+
+      const preview = await generateBlueprintPreview(cells)
+
+      blueprints.value.push({
+        id: Date.now().toString(),
+        name: trimmedName,
+        preview,
+        cells
+      })
+      saveBlueprintsToStorage()
+    }
+
+    function applyBlueprint(bp) {
+      if (suppressNextBlueprintClick.value) { suppressNextBlueprintClick.value = false; return }
+      startPasteFromCells(bp.cells)
+    }
+
+    const suppressNextBlueprintClick = ref(false)
+
+    function onBlueprintMouseDown(bp, e) {
+      if (e.button !== 0) return
+      if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
+      const startX = e.clientX, startY = e.clientY
+      let dragStarted = false
+
+      function onMove(e) {
+        if (!dragStarted) {
+          const dx = e.clientX - startX
+          const dy = e.clientY - startY
+          if (Math.sqrt(dx * dx + dy * dy) > 5) {
+            dragStarted = true
+            suppressNextBlueprintClick.value = true
+            startPasteFromCells(bp.cells)
+          }
+        }
+      }
+
+      function onUp() {
+        window.removeEventListener('mousemove', onMove)
+        window.removeEventListener('mouseup', onUp)
+      }
+
+      window.addEventListener('mousemove', onMove)
+      window.addEventListener('mouseup', onUp)
+    }
+
+    function deleteBlueprint(bp) {
+      if (!window.confirm(`Delete blueprint "${bp.name}"?`)) return
+      blueprints.value = blueprints.value.filter(b => b.id !== bp.id)
+      saveBlueprintsToStorage()
+    }
+
+    return { state, filteredPalette, addToGrid, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemMouseDown, rightPanelStyle, paletteGridStyle,
+      // blueprints
+      paletteTab, blueprintFilter, filteredBlueprints, createBlueprint, applyBlueprint, deleteBlueprint, onBlueprintMouseDown,
+    }
   }
 }
 </script>
@@ -347,6 +581,83 @@ export default {
 }
 .clipboard-row { display: flex; gap: 6px }
 .clipboard-row button { flex: 1; padding: 7px; border: none; cursor: pointer; border-radius: 4px; background: #1f79ff; color: white }
+
+/* ── Palette tabs ─────────────────────────────────────────────────────────── */
+.palette-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #d0d9e6;
+  flex-shrink: 0;
+}
+.palette-tab {
+  flex: 1;
+  padding: 6px 4px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  background: transparent;
+  color: #6b7a8d;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+.palette-tab:hover { color: #2a5db0 }
+.palette-tab.active {
+  color: #1f79ff;
+  border-bottom-color: #1f79ff;
+}
+
+/* ── Blueprint palette items ─────────────────────────────────────────────── */
+.blueprint-add-item {
+  border-style: dashed;
+  border-color: #9ab0cc;
+  background: #f5f8ff;
+}
+.blueprint-add-item:hover {
+  background: #e8f0ff;
+  border-color: #1f79ff;
+}
+.blueprint-plus-icon {
+  font-size: 48px;
+  color: #6b9fd4;
+}
+.blueprint-plus {
+  font-size: 52px;
+  font-weight: 300;
+  color: #6b9fd4;
+  line-height: 1;
+}
+.blueprint-item:hover {
+  border-color: #1f79ff;
+  background: #f0f5ff;
+}
+.blueprint-item {
+  user-select: none;
+}
+.blueprint-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.blueprint-placeholder {
+  font-size: 40px;
+}
+.blueprint-name {
+  font-size: 11px;
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
 
 /* ---- Structure mode palette ---- */
 .structure-header {
