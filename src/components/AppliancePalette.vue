@@ -176,7 +176,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const { palette } = useAppliancePalette()
-    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag } = useGrid()
+    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag } = useGrid()
 
     const structureTools = [
       { id: 'wall',  label: 'Wall',  description: 'Full-height wall',  },
@@ -455,6 +455,12 @@ export default {
       const startX = e.clientX, startY = e.clientY
       let dragStarted = false
 
+      function getCellFromPoint(clientX, clientY) {
+        const el = document.elementFromPoint(clientX, clientY)?.closest?.('.grid-item')
+        if (el && el.dataset.x !== undefined) return { x: parseInt(el.dataset.x), y: parseInt(el.dataset.y) }
+        return null
+      }
+
       function onMove(e) {
         if (!dragStarted) {
           const dx = e.clientX - startX
@@ -465,11 +471,20 @@ export default {
             startPasteFromCells(bp.cells)
           }
         }
+        if (dragStarted) {
+          const cell = getCellFromPoint(e.clientX, e.clientY)
+          if (cell) setPasteAnchor(cell.x, cell.y)
+        }
       }
 
-      function onUp() {
+      function onUp(e) {
         window.removeEventListener('mousemove', onMove)
         window.removeEventListener('mouseup', onUp)
+        if (dragStarted) {
+          const cell = getCellFromPoint(e.clientX, e.clientY)
+          if (cell) { setPasteAnchor(cell.x, cell.y); confirmPaste() }
+          else cancelPaste()
+        }
       }
 
       window.addEventListener('mousemove', onMove)
