@@ -111,6 +111,14 @@
         </div>
         <div class="grid-status-bar">{{ hoverLabel }}</div>
       </div>
+      <div class="ad-slot">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-7670834418076181"
+             data-ad-slot="7443508808"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      </div>
     </div>
 
     <div
@@ -921,6 +929,7 @@ export default {
 .tab-user-9.active { background: #b8f494; border-color: #78b848; }
 .tab-postit:hover { transform: translateX(-3px) scale(1.02) rotate(0deg) }
 .controls-with-status { display: flex; flex-direction: row; align-items: center; gap: 8px; }
+.ad-slot { flex: 1; min-width: 200px; max-height: 90px; overflow: hidden; }
 .hover-icon-box {
   width: 72px;
   height: 72px;

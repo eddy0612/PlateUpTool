@@ -175,6 +175,8 @@ export default {
         loadFromHash()
         loadGridFromState()
       })
+      // Initialise any AdSense units rendered by Vue
+      try { (window.adsbygoogle = window.adsbygoogle || []).push({}) } catch {}
     })
 
     function startAgain() {
