@@ -205,8 +205,10 @@ export default {
 
     const filteredPalette = computed(() => {
       const q = state.filterText.trim().toLowerCase()
-      if (!q) return palette.value
-      return palette.value.filter(item => item.label.toLowerCase().includes(q))
+      const items = q
+        ? palette.value.filter(item => item.label.toLowerCase().includes(q))
+        : palette.value.slice()
+      return items.slice().sort((a, b) => a.label.localeCompare(b.label))
     })
 
     const inventoryList = computed(() => {
