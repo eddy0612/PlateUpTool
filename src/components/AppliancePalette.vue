@@ -159,7 +159,6 @@
           <button @click="copyToClipboard">Copy</button>
           <button @click="startPaste">Paste</button>
           <button @click="removeSelected">Delete</button>
-          <button class="fill-all-btn" @click="addAllToGrid" title="Fill All (Testing)">Fill</button>
         </div>
         <div class="io-row">
           <button @click="exportDesign" title="Export full design as a PNG with embedded layout data">⬇ Export Design</button>
