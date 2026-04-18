@@ -35,6 +35,12 @@
           </svg>
           Bugs/Feedback
         </button>
+        <button class="share-button" @click="copyUrl" title="Copy link to clipboard">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5z"/>
+          </svg>
+          Share
+        </button>
         <button class="help-button" @click="showHelp = true" title="Keyboard shortcuts &amp; controls">?</button>
       </div>
     </header>
@@ -133,6 +139,9 @@
            data-ad-client="ca-pub-7670834418076181"
            data-ad-slot="7443508808"></ins>
     </div>
+    <transition name="toast">
+      <div v-if="showCopiedToast" class="copied-toast">Link copied to clipboard</div>
+    </transition>
     <div
       v-if="paletteDragActive && paletteDragItem"
       class="palette-drag-ghost"
@@ -165,6 +174,7 @@ export default {
     const showHelp = ref(false)
     const showCredits = ref(false)
     const showTutorial = ref(false)
+    const showCopiedToast = ref(false)
 
     const renderer = new marked.Renderer()
     renderer.link = ({ href, text }) =>
@@ -181,6 +191,12 @@ export default {
 
     function openFeedback() {
       window.open('https://github.com/eddy0612/PlateUpTool/issues', '_blank', 'noopener,noreferrer')
+    }
+
+    function copyUrl() {
+      navigator.clipboard.writeText(window.location.href)
+      showCopiedToast.value = true
+      setTimeout(() => { showCopiedToast.value = false }, 2500)
     }
 
     watch(() => ({ ...state }), () => syncToHash(), { deep: true })
@@ -204,7 +220,7 @@ export default {
       loadGridFromState()
     }
 
-    return { startAgain, showHelp, showCredits, showTutorial, creditsHtml, openDonate, openFeedback, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state }
+    return { startAgain, showHelp, showCredits, showTutorial, showCopiedToast, creditsHtml, openDonate, openFeedback, copyUrl, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state }
   }
 }
 </script>
@@ -249,6 +265,37 @@ html, body { margin: 0; font-family: sans-serif; overflow: hidden; height: 100%;
   gap: 5px; font-size: 0.875rem; font-weight: 600;
 }
 .feedback-button:hover { background: #237a2b }
+.copied-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a2e;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  z-index: 99999;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.toast-enter-active, .toast-leave-active { transition: opacity 0.3s, transform 0.3s; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(10px); }
+.toast-enter-to, .toast-leave-from { opacity: 1; transform: translateX(-50%) translateY(0); }
+.share-button {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid #5b8fd9;
+  background: #eef4ff;
+  color: #2a5db0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.share-button:hover { background: #d0e3ff; border-color: #2a5db0 }
 .help-button {
   width: 28px; height: 28px;
   border-radius: 50%;
