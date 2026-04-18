@@ -718,7 +718,7 @@ export default {
       const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
       const bytes = dataUrlToBytes(preview)
       const modified = writePngText(bytes, 'plateup-structure', payload)
-      downloadDataUrl(bytesToDataUrl(modified), `plateup-structure-${exportTimestamp()}.png`)
+      downloadDataUrl(bytesToDataUrl(modified), `plateup-structure-${state.roomWidth}x${state.roomHeight}-${exportTimestamp()}.png`)
     }
 
     async function handleStructureImport(event) {
