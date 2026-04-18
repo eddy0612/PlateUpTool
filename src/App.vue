@@ -55,8 +55,7 @@
             <section>
               <h3>Tabs</h3>
               <dl>
-                <div><dt>1 – 9, 0</dt><dd>Switch to tab 1–9 / 10</dd></div>
-                <div><dt>Click tab</dt><dd>Switch to that tab</dd></div>
+                <div><dt>1 – 9, 0 or click</dt><dd>Switch to tab 1–9 / 10</dd></div>
                 <div><dt>Right-click tab</dt><dd>Rename / delete tab</dd></div>
                 <div><dt>+ button</dt><dd>Add a new tab (up to 10)</dd></div>
               </dl>
@@ -84,8 +83,8 @@
               <dl>
                 <div><dt>Ctrl+C</dt><dd>Copy selected cells</dd></div>
                 <div><dt>Ctrl+X</dt><dd>Cut selected cells</dd></div>
-                <div><dt>Ctrl+V</dt><dd>Start paste (move mouse to desired position, click to confirm)</dd></div>
-                <div><dt>Ctrl+D</dt><dd>Duplicate (copy &amp; start paste without affecting clipboard)</dd></div>
+                <div><dt>Ctrl+V</dt><dd>Paste</dd></div>
+                <div><dt>Ctrl+D</dt><dd>Duplicate</dd></div>
                 <div><dt>Escape</dt><dd>Cancel pending paste</dd></div>
               </dl>
             </section>
