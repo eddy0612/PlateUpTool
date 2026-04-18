@@ -583,16 +583,27 @@ export default {
     // --- Context menu for ghosted cells ---
     const contextMenuVisible = ref(false)
     const contextMenuPos = ref({ x: 0, y: 0 })
+    const contextMenuCell = ref(null)
 
-    function closeContextMenu() { contextMenuVisible.value = false }
+    function closeContextMenu() { contextMenuVisible.value = false; contextMenuCell.value = null }
 
     function doMoveToThisLevel() {
+      if (contextMenuCell.value) {
+        const { x, y } = contextMenuCell.value
+        selectedCells.value = new Set([`${x},${y}`])
+      }
       moveSelectionToTab(state.activeTabId)
+      contextMenuCell.value = null
       contextMenuVisible.value = false
     }
 
     function doShowInBothLevels() {
+      if (contextMenuCell.value) {
+        const { x, y } = contextMenuCell.value
+        selectedCells.value = new Set([`${x},${y}`])
+      }
       addSelectionToTab(state.activeTabId)
+      contextMenuCell.value = null
       contextMenuVisible.value = false
     }
 
@@ -693,7 +704,12 @@ export default {
       if (state.activeTabId === 'structure') return
       if (state.activeTabId === 'complete') return
       if (isCellGhosted(x, y)) {
-        if (!isSelected(x, y)) selectCell(x, y)
+        if (!isSelected(x, y)) {
+          selectCell(x, y)
+          // If the cell couldn't be selected (it's on another tab), store it
+          // so the context menu actions can still operate on it
+          if (!isSelected(x, y)) contextMenuCell.value = { x, y }
+        }
         contextMenuPos.value = { x: e.clientX, y: e.clientY }
         contextMenuVisible.value = true
         return
