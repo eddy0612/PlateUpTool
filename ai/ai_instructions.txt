@@ -1,0 +1,10 @@
+This is about building an application which is a web page which will use Javascript and VUE to enable manipulation of a layout or a restaurant
+
+Rules
+- There will be a core data structure representing the restaurant, and that will be in the url
+- Any manipulation of any aspect of the restaurant must be reflexted in a url update - ie you can always get to the same view as shown by reloading that specific url
+- Ideally I should be able to test just be loading the main html page and using localhost - If I need a dummy web server to share the files, please give me one (eg src\testharness) and the ability to run it via npnm run at the src directory
+- Code will be in javascript & vue - I am still learning vue so suggestions/alternatives to my ideas are welcome
+- All code must be under src with the exception of a helpful script to launch the Vite webserver for testing. For this project, src is the root directory
+- This is a windows machine so all commands must be windows relevant
+
