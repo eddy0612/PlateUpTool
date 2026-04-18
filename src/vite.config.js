@@ -2,9 +2,9 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   root: '.',
-  base: '/',
+  base: command === 'build' ? '/PlateUpTool/' : '/',
   plugins: [vue()],
   resolve: {
     alias: {
@@ -12,4 +12,4 @@ export default defineConfig({
     }
   },
   server: { port: 5173 }
-})
+}))
