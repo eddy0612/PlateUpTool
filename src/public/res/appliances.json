@@ -1386,11 +1386,29 @@
     "Reason": ""
   },
   {
-    "OriginalFileName": "GrabberRotating--331651461.png",
+    "OriginalFileName": "GrabberRotatingL--331651461.png",
     "Keep": true,
     "ID": 154,
-    "3DFilename": "GrabberRotating--331651461.png",
-    "2DFilename": "2D_GrabberRotating--331651461.png",
+    "3DFilename": "GrabberRotatingL--331651461.png",
+    "2DFilename": "2D_GrabberRotatingL--331651461.png",
+    "ItemDescription": "Grabber - Rotating Left",
+    "Reason": ""
+  },
+  {
+    "OriginalFileName": "GrabberRotatingR--331651461.png",
+    "Keep": true,
+    "ID": 346,
+    "3DFilename": "GrabberRotatingR--331651461.png",
+    "2DFilename": "2D_GrabberRotatingR--331651461.png",
+    "ItemDescription": "Grabber - Rotating Right",
+    "Reason": ""
+  },
+  {
+    "OriginalFileName": "GrabberRotatingS--331651461.png",
+    "Keep": true,
+    "ID": 347,
+    "3DFilename": "GrabberRotatingS--331651461.png",
+    "2DFilename": "2D_GrabberRotatingS--331651461.png",
     "ItemDescription": "Grabber - Rotating",
     "Reason": ""
   },
