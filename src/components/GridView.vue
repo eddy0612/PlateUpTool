@@ -164,7 +164,7 @@ export default {
       copyToClipboard, cutToClipboard,
       pastePending, getCellPasteState, startPaste, startDuplicate, setPasteAnchor, confirmPaste, cancelPaste,
       tabHasVisibleItems, deleteTabItems,
-      isStructureMode, selectedStructureTool, getWallEdge, setWallEdge,
+      isStructureMode, selectedStructureTool, getWallEdge, setWallEdge, clearWallEdge,
       paletteDragActive, paletteDragHoverCell, isPaletteDragDropValid,
       getTeleporterPairPos
     } = useGrid()
@@ -690,7 +690,11 @@ export default {
 
     function handleCellContextMenu(e, x, y) {
       if (wasRightDragging.value) return
-      if (state.activeTabId === 'structure') return
+      if (state.activeTabId === 'structure') {
+        const dir = detectEdgeDir(e)
+        if (dir) clearWallEdge(x, y, dir)
+        return
+      }
       if (state.activeTabId === 'complete') return
       if (isCellGhosted(x, y)) {
         if (!isSelected(x, y)) selectCell(x, y)
