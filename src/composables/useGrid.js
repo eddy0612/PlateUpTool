@@ -371,7 +371,15 @@ const moveDragTargetMap = computed(() => {
   const map = new Map()
   for (const srcKey of selectedCells.value) {
     const [sx, sy] = srcKey.split(',').map(Number)
-    if (isCellGhosted(sx, sy)) continue  // ghosted cells don't participate in move drag
+    // Inline ghost check using raw grid data to avoid a circular computed dependency:
+    // isCellGhosted → getDisplayCell → moveDragTargetMap.value (undefined mid-evaluation)
+    const cell = grid.value[sy]?.[sx]
+    if (cell?.applianceId && state.activeTabId !== 'complete') {
+      const ghosted = Array.isArray(cell.tabIds)
+        ? !cell.tabIds.includes(state.activeTabId)
+        : cell.tabId != null ? cell.tabId !== state.activeTabId : false
+      if (ghosted) continue
+    }
     map.set(cellKey(sx + moveDragOffset.value.dx, sy + moveDragOffset.value.dy), srcKey)
   }
   return map
