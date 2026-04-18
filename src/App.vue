@@ -191,7 +191,7 @@ export default {
 
 <style>
 * { box-sizing: border-box }
-body { margin: 0; font-family: sans-serif; }
+html, body { margin: 0; font-family: sans-serif; overflow: hidden; height: 100%; }
 </style>
 
 <style scoped>
