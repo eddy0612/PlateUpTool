@@ -250,7 +250,22 @@ function decodeState(encoded) {
   }
 }
 
+function isDefaultState() {
+  return (
+    JSON.stringify(state.tabs) === DEFAULT_TABS_JSON &&
+    state.orientation === DEFAULT_STATE.orientation &&
+    state.roomWidth === DEFAULT_STATE.roomWidth &&
+    state.roomHeight === DEFAULT_STATE.roomHeight &&
+    Object.keys(state.walls).length === 0 &&
+    state.gridCells.length === 0
+  )
+}
+
 function syncToHash() {
+  if (isDefaultState()) {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    return
+  }
   const toSave = {}
   URL_FIELDS.forEach(k => { toSave[k] = JSON.parse(JSON.stringify(state[k])) })
   const encoded = encodeState(toSave)

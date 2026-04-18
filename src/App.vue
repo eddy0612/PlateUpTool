@@ -171,7 +171,6 @@ export default {
     onMounted(() => {
       loadFromHash()
       loadGridFromState()
-      if (!window.location.hash.startsWith('#state=')) syncToHash()
       window.addEventListener('hashchange', () => {
         loadFromHash()
         loadGridFromState()
