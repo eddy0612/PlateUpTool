@@ -66,25 +66,67 @@ function markTutorialSeen() {
   localStorage.setItem(STORAGE_KEY, 'true')
 }
 
-// Dummy pages – replace gif paths and copy when real assets are ready
+// Pages – replace gif paths with real animated GIFs when assets are ready
 const pages = [
   {
     title: 'Welcome to PlateUp Tool',
-    body: 'This tool lets you design and plan your PlateUp restaurant layout. Drag appliances from the palette on the right onto the grid to build your kitchen.',
-    gif: 'https://placehold.co/480x270/1a2a4a/ffffff?text=Tutorial+Page+1',
-    gifAlt: 'Animated overview of the tool'
+    body: 'PlateUp Tool is a layout planner for PlateUp! Drag appliances from the palette on the right onto the grid to start designing your restaurant. Your design is saved automatically in the URL — no account needed.',
+    gif: 'https://placehold.co/480x270/1a2a4a/ffffff?text=Page+1',
+    gifAlt: 'Overview of the PlateUp Tool interface'
   },
   {
-    title: 'Using the Grid',
-    body: 'Click a cell to select it, drag to move appliances, and use Ctrl+C / Ctrl+V to copy and paste. You can also right-click a selection to rotate it.',
-    gif: 'https://placehold.co/480x270/2d5a27/ffffff?text=Tutorial+Page+2',
-    gifAlt: 'Animated demonstration of grid editing'
+    title: 'Moving Items Around the Grid',
+    body: 'Click any cell to select it, then drag it to a new position. Right-click a selected item to rotate it 90° clockwise, or hold Shift while right-clicking to rotate counter-clockwise.',
+    gif: 'https://placehold.co/480x270/1a3a2a/ffffff?text=Page+2',
+    gifAlt: 'Dragging and rotating items on the grid'
   },
   {
-    title: 'Tabs & Sharing',
-    body: 'Use tabs at the top of the grid to organise your layout into layers. When you are happy with your design, copy the URL to share it with friends.',
-    gif: 'https://placehold.co/480x270/4a1a2a/ffffff?text=Tutorial+Page+3',
-    gifAlt: 'Animated demonstration of tabs and sharing'
+    title: 'Selecting Multiple Items',
+    body: 'Hold Shift or Ctrl and drag across the grid to box-select multiple items at once. Ctrl+Click toggles individual cells in or out of the selection, and Ctrl+A selects everything on the current tab.',
+    gif: 'https://placehold.co/480x270/2a1a4a/ffffff?text=Page+3',
+    gifAlt: 'Selecting multiple grid cells'
+  },
+  {
+    title: 'Working with Selections',
+    body: 'Right-click any cell within a selection to rotate the whole group around that pivot — Shift+Right-click rotates the other way. You can also cut (Ctrl+X), copy (Ctrl+C), paste (Ctrl+V) or duplicate (Ctrl+D) the entire selection.',
+    gif: 'https://placehold.co/480x270/3a2a1a/ffffff?text=Page+4',
+    gifAlt: 'Rotating and copying a selection'
+  },
+  {
+    title: 'Adding Walls, Hatches and Doors',
+    body: 'Switch to the Structure tab to define the shape of your restaurant. Select a tool from the palette, then left-click any cell edge to apply it. Right-click an edge to clear it.',
+    gif: 'https://placehold.co/480x270/1a3a3a/ffffff?text=Page+5',
+    gifAlt: 'Adding walls and doors in Structure mode'
+  },
+  {
+    title: 'Organising with Tabs',
+    body: 'Add extra tabs to separate different areas of your restaurant — for example, Pizza, Pies and Soups. Selected cells can be moved to another tab or set to appear on multiple tabs at the same time.',
+    gif: 'https://placehold.co/480x270/2a3a1a/ffffff?text=Page+6',
+    gifAlt: 'Using tabs to organise the layout'
+  },
+  {
+    title: 'Previewing Your Design',
+    body: 'Click the Preview tab to see a fully rendered view of your complete layout, along with a full inventory of every appliance placed across all tabs.',
+    gif: 'https://placehold.co/480x270/3a1a2a/ffffff?text=Page+7',
+    gifAlt: 'Preview tab showing the finished layout'
+  },
+  {
+    title: 'Sharing Your Design',
+    body: 'Your entire design — every appliance, wall and tab — is encoded directly in the page URL. Copy the address from your browser and share it with friends; they will see exactly what you see.',
+    gif: 'https://placehold.co/480x270/1a2a3a/ffffff?text=Page+8',
+    gifAlt: 'Copying the URL to share a design'
+  },
+  {
+    title: 'Keyboard Shortcuts',
+    body: 'A full list of keyboard shortcuts and controls is available at any time. Click the ? button in the top-right corner of the screen to open the Controls & Shortcuts reference.',
+    gif: 'https://placehold.co/480x270/2a2a3a/ffffff?text=Page+9',
+    gifAlt: 'The keyboard shortcuts reference panel'
+  },
+  {
+    title: 'Advanced: Blueprints & Import / Export',
+    body: 'Blueprints let you save a group of items as a reusable block. Select the cells you want, save them as a blueprint, and it will appear in the palette just like any appliance. You can also export or import the full restaurant structure, the entire design, or an individual blueprint to back up or share your work.',
+    gif: 'https://placehold.co/480x270/3a2a3a/ffffff?text=Page+10',
+    gifAlt: 'Creating and using blueprints'
   }
 ]
 
