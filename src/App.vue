@@ -74,8 +74,8 @@
             <section>
               <h3>Rotation</h3>
               <dl>
-                <div><dt>Right-click selection</dt><dd>Rotate selection 90° clockwise</dd></div>
-                <div><dt>Shift+Right-click selection</dt><dd>Rotate selection 90° counter-clockwise</dd></div>
+                <div><dt>Right-click selection</dt><dd>Pivot 90° clockwise around clicked cell</dd></div>
+                <div><dt>Shift+Right-click selection</dt><dd>Pivot 90° counter-clockwise around clicked cell</dd></div>
               </dl>
             </section>
             <section>
