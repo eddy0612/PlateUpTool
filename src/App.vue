@@ -120,11 +120,9 @@
     </div>
     <div class="ad-bar">
       <ins class="adsbygoogle"
-           style="display:block; width:100%; height:72px"
+           style="display:inline-block; width:728px; height:90px"
            data-ad-client="ca-pub-7670834418076181"
-           data-ad-slot="7443508808"
-           data-ad-format="horizontal"
-           data-full-width-responsive="true"></ins>
+           data-ad-slot="7443508808"></ins>
     </div>
     <div
       v-if="paletteDragActive && paletteDragItem"
@@ -183,8 +181,10 @@ export default {
         loadFromHash()
         loadGridFromState()
       })
-      // Initialise any AdSense units rendered by Vue
-      try { (window.adsbygoogle = window.adsbygoogle || []).push({}) } catch {}
+      // Initialise AdSense after browser has finished layout
+      requestAnimationFrame(() => {
+        try { (window.adsbygoogle = window.adsbygoogle || []).push({}) } catch {}
+      })
     })
 
     function startAgain() {
@@ -326,7 +326,7 @@ html, body { margin: 0; font-family: sans-serif; overflow: hidden; height: 100%;
 .ad-bar {
   padding-left: 90px;
   overflow: hidden;
-  height: 72px;
+  height: 90px;
   flex-shrink: 0;
 }
 </style>
