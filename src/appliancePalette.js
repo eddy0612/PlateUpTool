@@ -4,7 +4,7 @@
 
 // Returns a Promise that resolves to an array of { id, label, icon }
 export async function getAppliancePalette() {
-  const resp = await fetch('/res/appliances.json')
+  const resp = await fetch(import.meta.env.BASE_URL + 'res/appliances.json')
   if (!resp.ok) throw new Error('Failed to load appliances.json')
   const applianceMap = await resp.json()
   return applianceMap
