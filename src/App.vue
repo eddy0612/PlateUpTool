@@ -3,6 +3,13 @@
     <header class="top-bar">
       <h1>PlateUp Tool</h1>
       <div class="header-right">
+        <button class="tutorial-button" @click="showTutorial = true" title="Launch the tutorial">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+          </svg>
+          Tutorial
+        </button>
         <button class="reset-button" @click="startAgain" title="Clear the grid and start over">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
@@ -31,6 +38,8 @@
         <button class="help-button" @click="showHelp = true" title="Keyboard shortcuts &amp; controls">?</button>
       </div>
     </header>
+
+    <TutorialModal v-if="showTutorial" @close="showTutorial = false" />
 
     <teleport to="body">
       <div v-if="showCredits" class="help-modal-backdrop" @click.self="showCredits = false">
@@ -144,16 +153,18 @@ import AppliancePalette from './components/AppliancePalette.vue'
 import creditsRaw from './CREDITS.md?raw'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
+import TutorialModal, { hasTutorialBeenSeen } from './components/TutorialModal.vue'
 
 export default {
   name: 'App',
-  components: { GridView, AppliancePalette },
+  components: { GridView, AppliancePalette, TutorialModal },
   setup() {
     const { state, loadFromHash, syncToHash, resetState } = useRestaurantStore()
     const { loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize } = useGrid()
 
     const showHelp = ref(false)
     const showCredits = ref(false)
+    const showTutorial = ref(false)
 
     const renderer = new marked.Renderer()
     renderer.link = ({ href, text }) =>
@@ -177,6 +188,7 @@ export default {
     onMounted(() => {
       loadFromHash()
       loadGridFromState()
+      if (!hasTutorialBeenSeen()) showTutorial.value = true
       window.addEventListener('hashchange', () => {
         loadFromHash()
         loadGridFromState()
@@ -192,7 +204,7 @@ export default {
       loadGridFromState()
     }
 
-    return { startAgain, showHelp, showCredits, creditsHtml, openDonate, openFeedback, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state }
+    return { startAgain, showHelp, showCredits, showTutorial, creditsHtml, openDonate, openFeedback, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state }
   }
 }
 </script>
@@ -207,6 +219,12 @@ html, body { margin: 0; font-family: sans-serif; overflow: hidden; height: 100%;
 .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px }
 .top-bar h1 { margin: 0 }
 .header-right { display: flex; align-items: center; gap: 6px; margin-right: 8px }
+.tutorial-button {
+  border: none; background: #e07b20; color: white; padding: 0.4rem 0.8rem;
+  border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center;
+  gap: 5px; font-size: 0.875rem; font-weight: 600;
+}
+.tutorial-button:hover { background: #c46a14 }
 .reset-button {
   border: none; background: #d9534f; color: white; padding: 0.4rem 0.8rem;
   border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center;
