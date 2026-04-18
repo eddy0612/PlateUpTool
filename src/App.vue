@@ -118,6 +118,14 @@
       <GridView />
       <AppliancePalette />
     </div>
+    <div class="ad-bar">
+      <ins class="adsbygoogle"
+           style="display:block; width:100%; height:72px"
+           data-ad-client="ca-pub-7670834418076181"
+           data-ad-slot="7443508808"
+           data-ad-format="horizontal"
+           data-full-width-responsive="true"></ins>
+    </div>
     <div
       v-if="paletteDragActive && paletteDragItem"
       class="palette-drag-ghost"
@@ -314,5 +322,11 @@ html, body { margin: 0; font-family: sans-serif; overflow: hidden; height: 100%;
   padding-left: 90px;
   overflow: visible;
   align-items: flex-start;
+}
+.ad-bar {
+  padding-left: 90px;
+  overflow: hidden;
+  height: 72px;
+  flex-shrink: 0;
 }
 </style>
