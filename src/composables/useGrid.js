@@ -191,23 +191,29 @@ function rotateCellCCW(x, y) {
 // The pivot stays in place; every other selected cell moves to its rotated position.
 // Returns true on success, false if the rotation is blocked (out of bounds or collision).
 function rotateGroupAroundCell(pivotX, pivotY) {
-  if (selectedCells.value.size <= 1) return false
+  // Only rotate non-ghosted cells; ghosted cells stay in place
+  const activeKeys = [...selectedCells.value].filter(key => {
+    const [x, y] = key.split(',').map(Number)
+    return !isCellGhosted(x, y)
+  })
+  if (activeKeys.length <= 1) return false
 
   // Compute rotated positions — CW 90° in grid coords (y increases downward):
   //   new_x = pivotX - (y - pivotY)
   //   new_y = pivotY + (x - pivotX)
   const moves = []
-  for (const key of selectedCells.value) {
+  for (const key of activeKeys) {
     const [x, y] = key.split(',').map(Number)
     const dx = x - pivotX
     const dy = y - pivotY
     moves.push({ sx: x, sy: y, tx: pivotX - dy, ty: pivotY + dx })
   }
 
-  // Validate: every target must be in-bounds and not occupied by a non-selected cell
+  // Validate: every target must be in-bounds and not occupied by a cell not being moved
+  const sourcePositions = new Set(moves.map(m => cellKey(m.sx, m.sy)))
   for (const { tx, ty } of moves) {
     if (tx < 0 || tx >= state.roomWidth || ty < 0 || ty >= state.roomHeight) return false
-    if (grid.value[ty]?.[tx]?.applianceId && !selectedCells.value.has(cellKey(tx, ty))) return false
+    if (grid.value[ty]?.[tx]?.applianceId && !sourcePositions.has(cellKey(tx, ty))) return false
   }
 
   // Snapshot content (incrementing each appliance's rotation) before any writes
@@ -223,31 +229,41 @@ function rotateGroupAroundCell(pivotX, pivotY) {
   for (const { sx, sy } of moves) grid.value[sy][sx] = null
   for (const { tx, ty, content } of moveData) grid.value[ty][tx] = content
 
-  // Update selection to the new positions
-  selectedCells.value = new Set(moves.map(({ tx, ty }) => cellKey(tx, ty)))
+  // Update selection: rotated active cells at new positions + ghosted cells unchanged
+  const ghostedKeys = [...selectedCells.value].filter(key => {
+    const [x, y] = key.split(',').map(Number)
+    return isCellGhosted(x, y)
+  })
+  selectedCells.value = new Set([...moves.map(({ tx, ty }) => cellKey(tx, ty)), ...ghostedKeys])
   anchorCell.value = null
   return true
 }
 
 // Rotate all selected cells 90° CCW around the given pivot cell.
 function rotateGroupAroundCellCCW(pivotX, pivotY) {
-  if (selectedCells.value.size <= 1) return false
+  // Only rotate non-ghosted cells; ghosted cells stay in place
+  const activeKeys = [...selectedCells.value].filter(key => {
+    const [x, y] = key.split(',').map(Number)
+    return !isCellGhosted(x, y)
+  })
+  if (activeKeys.length <= 1) return false
 
   // CCW 90° in grid coords (y increases downward):
   //   new_x = pivotX + (y - pivotY)
   //   new_y = pivotY - (x - pivotX)
   const moves = []
-  for (const key of selectedCells.value) {
+  for (const key of activeKeys) {
     const [x, y] = key.split(',').map(Number)
     const dx = x - pivotX
     const dy = y - pivotY
     moves.push({ sx: x, sy: y, tx: pivotX + dy, ty: pivotY - dx })
   }
 
-  // Validate: every target must be in-bounds and not occupied by a non-selected cell
+  // Validate: every target must be in-bounds and not occupied by a cell not being moved
+  const sourcePositions = new Set(moves.map(m => cellKey(m.sx, m.sy)))
   for (const { tx, ty } of moves) {
     if (tx < 0 || tx >= state.roomWidth || ty < 0 || ty >= state.roomHeight) return false
-    if (grid.value[ty]?.[tx]?.applianceId && !selectedCells.value.has(cellKey(tx, ty))) return false
+    if (grid.value[ty]?.[tx]?.applianceId && !sourcePositions.has(cellKey(tx, ty))) return false
   }
 
   // Snapshot content (decrementing each appliance's rotation) before any writes
@@ -263,8 +279,12 @@ function rotateGroupAroundCellCCW(pivotX, pivotY) {
   for (const { sx, sy } of moves) grid.value[sy][sx] = null
   for (const { tx, ty, content } of moveData) grid.value[ty][tx] = content
 
-  // Update selection to the new positions
-  selectedCells.value = new Set(moves.map(({ tx, ty }) => cellKey(tx, ty)))
+  // Update selection: rotated active cells at new positions + ghosted cells unchanged
+  const ghostedKeys = [...selectedCells.value].filter(key => {
+    const [x, y] = key.split(',').map(Number)
+    return isCellGhosted(x, y)
+  })
+  selectedCells.value = new Set([...moves.map(({ tx, ty }) => cellKey(tx, ty)), ...ghostedKeys])
   anchorCell.value = null
   return true
 }
@@ -289,10 +309,10 @@ function selectCell(x, y, shiftKey = false, ctrlKey = false) {
     const base = ctrlKey ? new Set(selectedCells.value) : new Set()
     for (let cy = y0; cy <= y1; cy++)
       for (let cx = x0; cx <= x1; cx++)
-        if (isCellOnActiveTab(cx, cy)) base.add(cellKey(cx, cy))
+        if (grid.value[cy]?.[cx]?.applianceId) base.add(cellKey(cx, cy))
     selectedCells.value = base
   } else if (ctrlKey) {
-    if (!isCellOnActiveTab(x, y)) return
+    if (!grid.value[y]?.[x]?.applianceId) return
     const key = cellKey(x, y)
     const next = new Set(selectedCells.value)
     if (next.has(key)) next.delete(key)
@@ -300,14 +320,14 @@ function selectCell(x, y, shiftKey = false, ctrlKey = false) {
     selectedCells.value = next
     anchorCell.value = { x, y }
   } else {
-    if (!isCellOnActiveTab(x, y)) return
+    if (!grid.value[y]?.[x]?.applianceId) return
     selectedCells.value = new Set([cellKey(x, y)])
     anchorCell.value = { x, y }
   }
 }
 
 function selectCellsInRect(cells) {
-  const filtered = cells.filter(c => isCellOnActiveTab(c.x, c.y))
+  const filtered = cells.filter(c => grid.value[c.y]?.[c.x]?.applianceId)
   selectedCells.value = new Set(filtered.map(c => cellKey(c.x, c.y)))
   if (filtered.length > 0) anchorCell.value = filtered[filtered.length - 1]
 }
@@ -335,9 +355,9 @@ function invertSelection() {
 
 function addCellsToSelection(cells) {
   const next = new Set(selectedCells.value)
-  cells.forEach(c => { if (isCellOnActiveTab(c.x, c.y)) next.add(cellKey(c.x, c.y)) })
+  cells.forEach(c => { if (grid.value[c.y]?.[c.x]?.applianceId) next.add(cellKey(c.x, c.y)) })
   selectedCells.value = next
-  const last = [...cells].reverse().find(c => isCellOnActiveTab(c.x, c.y))
+  const last = [...cells].reverse().find(c => grid.value[c.y]?.[c.x]?.applianceId)
   if (last) anchorCell.value = last
 }
 
@@ -345,12 +365,13 @@ function addCellsToSelection(cells) {
 const moveDragActive = ref(false)
 const moveDragOffset = ref({ dx: 0, dy: 0 })
 
-// Map of "tx,ty" -> "sx,sy" for every selected cell offset by the current drag delta
+// Map of "tx,ty" -> "sx,sy" for every non-ghosted selected cell offset by the current drag delta
 const moveDragTargetMap = computed(() => {
   if (!moveDragActive.value || selectedCells.value.size === 0) return new Map()
   const map = new Map()
   for (const srcKey of selectedCells.value) {
     const [sx, sy] = srcKey.split(',').map(Number)
+    if (isCellGhosted(sx, sy)) continue  // ghosted cells don't participate in move drag
     map.set(cellKey(sx + moveDragOffset.value.dx, sy + moveDragOffset.value.dy), srcKey)
   }
   return map
@@ -358,11 +379,12 @@ const moveDragTargetMap = computed(() => {
 
 const isMoveValid = computed(() => {
   if (!moveDragActive.value || moveDragTargetMap.value.size === 0) return false
+  const sourceKeys = new Set(moveDragTargetMap.value.values())
   for (const [tKey] of moveDragTargetMap.value) {
     const [tx, ty] = tKey.split(',').map(Number)
     if (tx < 0 || tx >= state.roomWidth || ty < 0 || ty >= state.roomHeight) return false
     // Occupied by a cell that is NOT one of the sources being moved
-    if (grid.value[ty]?.[tx]?.applianceId && !selectedCells.value.has(cellKey(tx, ty))) return false
+    if (grid.value[ty]?.[tx]?.applianceId && !sourceKeys.has(cellKey(tx, ty))) return false
   }
   return true
 })
@@ -372,7 +394,7 @@ function getCellMoveState(x, y) {
   if (!moveDragActive.value) return null
   const key = cellKey(x, y)
   if (moveDragTargetMap.value.has(key)) return isMoveValid.value ? 'preview-valid' : 'preview-invalid'
-  if (selectedCells.value.has(key)) return 'source'
+  if (selectedCells.value.has(key) && !isCellGhosted(x, y)) return 'source'
   return null
 }
 
@@ -404,7 +426,7 @@ function commitMoveDrag() {
     const [sx, sy] = sKey.split(',').map(Number)
     moves.push({ tx, ty, content: { ...grid.value[sy][sx] } })
   }
-  for (const sKey of selectedCells.value) {
+  for (const sKey of moveDragTargetMap.value.values()) {
     const [sx, sy] = sKey.split(',').map(Number)
     grid.value[sy][sx] = null
   }
@@ -425,10 +447,16 @@ function cancelMoveDrag() {
 function removeSelected() {
   if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
 
+  // Only delete non-ghosted cells; ghosted cells are ignored by all operations
+  const activeKeys = [...selectedCells.value].filter(key => {
+    const [x, y] = key.split(',').map(Number)
+    return !isCellGhosted(x, y)
+  })
+
   // Track how many of each teleporter pair number are being deleted.
   // If count < 2 the remaining partner must be unpaired.
   const deletingPairNums = new Map()
-  for (const key of selectedCells.value) {
+  for (const key of activeKeys) {
     const [x, y] = key.split(',').map(Number)
     const cell = grid.value[y][x]
     if (isTeleporter(cell) && (cell.extraData || 0) > 0) {
@@ -437,7 +465,7 @@ function removeSelected() {
     }
   }
 
-  for (const key of selectedCells.value) {
+  for (const key of activeKeys) {
     const [x, y] = key.split(',').map(Number)
     grid.value[y][x] = null
   }
@@ -553,15 +581,20 @@ const duplicateBuffer = ref([])        // same format as clipboard
 const duplicateMode = ref(false)       // true when paste is sourced from duplicateBuffer
 
 function copyToClipboard() {
-  if (selectedCells.value.size === 0) return
+  // Ghosted cells (from other tabs) are excluded from copy/cut operations
+  const activeKeys = [...selectedCells.value].filter(key => {
+    const [x, y] = key.split(',').map(Number)
+    return !isCellGhosted(x, y)
+  })
+  if (activeKeys.length === 0) return
   let minX = Infinity, minY = Infinity
-  for (const key of selectedCells.value) {
+  for (const key of activeKeys) {
     const [x, y] = key.split(',').map(Number)
     if (x < minX) minX = x
     if (y < minY) minY = y
   }
   const entries = []
-  for (const key of selectedCells.value) {
+  for (const key of activeKeys) {
     const [x, y] = key.split(',').map(Number)
     const cell = grid.value[y]?.[x]
     if (cell) entries.push({ dx: x - minX, dy: y - minY, cell: { ...cell } })

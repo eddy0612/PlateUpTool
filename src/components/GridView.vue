@@ -434,7 +434,7 @@ export default {
           // Unselected cell → clear selection, select this cell, start potential move drag
           selectedCells.value = new Set()
           selectCell(cx, cy, false, false)
-          if (isSelected(cx, cy)) {
+          if (isSelected(cx, cy) && !isCellGhosted(cx, cy)) {
             pendingMoveCell.value = { x: cx, y: cy }
             moveDragStartMouse.value = { x: e.clientX, y: e.clientY }
             window.addEventListener('mousemove', onWindowMouseMove)
@@ -583,27 +583,16 @@ export default {
     // --- Context menu for ghosted cells ---
     const contextMenuVisible = ref(false)
     const contextMenuPos = ref({ x: 0, y: 0 })
-    const contextMenuCell = ref(null)
 
-    function closeContextMenu() { contextMenuVisible.value = false; contextMenuCell.value = null }
+    function closeContextMenu() { contextMenuVisible.value = false }
 
     function doMoveToThisLevel() {
-      if (contextMenuCell.value) {
-        const { x, y } = contextMenuCell.value
-        selectedCells.value = new Set([`${x},${y}`])
-      }
       moveSelectionToTab(state.activeTabId)
-      contextMenuCell.value = null
       contextMenuVisible.value = false
     }
 
     function doShowInBothLevels() {
-      if (contextMenuCell.value) {
-        const { x, y } = contextMenuCell.value
-        selectedCells.value = new Set([`${x},${y}`])
-      }
       addSelectionToTab(state.activeTabId)
-      contextMenuCell.value = null
       contextMenuVisible.value = false
     }
 
@@ -704,22 +693,23 @@ export default {
       if (state.activeTabId === 'structure') return
       if (state.activeTabId === 'complete') return
       if (isCellGhosted(x, y)) {
-        if (!isSelected(x, y)) {
-          selectCell(x, y)
-          // If the cell couldn't be selected (it's on another tab), store it
-          // so the context menu actions can still operate on it
-          if (!isSelected(x, y)) contextMenuCell.value = { x, y }
-        }
+        if (!isSelected(x, y)) selectCell(x, y)
         contextMenuPos.value = { x: e.clientX, y: e.clientY }
         contextMenuVisible.value = true
         return
       }
       const ccw = e.shiftKey
-      // Group rotation: right-click on a selected cell in a multi-cell selection
+      // Group rotation: right-click on a selected non-ghosted cell in a multi-cell selection
+      // Only count non-ghosted cells towards the group rotation threshold
       if (isSelected(x, y) && selectedCells.value.size > 1) {
-        const success = ccw ? rotateGroupAroundCellCCW(x, y) : rotateGroupAroundCell(x, y)
-        if (!success) flashGroupRed()
-        return
+        const activeCount = [...selectedCells.value].filter(k => {
+          const [kx, ky] = k.split(',').map(Number); return !isCellGhosted(kx, ky)
+        }).length
+        if (activeCount > 1) {
+          const success = ccw ? rotateGroupAroundCellCCW(x, y) : rotateGroupAroundCell(x, y)
+          if (!success) flashGroupRed()
+          return
+        }
       }
       ccw ? rotateCellCCW(x, y) : rotateCell(x, y)
     }
@@ -833,6 +823,7 @@ export default {
 }
 .grid-item.selected { border: 2px solid #1f79ff; background: #dde9ff }
 .grid-item.selected { cursor: grab }
+.grid-item.selected.ghosted { border: 2px solid #999; background: #e4e4e4 }
 .grid.move-dragging .grid-item { cursor: grabbing }
 .grid-item.move-source { border: 2px dashed #1f79ff; background: #dde9ff }
 .grid-item.move-source .cell-content { opacity: 0.35; }
