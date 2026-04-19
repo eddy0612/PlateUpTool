@@ -23,7 +23,7 @@
                     :alt="getDisplayCell(cellInfo.x, cellInfo.y).applianceId"
                     draggable="false"
                     style="max-width:100%;max-height:100%;display:block;"
-                    @error="$event.target.onerror=null; $event.target.src=getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId)"
+                    @error="onApplianceImgError($event, getDisplayCell(cellInfo.x, cellInfo.y).applianceId)"
                   />
                   <template v-else>{{ getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId) }}</template>
                 </span>
@@ -384,6 +384,20 @@ export default {
       const d = { top: relY, bottom: 1 - relY, left: relX, right: 1 - relX }
       const minEntry = Object.entries(d).reduce((a, b) => a[1] < b[1] ? a : b)
       return minEntry[1] <= 0.38 ? minEntry[0] : null
+    }
+
+    function onApplianceImgError(event, applianceId) {
+      const img = event.target
+      if (!img.dataset.fallback) {
+        img.dataset.fallback = '1'
+        img.src = getApplianceIcon(applianceId)
+      } else {
+        img.style.display = 'none'
+        const q = document.createElement('span')
+        q.textContent = '?'
+        q.style.cssText = 'font-size:1.4em;line-height:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%;'
+        img.parentElement.appendChild(q)
+      }
     }
 
     function handleCellClick(e, x, y) {
@@ -773,7 +787,7 @@ export default {
       isStructureMode, getWallEdge,
       getTabColorClass, getApplianceBgStyle,
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
-      getApplianceIcon, isImageIcon,
+      getApplianceIcon, isImageIcon, onApplianceImgError,
       TELEPORTER_APPLIANCE_ID, teleporterPairLines
     }
   }
