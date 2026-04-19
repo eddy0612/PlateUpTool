@@ -159,7 +159,7 @@ export default {
     const {
       flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon,
       rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection,
-      moveDragActive, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
+      moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
       copyToClipboard, cutToClipboard,
       pastePending, getCellPasteState, startPaste, startDuplicate, setPasteAnchor, confirmPaste, cancelPaste,
@@ -473,6 +473,16 @@ export default {
               parseInt(el.dataset.x) - pendingMoveCell.value.x,
               parseInt(el.dataset.y) - pendingMoveCell.value.y
             )
+          } else if (gridEl.value) {
+            // Mouse is outside the grid — compute virtual cell from bounding rect
+            const rect = gridEl.value.getBoundingClientRect()
+            const cellW = rect.width / state.roomWidth
+            const cellH = rect.height / state.roomHeight
+            if (cellW > 0 && cellH > 0) {
+              const vx = Math.floor((e.clientX - rect.left) / cellW)
+              const vy = Math.floor((e.clientY - rect.top) / cellH)
+              updateMoveDragOffset(vx - pendingMoveCell.value.x, vy - pendingMoveCell.value.y)
+            }
           }
         }
         return
@@ -493,7 +503,12 @@ export default {
       // --- Move drag path ---
       if (pendingMoveCell.value) {
         if (isMoveDragging.value) {
-          commitMoveDrag()
+          if (isMoveAllOutside.value) {
+            removeSelected()
+            cancelMoveDrag()
+          } else {
+            commitMoveDrag()
+          }
           isMoveDragging.value = false
           // Suppress click after an actual drag
           wasDragging.value = true
@@ -544,6 +559,7 @@ export default {
         'grid-item': true,
         selected: isSelected(x, y),
         'move-source': move === 'source',
+        'move-delete-preview': move === 'delete-preview',
         'move-preview-valid': move === 'preview-valid',
         'move-preview-invalid': move === 'preview-invalid',
         'paste-preview-valid': paste === 'paste-preview-valid',
@@ -831,6 +847,8 @@ export default {
 .grid.move-dragging .grid-item { cursor: grabbing }
 .grid-item.move-source { border: 2px dashed #1f79ff; background: #dde9ff }
 .grid-item.move-source .cell-content { opacity: 0.35; }
+.grid-item.move-delete-preview { border: 2px dashed #d93025; background: rgba(217, 48, 37, 0.15) }
+.grid-item.move-delete-preview .cell-content { opacity: 0.35; }
 .grid-item.move-preview-valid { border: 2px solid #22a355; background: rgba(34, 163, 85, 0.18) }
 .grid-item.move-preview-invalid { border: 2px solid #d93025; background: rgba(217, 48, 37, 0.18) }
 .grid-item.paste-preview-valid { border: 2px solid #22a355; background: rgba(34, 163, 85, 0.25) }
