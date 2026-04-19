@@ -6,7 +6,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "AffordableBin-620400448.png",
@@ -15,7 +16,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Apple-681117884-Provider.png",
@@ -24,7 +26,8 @@
     "3DFilename": "Apple-681117884-Provider.png",
     "2DFilename": "2D_Apple-681117884-Provider.png",
     "ItemDescription": "Apples",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Apples--905438738.png",
@@ -33,7 +36,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "AutoPlater-739504637.png",
@@ -42,7 +46,8 @@
     "3DFilename": "AutoPlater-739504637.png",
     "2DFilename": "2D_AutoPlater-739504637.png",
     "ItemDescription": "Auto Plater",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Balloons-1147639502.png",
@@ -51,7 +56,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Bamboo--2092567672.png",
@@ -60,7 +66,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BambooRaw--1635701703-Provider.png",
@@ -69,7 +76,8 @@
     "3DFilename": "BambooRaw--1635701703-Provider.png",
     "2DFilename": "2D_BambooRaw--1635701703-Provider.png",
     "ItemDescription": "Bamboo",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Banner--1380985631.png",
@@ -78,7 +86,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BarTable--3721951.png",
@@ -87,7 +96,8 @@
     "3DFilename": "BarTable--3721951.png",
     "2DFilename": "2D_BarTable--3721951.png",
     "ItemDescription": "Bar Table",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Barrel-1569358344.png",
@@ -96,7 +106,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Beans-1807525572.png",
@@ -105,7 +116,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BeansIngredient-75221795-Provider.png",
@@ -114,7 +126,8 @@
     "3DFilename": "BeansIngredient-75221795-Provider.png",
     "2DFilename": "2D_BeansIngredient-75221795-Provider.png",
     "ItemDescription": "Beans",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Beehive--544237849.png",
@@ -123,7 +136,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BigCakeTin-933861469-Provider.png",
@@ -132,7 +146,8 @@
     "3DFilename": "BigCakeTin-933861469-Provider.png",
     "2DFilename": "2D_BigCakeTin-933861469-Provider.png",
     "ItemDescription": "Cake Tin",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BigCakeTinBurned--1140210773-Provider.png",
@@ -141,7 +156,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Bin-1159228054.png",
@@ -150,7 +166,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Bin-1551609169.png",
@@ -159,7 +176,8 @@
     "3DFilename": "Bin-1551609169.png",
     "2DFilename": "2D_Bin-1551609169.png",
     "ItemDescription": "Bin",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BirthdayBanner--71664252.png",
@@ -168,7 +186,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BlueprintCabinet--571205127.png",
@@ -177,7 +196,8 @@
     "3DFilename": "BlueprintCabinet--571205127.png",
     "2DFilename": "2D_BlueprintCabinet--571205127.png",
     "ItemDescription": "Blueprint Cabinet",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BlueprintDesk-1446975727.png",
@@ -186,7 +206,8 @@
     "3DFilename": "BlueprintDesk-1446975727.png",
     "2DFilename": "2D_BlueprintDesk-1446975727.png",
     "ItemDescription": "Blueprint Desk",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BoneinMeat-269523389.png",
@@ -195,7 +216,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Bookcase--60168847.png",
@@ -204,7 +226,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BookingDesk-238041352.png",
@@ -213,7 +236,8 @@
     "3DFilename": "BookingDesk-238041352.png",
     "2DFilename": "2D_BookingDesk-238041352.png",
     "ItemDescription": "Booking Desk",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BookingsStand--60938940.png",
@@ -222,7 +246,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BrandMascot-1551024733.png",
@@ -231,7 +256,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Breadsticks-639111696.png",
@@ -240,7 +266,8 @@
     "3DFilename": "Breadsticks-639111696.png",
     "2DFilename": "2D_Breadsticks-639111696.png",
     "ItemDescription": "Breadsticks",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Broccoli--1573812073.png",
@@ -249,7 +276,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BroccoliRaw--1774883004-Provider.png",
@@ -258,7 +286,8 @@
     "3DFilename": "BroccoliRaw--1774883004-Provider.png",
     "2DFilename": "2D_BroccoliRaw--1774883004-Provider.png",
     "ItemDescription": "Broccoli",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Brownie--591261173-Provider.png",
@@ -267,7 +296,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BrownieTray--2135982034.png",
@@ -276,7 +306,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BrownieTray-122760125-Provider.png",
@@ -285,7 +316,8 @@
     "3DFilename": "BrownieTray-122760125-Provider.png",
     "2DFilename": "2D_BrownieTray-122760125-Provider.png",
     "ItemDescription": "Brownie Tray",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BrownieTrayBurned--1370587045-Provider.png",
@@ -294,7 +326,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Buffet--773196462.png",
@@ -303,7 +336,8 @@
     "3DFilename": "Buffet--773196462.png",
     "2DFilename": "2D_Buffet--773196462.png",
     "ItemDescription": "Buffet",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BurgerBun--1756808590-Provider.png",
@@ -312,7 +346,8 @@
     "3DFilename": "BurgerBun--1756808590-Provider.png",
     "2DFilename": "2D_BurgerBun--1756808590-Provider.png",
     "ItemDescription": "Burger Buns",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BurgerBuns-759552160.png",
@@ -321,7 +356,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "BurgerPattyRaw-1150879908-Provider.png",
@@ -330,7 +366,8 @@
     "3DFilename": "BurgerPattyRaw-1150879908-Provider.png",
     "2DFilename": "2D_BurgerPattyRaw-1150879908-Provider.png",
     "ItemDescription": "Burger Patties",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Butter--215543585.png",
@@ -339,7 +376,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Butter-1605072344-Provider.png",
@@ -348,7 +386,8 @@
     "3DFilename": "Butter-1605072344-Provider.png",
     "2DFilename": "2D_Butter-1605072344-Provider.png",
     "ItemDescription": "Butter",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CakeTin--660310536.png",
@@ -357,7 +396,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CalmPainting-668664567.png",
@@ -366,7 +406,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Candelabra--13481890.png",
@@ -375,7 +416,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CandleBox-1358522063.png",
@@ -384,7 +426,8 @@
     "3DFilename": "CandleBox-1358522063.png",
     "2DFilename": "2D_CandleBox-1358522063.png",
     "ItemDescription": "Candle Box",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Candles--1552572658.png",
@@ -393,7 +436,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "Carrot--1944015682-Provider.png",
@@ -402,7 +446,8 @@
     "3DFilename": "Carrot--1944015682-Provider.png",
     "2DFilename": "2D_Carrot--1944015682-Provider.png",
     "ItemDescription": "Carrots",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Carrots--452101383.png",
@@ -411,16 +456,18 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Cauldron-782648278.png",
-    "Keep": false,
+    "Keep": true,
     "ID": 46,
-    "3DFilename": "",
-    "2DFilename": "",
+    "3DFilename": "Cauldron-782648278.png",
+    "2DFilename": "2D_Cauldron-782648278.png",
     "ItemDescription": "Cauldron",
-    "Reason": "Item is not needed in planner"
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "CeilingLight-230540973.png",
@@ -429,7 +476,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CeilingLight-908498444.png",
@@ -438,7 +486,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Chair--1979922052.png",
@@ -447,7 +496,8 @@
     "3DFilename": "Chair--1979922052.png",
     "2DFilename": "2D_Chair--1979922052.png",
     "ItemDescription": "Chair",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Chair-938247786.png",
@@ -456,7 +506,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Chandelier-1233091186.png",
@@ -465,7 +516,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Cheese--117339838.png",
@@ -474,7 +526,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Cheese--755280170-Provider.png",
@@ -483,7 +536,8 @@
     "3DFilename": "Cheese--755280170-Provider.png",
     "2DFilename": "2D_Cheese--755280170-Provider.png",
     "ItemDescription": "Cheese",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Cherries-148543530.png",
@@ -492,7 +546,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Cherry--2056677123-Provider.png",
@@ -501,7 +556,8 @@
     "3DFilename": "Cherry--2056677123-Provider.png",
     "2DFilename": "2D_Cherry--2056677123-Provider.png",
     "ItemDescription": "Cherries",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Chocolate-1069000119-Provider.png",
@@ -510,7 +566,8 @@
     "3DFilename": "Chocolate-1069000119-Provider.png",
     "2DFilename": "2D_Chocolate-1069000119-Provider.png",
     "ItemDescription": "Chocolate",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Chocolate-783588616.png",
@@ -519,7 +576,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ChocolateSyrup-825737084.png",
@@ -528,7 +586,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ChristmasCracker-749675166-Provider.png",
@@ -537,7 +596,8 @@
     "3DFilename": "ChristmasCracker-749675166-Provider.png",
     "2DFilename": "2D_ChristmasCracker-749675166-Provider.png",
     "ItemDescription": "Christmas Crackers",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ChristmasCrackers-303858729.png",
@@ -546,7 +606,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ChristmasTree--602487625.png",
@@ -555,7 +616,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ChristmasTree-1797739089.png",
@@ -564,7 +626,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ClassicalGlobe-642318074.png",
@@ -573,7 +636,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ClipboardStand--2070005162.png",
@@ -582,7 +646,8 @@
     "3DFilename": "ClipboardStand--2070005162.png",
     "2DFilename": "2D_ClipboardStand--2070005162.png",
     "ItemDescription": "Clipboard Stand",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Cobwebs--636342486.png",
@@ -591,7 +656,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "CoffeeCup-364023067-Provider.png",
@@ -600,7 +666,8 @@
     "3DFilename": "CoffeeCup-364023067-Provider.png",
     "2DFilename": "2D_CoffeeCup-364023067-Provider.png",
     "ItemDescription": "Coffee Machine",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CoffeeMachine--1609758240.png",
@@ -609,7 +676,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CoffeeTable-1648733244.png",
@@ -618,7 +686,8 @@
     "3DFilename": "CoffeeTable-1648733244.png",
     "2DFilename": "2D_CoffeeTable-1648733244.png",
     "ItemDescription": "Coffee Table",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Combiner--1906799936.png",
@@ -627,7 +696,8 @@
     "3DFilename": "Combiner--1906799936.png",
     "2DFilename": "2D_Combiner--1906799936.png",
     "ItemDescription": "Combiner",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CompactorBin-2127051779.png",
@@ -636,7 +706,8 @@
     "3DFilename": "CompactorBin-2127051779.png",
     "2DFilename": "2D_CompactorBin-2127051779.png",
     "ItemDescription": "Compactor Bin",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ComposterBin--1632826946.png",
@@ -645,7 +716,8 @@
     "3DFilename": "ComposterBin--1632826946.png",
     "2DFilename": "2D_ComposterBin--1632826946.png",
     "ItemDescription": "Composter Bin",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CondimentKetchup--1075930689-Provider.png",
@@ -654,7 +726,8 @@
     "3DFilename": "CondimentKetchup--1075930689-Provider.png",
     "2DFilename": "2D_CondimentKetchup--1075930689-Provider.png",
     "ItemDescription": "Extra Ketchup",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CondimentMustard--1114203942-Provider.png",
@@ -663,7 +736,8 @@
     "3DFilename": "CondimentMustard--1114203942-Provider.png",
     "2DFilename": "2D_CondimentMustard--1114203942-Provider.png",
     "ItemDescription": "Extra Mustard",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CondimentSoySauce-1190974918-Provider.png",
@@ -672,7 +746,8 @@
     "3DFilename": "CondimentSoySauce-1190974918-Provider.png",
     "2DFilename": "2D_CondimentSoySauce-1190974918-Provider.png",
     "ItemDescription": "Extra Soy Sauce",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Conveyor--667884240.png",
@@ -681,7 +756,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Conveyor-1973114260.png",
@@ -690,7 +766,8 @@
     "3DFilename": "Conveyor-1973114260.png",
     "2DFilename": "2D_Conveyor-1973114260.png",
     "ItemDescription": "Conveyor",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ConveyorMixer--1357906425.png",
@@ -699,7 +776,8 @@
     "3DFilename": "ConveyorMixer--1357906425.png",
     "2DFilename": "2D_ConveyorMixer--1357906425.png",
     "ItemDescription": "Conveyor Mixer",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CookieTray--1723125645.png",
@@ -708,7 +786,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CookieTray--622622812-Provider.png",
@@ -717,7 +796,8 @@
     "3DFilename": "CookieTray--622622812-Provider.png",
     "2DFilename": "2D_CookieTray--622622812-Provider.png",
     "ItemDescription": "Cookie Tray",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CookieTrayBurned-390623838-Provider.png",
@@ -726,7 +806,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CopyingDesk--729493805.png",
@@ -735,7 +816,8 @@
     "3DFilename": "CopyingDesk--729493805.png",
     "2DFilename": "2D_CopyingDesk--729493805.png",
     "ItemDescription": "Copying Desk",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Corn-976574457.png",
@@ -744,7 +826,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CornRaw-529258958-Provider.png",
@@ -753,7 +836,8 @@
     "3DFilename": "CornRaw-529258958-Provider.png",
     "2DFilename": "2D_CornRaw-529258958-Provider.png",
     "ItemDescription": "Corn",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Counter--1248669347.png",
@@ -762,7 +846,8 @@
     "3DFilename": "Counter--1248669347.png",
     "2DFilename": "2D_Counter--1248669347.png",
     "ItemDescription": "Counter",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Counter--996680732.png",
@@ -771,7 +856,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CrabRaw--1452580334-Provider.png",
@@ -780,7 +866,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Cranberries-1474921248-Provider.png",
@@ -789,7 +876,8 @@
     "3DFilename": "Cranberries-1474921248-Provider.png",
     "2DFilename": "2D_Cranberries-1474921248-Provider.png",
     "ItemDescription": "Cranberries",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Cranberry-735786885.png",
@@ -798,7 +886,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CupcakeStand-143484231.png",
@@ -807,7 +896,8 @@
     "3DFilename": "CupcakeStand-143484231.png",
     "2DFilename": "2D_CupcakeStand-143484231.png",
     "ItemDescription": "Cupcake Stand",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CupcakeTray--315287689.png",
@@ -816,7 +906,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CupcakeTray-723989167-Provider.png",
@@ -825,7 +916,8 @@
     "3DFilename": "CupcakeTray-723989167-Provider.png",
     "2DFilename": "2D_CupcakeTray-723989167-Provider.png",
     "ItemDescription": "Cupcake Tray",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "CupcakeTrayBurned--1427780146-Provider.png",
@@ -834,7 +926,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DangerHob--1448690107.png",
@@ -843,7 +936,8 @@
     "3DFilename": "DangerHob--1448690107.png",
     "2DFilename": "2D_DangerHob--1448690107.png",
     "ItemDescription": "Danger Hob",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Dartboard--1941237931.png",
@@ -852,7 +946,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DiningTable-209074140.png",
@@ -861,7 +956,8 @@
     "3DFilename": "DiningTable-209074140.png",
     "2DFilename": "2D_DiningTable-209074140.png",
     "ItemDescription": "Dining Table",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DirtyFloorSign--2108088224.png",
@@ -870,7 +966,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DiscountDesk--272437832.png",
@@ -879,7 +976,8 @@
     "3DFilename": "DiscountDesk--272437832.png",
     "2DFilename": "2D_DiscountDesk--272437832.png",
     "ItemDescription": "Discount Desk",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DiscountDesk-1586911545.png",
@@ -888,7 +986,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DishRack-1653145961.png",
@@ -897,7 +996,8 @@
     "3DFilename": "DishRack-1653145961.png",
     "2DFilename": "2D_DishRack-1653145961.png",
     "ItemDescription": "Dish Rack",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DishRack-434150763.png",
@@ -906,7 +1006,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DishSourceCabinet-509800268.png",
@@ -915,7 +1016,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DishWasher--823922901.png",
@@ -924,7 +1026,8 @@
     "3DFilename": "DishWasher--823922901.png",
     "2DFilename": "2D_DishWasher--823922901.png",
     "ItemDescription": "Dish Washer",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DisplayStand--1813414500.png",
@@ -933,7 +1036,8 @@
     "3DFilename": "DisplayStand--1813414500.png",
     "2DFilename": "2D_DisplayStand--1813414500.png",
     "ItemDescription": "Display Stand",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DoughnutPlain--408336479-Provider.png",
@@ -942,7 +1046,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DoughnutTray--329134625-Provider.png",
@@ -951,7 +1056,8 @@
     "3DFilename": "DoughnutTray--329134625-Provider.png",
     "2DFilename": "2D_DoughnutTray--329134625-Provider.png",
     "ItemDescription": "Doughnut Tray",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DoughnutTray-2136474391.png",
@@ -960,7 +1066,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DoughnutTrayBurned--1176063723-Provider.png",
@@ -969,7 +1076,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "DrinkTap--1506601664.png",
@@ -978,7 +1086,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Dumbwaiter-532998682.png",
@@ -987,7 +1096,8 @@
     "3DFilename": "Dumbwaiter-532998682.png",
     "2DFilename": "2D_Dumbwaiter-532998682.png",
     "ItemDescription": "Dumbwaiter",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Egg-1755299639-Provider.png",
@@ -996,7 +1106,8 @@
     "3DFilename": "Egg-1755299639-Provider.png",
     "2DFilename": "2D_Egg-1755299639-Provider.png",
     "ItemDescription": "Eggs",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Eggs-961148621.png",
@@ -1005,7 +1116,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "EnchantedBroom--1992638820.png",
@@ -1014,34 +1126,38 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "EnchantedBroom--877630314.png",
-    "Keep": false,
+    "Keep": true,
     "ID": 113,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "3DFilename": "EnchantedBroom--877630314.png",
+    "2DFilename": "2D_EnchantedBroom--877630314.png",
+    "ItemDescription": "Enchanted Broom",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "EnchantedPlates-540526865.png",
-    "Keep": false,
+    "Keep": true,
     "ID": 114,
-    "3DFilename": "",
-    "2DFilename": "",
+    "3DFilename": "EnchantedPlates-540526865.png",
+    "2DFilename": "2D_EnchantedPlates-540526865.png",
     "ItemDescription": "Enchanted Plates",
-    "Reason": "Item is not needed in planner"
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "EnchantingDesk--292467039.png",
-    "Keep": false,
+    "Keep": true,
     "ID": 115,
-    "3DFilename": "",
-    "2DFilename": "",
+    "3DFilename": "EnchantingDesk--292467039.png",
+    "2DFilename": "2D_EnchantingDesk--292467039.png",
     "ItemDescription": "Enchanting Desk",
-    "Reason": "Item is not needed in planner"
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "ExpandedBin--1855909480.png",
@@ -1050,7 +1166,8 @@
     "3DFilename": "ExpandedBin--1855909480.png",
     "2DFilename": "2D_ExpandedBin--1855909480.png",
     "ItemDescription": "Expanded Bin",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ExtraCakeStand-41735497-Provider.png",
@@ -1059,7 +1176,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ExtraKetchup--965827229.png",
@@ -1068,7 +1186,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ExtraLife--1817838704.png",
@@ -1077,7 +1196,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ExtraMustard--117356585.png",
@@ -1086,7 +1206,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ExtraSoySauce--471813067.png",
@@ -1095,7 +1216,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FairyLights--4737636.png",
@@ -1104,7 +1226,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FastFoodTerminal-136867583.png",
@@ -1113,7 +1236,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FastMop--1495393751.png",
@@ -1122,7 +1246,8 @@
     "3DFilename": "FastMop--1495393751.png",
     "2DFilename": "2D_FastMop--1495393751.png",
     "ItemDescription": "Fast Mop",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FireExtinguisher-1286554202.png",
@@ -1131,7 +1256,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Fireplace--441525746.png",
@@ -1140,7 +1266,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Fish--1735137431.png",
@@ -1149,7 +1276,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Fish--609358791.png",
@@ -1158,7 +1286,8 @@
     "3DFilename": "Fish--609358791.png",
     "2DFilename": "2D_Fish--609358791.png",
     "ItemDescription": "Fish",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FishBlueRaw-1592653566-Provider.png",
@@ -1167,7 +1296,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FishFilletRaw--2145487392-Provider.png",
@@ -1176,7 +1306,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FishPinkRaw-1244918234-Provider.png",
@@ -1185,7 +1316,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FishSpecialExtraChoice1-107399665-Provider.png",
@@ -1194,7 +1326,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FishSpecialExtraChoice2-2113587247-Provider.png",
@@ -1203,7 +1336,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FishSpinyBones--1724190260-Provider.png",
@@ -1212,7 +1346,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FishSpinyCooked-1247388187-Provider.png",
@@ -1221,7 +1356,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FishSpinyDeboned--890521693-Provider.png",
@@ -1230,7 +1366,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FishSpinyRaw--2047884387-Provider.png",
@@ -1239,7 +1376,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FloorBuffer-1351951642.png",
@@ -1248,7 +1386,8 @@
     "3DFilename": "FloorBuffer-1351951642.png",
     "2DFilename": "2D_FloorBuffer-1351951642.png",
     "ItemDescription": "Floor Buffer",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Flour-1378842682-Provider.png",
@@ -1257,7 +1396,8 @@
     "3DFilename": "Flour-1378842682-Provider.png",
     "2DFilename": "2D_Flour-1378842682-Provider.png",
     "ItemDescription": "Flour",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Flour-925796718.png",
@@ -1266,7 +1406,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FlowerArch--471643137.png",
@@ -1275,7 +1416,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FlowerPot-221442949.png",
@@ -1284,7 +1426,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Freezer--1857890774.png",
@@ -1293,7 +1436,8 @@
     "3DFilename": "Freezer--1857890774.png",
     "2DFilename": "2D_Freezer--1857890774.png",
     "ItemDescription": "Freezer",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FriendsPoster-142298503.png",
@@ -1302,7 +1446,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "FrozenPrepStation--759808000.png",
@@ -1311,7 +1456,8 @@
     "3DFilename": "FrozenPrepStation--759808000.png",
     "2DFilename": "2D_FrozenPrepStation--759808000.png",
     "ItemDescription": "Frozen Prep Station",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "GasLimiter-1921027834.png",
@@ -1320,7 +1466,8 @@
     "3DFilename": "GasLimiter-1921027834.png",
     "2DFilename": "2D_GasLimiter-1921027834.png",
     "ItemDescription": "Gas Limiter",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "GasOverride--770041014.png",
@@ -1329,16 +1476,18 @@
     "3DFilename": "GasOverride--770041014.png",
     "2DFilename": "2D_GasOverride--770041014.png",
     "ItemDescription": "Gas Override",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
-    "OriginalFileName": "GhostScrubber--560953757.png",
-    "Keep": false,
+    "OriginalFileName": "GhostScrubber--560953757-combined.png",
+    "Keep": true,
     "ID": 148,
-    "3DFilename": "",
-    "2DFilename": "",
+    "3DFilename": "GhostScrubber--560953757-combined.png",
+    "2DFilename": "2D_GhostScrubber--560953757-combined.png",
     "ItemDescription": "Ghost Scrubber",
-    "Reason": "Item is not needed in planner"
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "GhostStatue--1318523640.png",
@@ -1347,34 +1496,38 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "magic"
   },
   {
-    "OriginalFileName": "GhostlyClipboard--1946127856.png",
-    "Keep": false,
+    "OriginalFileName": "GhostlyClipboard--1946127856-combined.png",
+    "Keep": true,
     "ID": 150,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "3DFilename": "GhostlyClipboard--1946127856-combined.png",
+    "2DFilename": "2D_GhostlyClipboard--1946127856-combined.png",
+    "ItemDescription": "Ghostly Clipboard",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
-    "OriginalFileName": "GhostlyKnife-1313278365.png",
-    "Keep": false,
+    "OriginalFileName": "GhostlyKnife-1313278365-combined.png",
+    "Keep": true,
     "ID": 151,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "3DFilename": "GhostlyKnife-1313278365-combined.png",
+    "2DFilename": "2D_GhostlyKnife-1313278365-combined.png",
+    "ItemDescription": "Ghostly Knife",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
-    "OriginalFileName": "GhostlyRollingPin-689268680.png",
-    "Keep": false,
+    "OriginalFileName": "GhostlyRollingPin-689268680-combined.png",
+    "Keep": true,
     "ID": 152,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "3DFilename": "GhostlyRollingPin-689268680-combined.png",
+    "2DFilename": "2D_GhostlyRollingPin-689268680-combined.png",
+    "ItemDescription": "Ghostly Rolling Pin",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "Grabber--1029710921.png",
@@ -1383,7 +1536,8 @@
     "3DFilename": "Grabber--1029710921.png",
     "2DFilename": "2D_Grabber--1029710921.png",
     "ItemDescription": "Grabber",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "GrabberRotatingL--331651461.png",
@@ -1392,7 +1546,8 @@
     "3DFilename": "GrabberRotatingL--331651461.png",
     "2DFilename": "2D_GrabberRotatingL--331651461.png",
     "ItemDescription": "Grabber - Rotating Left",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "GrabberRotatingR--331651461.png",
@@ -1401,7 +1556,8 @@
     "3DFilename": "GrabberRotatingR--331651461.png",
     "2DFilename": "2D_GrabberRotatingR--331651461.png",
     "ItemDescription": "Grabber - Rotating Right",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "GrabberRotatingS--331651461.png",
@@ -1410,7 +1566,8 @@
     "3DFilename": "GrabberRotatingS--331651461.png",
     "2DFilename": "2D_GrabberRotatingS--331651461.png",
     "ItemDescription": "Grabber - Rotating",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "GumballMachine-1830133512.png",
@@ -1419,7 +1576,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Ham--1673135814.png",
@@ -1428,7 +1586,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "HamSliced-164425076-Provider.png",
@@ -1437,7 +1596,8 @@
     "3DFilename": "HamSliced-164425076-Provider.png",
     "2DFilename": "2D_HamSliced-164425076-Provider.png",
     "ItemDescription": "Ham",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "HeartBalloons--2001861712.png",
@@ -1446,7 +1606,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "HeartBunting--1314508999.png",
@@ -1455,7 +1616,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "HeatedMixer-505496455.png",
@@ -1464,7 +1626,8 @@
     "3DFilename": "HeatedMixer-505496455.png",
     "2DFilename": "2D_HeatedMixer-505496455.png",
     "ItemDescription": "Heated Mixer",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Hob-862493270.png",
@@ -1473,7 +1636,8 @@
     "3DFilename": "Hob-862493270.png",
     "2DFilename": "2D_Hob-862493270.png",
     "ItemDescription": "Hob",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "HostingStand--63118559.png",
@@ -1482,7 +1646,8 @@
     "3DFilename": "HostingStand--63118559.png",
     "2DFilename": "2D_HostingStand--63118559.png",
     "ItemDescription": "Hosting Stand",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "HotDogs-1799769627.png",
@@ -1491,7 +1656,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "HotdogBun-756326364-Provider.png",
@@ -1500,7 +1666,8 @@
     "3DFilename": "HotdogBun-756326364-Provider.png",
     "2DFilename": "2D_HotdogBun-756326364-Provider.png",
     "ItemDescription": "Hot dog bun",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "HotdogRaw-1702717896-Provider.png",
@@ -1509,7 +1676,8 @@
     "3DFilename": "HotdogRaw-1702717896-Provider.png",
     "2DFilename": "2D_HotdogRaw-1702717896-Provider.png",
     "ItemDescription": "Hot Dogs",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Hotdogbun--1132411297.png",
@@ -1518,7 +1686,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Ice--442824475-Provider.png",
@@ -1527,7 +1696,8 @@
     "3DFilename": "Ice--442824475-Provider.png",
     "2DFilename": "2D_Ice--442824475-Provider.png",
     "ItemDescription": "Ice Dispenser",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "IceCream--1533430406.png",
@@ -1536,7 +1706,8 @@
     "3DFilename": "IceCream--1533430406.png",
     "2DFilename": "2D_IceCream--1533430406.png",
     "ItemDescription": "Ice Cream",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "IceCreamChocolate-502129042-Provider.png",
@@ -1545,7 +1716,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "IceCreamStrawberry-186895094-Provider.png",
@@ -1554,7 +1726,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "IceCreamVanilla-1570518340-Provider.png",
@@ -1563,7 +1736,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "IceDispenser-801015432.png",
@@ -1572,7 +1746,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "IllusionWall--1780646993.png",
@@ -1581,7 +1756,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "Indoorfountain-1220439284.png",
@@ -1590,16 +1766,18 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "InstantWand-1150470926.png",
-    "Keep": false,
+    "Keep": true,
     "ID": 175,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "Wand",
-    "Reason": "Item is not needed in planner"
+    "3DFilename": "InstantWand-1150470926.png",
+    "2DFilename": "2D_InstantWand-1150470926.png",
+    "ItemDescription": "Instand Wand",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "KitchenFloorProtector-1765889988.png",
@@ -1608,7 +1786,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "KneadingCounter-1365340297.png",
@@ -1617,7 +1796,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Lantern--2084684446.png",
@@ -1626,7 +1806,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "LasagnePastaSheet-1521319349-Provider.png",
@@ -1635,7 +1816,8 @@
     "3DFilename": "LasagnePastaSheet-1521319349-Provider.png",
     "2DFilename": "2D_LasagnePastaSheet-1521319349-Provider.png",
     "ItemDescription": "Lasagne Pasta Sheets",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "LasagneTray--1339944542.png",
@@ -1644,7 +1826,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "LasagneTray--2080052245-Provider.png",
@@ -1653,7 +1836,8 @@
     "3DFilename": "LasagneTray--2080052245-Provider.png",
     "2DFilename": "2D_LasagneTray--2080052245-Provider.png",
     "ItemDescription": "Lasagne Tray",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "LastingMop-1776760557.png",
@@ -1662,7 +1846,8 @@
     "3DFilename": "LastingMop-1776760557.png",
     "2DFilename": "2D_LastingMop-1776760557.png",
     "ItemDescription": "Lasting Mop",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "LeftoverBags--940358190.png",
@@ -1671,7 +1856,8 @@
     "3DFilename": "LeftoverBags--940358190.png",
     "2DFilename": "2D_LeftoverBags--940358190.png",
     "ItemDescription": "Leftover Bags",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Lemon-2094624730-Provider.png",
@@ -1680,7 +1866,8 @@
     "3DFilename": "Lemon-2094624730-Provider.png",
     "2DFilename": "2D_Lemon-2094624730-Provider.png",
     "ItemDescription": "Lemons",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "LemonTree-1470180731.png",
@@ -1689,7 +1876,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Lettuce--65594226-Provider.png",
@@ -1698,7 +1886,8 @@
     "3DFilename": "Lettuce--65594226-Provider.png",
     "2DFilename": "2D_Lettuce--65594226-Provider.png",
     "ItemDescription": "Lettuce",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Lettuce-1193867305.png",
@@ -1707,16 +1896,18 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "LevitationLine-2044081363.png",
-    "Keep": false,
+    "Keep": true,
     "ID": 188,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "3DFilename": "LevitationLine-2044081363.png",
+    "2DFilename": "2D_LevitationLine-2044081363.png",
+    "ItemDescription": "Levitation Line",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "LevitationSpot--1298525547.png",
@@ -1725,25 +1916,28 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "LevitationStation-119166501.png",
-    "Keep": false,
+    "Keep": true,
     "ID": 190,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "3DFilename": "LevitationStation-119166501.png",
+    "2DFilename": "2D_LevitationStation-119166501.png",
+    "ItemDescription": "Levitation Station",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "MagicAppleTree-267288096.png",
-    "Keep": false,
+    "Keep": true,
     "ID": 191,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "3DFilename": "MagicAppleTree-267288096.png",
+    "2DFilename": "2D_MagicAppleTree-267288096.png",
+    "ItemDescription": "Magic Apple Tree",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "MagicMirror-744482650.png",
@@ -1752,16 +1946,18 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "MagicSpring--1696198539.png",
     "Keep": false,
     "ID": 193,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "3DFilename": "MagicSpring--1696198539.png",
+    "2DFilename": "2D_MagicSpring--1696198539.png",
+    "ItemDescription": "Magic Spring",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "MandarinRaw-1291848678-Provider.png",
@@ -1770,7 +1966,8 @@
     "3DFilename": "MandarinRaw-1291848678-Provider.png",
     "2DFilename": "2D_MandarinRaw-1291848678-Provider.png",
     "ItemDescription": "Mandarins",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Mandarins--1210117767.png",
@@ -1779,7 +1976,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Meat--484165118.png",
@@ -1788,7 +1986,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Meat-1306214641-Provider.png",
@@ -1797,7 +1996,8 @@
     "3DFilename": "Meat-1306214641-Provider.png",
     "2DFilename": "2D_Meat-1306214641-Provider.png",
     "ItemDescription": "Meat",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "MeatBoned--315069952-Provider.png",
@@ -1806,7 +2006,8 @@
     "3DFilename": "MeatBoned--315069952-Provider.png",
     "2DFilename": "2D_MeatBoned--315069952-Provider.png",
     "ItemDescription": "Bone-in Meat",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "MeatThick--45632521-Provider.png",
@@ -1815,7 +2016,8 @@
     "3DFilename": "MeatThick--45632521-Provider.png",
     "2DFilename": "2D_MeatThick--45632521-Provider.png",
     "ItemDescription": "Thick Cut Meat",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "MeatThin-1256038534-Provider.png",
@@ -1824,7 +2026,8 @@
     "3DFilename": "MeatThin-1256038534-Provider.png",
     "2DFilename": "2D_MeatThin-1256038534-Provider.png",
     "ItemDescription": "Thin Cut Meat",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "MetalTable--203679687.png",
@@ -1833,7 +2036,8 @@
     "3DFilename": "MetalTable--203679687.png",
     "2DFilename": "2D_MetalTable--203679687.png",
     "ItemDescription": "Metal Table",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Microwave--1311702572.png",
@@ -1842,7 +2046,8 @@
     "3DFilename": "Microwave--1311702572.png",
     "2DFilename": "2D_Microwave--1311702572.png",
     "ItemDescription": "Microwave",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Milk-120342736.png",
@@ -1851,7 +2056,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Milk-329108931-Provider.png",
@@ -1860,7 +2066,8 @@
     "3DFilename": "Milk-329108931-Provider.png",
     "2DFilename": "2D_Milk-329108931-Provider.png",
     "ItemDescription": "Milk",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "MilkFrothedIngredient--1313420767-Provider.png",
@@ -1869,7 +2076,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "MilkSteamer--557736569.png",
@@ -1878,7 +2086,8 @@
     "3DFilename": "MilkSteamer--557736569.png",
     "2DFilename": "2D_MilkSteamer--557736569.png",
     "ItemDescription": "Milk Steamer",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Mince--1541798751.png",
@@ -1887,7 +2096,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Mince--2047874552-Provider.png",
@@ -1896,7 +2106,8 @@
     "3DFilename": "Mince--2047874552-Provider.png",
     "2DFilename": "2D_Mince--2047874552-Provider.png",
     "ItemDescription": "Mince",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Mixer-1329097317.png",
@@ -1905,7 +2116,8 @@
     "3DFilename": "Mixer-1329097317.png",
     "2DFilename": "2D_Mixer-1329097317.png",
     "ItemDescription": "Mixer",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "MixingBowlEmpty-1626110274-Provider.png",
@@ -1914,7 +2126,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "MixingBowlMixed-906595973-Provider.png",
@@ -1923,7 +2136,8 @@
     "3DFilename": "MixingBowlMixed-906595973-Provider.png",
     "2DFilename": "2D_MixingBowlMixed-906595973-Provider.png",
     "ItemDescription": "Mixing Bowls",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "MixingBowlUnmixed-52652731-Provider.png",
@@ -1932,7 +2146,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "MixingBowls--217313684.png",
@@ -1941,7 +2156,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Mop--1993346570.png",
@@ -1950,7 +2166,8 @@
     "3DFilename": "Mop--1993346570.png",
     "2DFilename": "2D_Mop--1993346570.png",
     "ItemDescription": "Mop",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Mushroom-313161428-Provider.png",
@@ -1959,7 +2176,8 @@
     "3DFilename": "Mushroom-313161428-Provider.png",
     "2DFilename": "2D_Mushroom-313161428-Provider.png",
     "ItemDescription": "Mushrooms",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Mushrooms--1097889139.png",
@@ -1968,7 +2186,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Napkins-1528688658.png",
@@ -1977,7 +2196,8 @@
     "3DFilename": "Napkins-1528688658.png",
     "2DFilename": "2D_Napkins-1528688658.png",
     "ItemDescription": "Napkins",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "NeonSign-1724963734.png",
@@ -1986,7 +2206,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "NeonSign-371247235.png",
@@ -1995,7 +2216,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "NeonSign-785615801.png",
@@ -2004,7 +2226,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Nuts-1834063794.png",
@@ -2013,7 +2236,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "NutsIngredient-609827370-Provider.png",
@@ -2022,7 +2246,8 @@
     "3DFilename": "NutsIngredient-609827370-Provider.png",
     "2DFilename": "2D_NutsIngredient-609827370-Provider.png",
     "ItemDescription": "Nuts",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Oil--1900989960-Provider.png",
@@ -2031,7 +2256,8 @@
     "3DFilename": "Oil--1900989960-Provider.png",
     "2DFilename": "2D_Oil--1900989960-Provider.png",
     "ItemDescription": "Oil",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Oil--1963699221.png",
@@ -2040,7 +2266,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Olive-892659864-Provider.png",
@@ -2049,7 +2276,8 @@
     "3DFilename": "Olive-892659864-Provider.png",
     "2DFilename": "2D_Olive-892659864-Provider.png",
     "ItemDescription": "Olives",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Olives--1434800013.png",
@@ -2058,7 +2286,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Onion--201067776-Provider.png",
@@ -2067,7 +2296,8 @@
     "3DFilename": "Onion--201067776-Provider.png",
     "2DFilename": "2D_Onion--201067776-Provider.png",
     "ItemDescription": "Onions",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Onion--2042103798.png",
@@ -2076,7 +2306,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "OrderingTerminal--1610332021.png",
@@ -2085,7 +2316,8 @@
     "3DFilename": "OrderingTerminal--1610332021.png",
     "2DFilename": "2D_OrderingTerminal--1610332021.png",
     "ItemDescription": "Ordering Terminal",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Oven--1068749602.png",
@@ -2094,7 +2326,8 @@
     "3DFilename": "Oven--1068749602.png",
     "2DFilename": "2D_Oven--1068749602.png",
     "ItemDescription": "Oven",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Painting--1486785449.png",
@@ -2103,7 +2336,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "PastaSheet--2077197906.png",
@@ -2112,7 +2346,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Patties-385684499.png",
@@ -2121,7 +2356,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Piano--326328571.png",
@@ -2130,7 +2366,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Pickle--74499940.png",
@@ -2139,7 +2376,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Pickle-1384381531-Provider.png",
@@ -2148,7 +2386,8 @@
     "3DFilename": "Pickle-1384381531-Provider.png",
     "2DFilename": "2D_Pickle-1384381531-Provider.png",
     "ItemDescription": "Pickle",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Plant-756364626.png",
@@ -2157,7 +2396,8 @@
     "3DFilename": "Plant-756364626.png",
     "2DFilename": "2D_Plant-756364626.png",
     "ItemDescription": "Plant",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Plate-793377380-Provider.png",
@@ -2166,7 +2406,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Plates-1313469794.png",
@@ -2175,7 +2416,8 @@
     "3DFilename": "Plates-1313469794.png",
     "2DFilename": "2D_Plates-1313469794.png",
     "ItemDescription": "Plates",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Portioner--1462602185.png",
@@ -2184,7 +2426,8 @@
     "3DFilename": "Portioner--1462602185.png",
     "2DFilename": "2D_Portioner--1462602185.png",
     "ItemDescription": "Portioner",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Pot--486398094-Provider.png",
@@ -2193,7 +2436,8 @@
     "3DFilename": "Pot--486398094-Provider.png",
     "2DFilename": "2D_Pot--486398094-Provider.png",
     "ItemDescription": "Pot Stack",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "PotStack--957949759.png",
@@ -2202,7 +2446,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Potato--1972529263-Provider.png",
@@ -2211,7 +2456,8 @@
     "3DFilename": "Potato--1972529263-Provider.png",
     "2DFilename": "2D_Potato--1972529263-Provider.png",
     "ItemDescription": "Potatoes",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Potato-44541785.png",
@@ -2220,7 +2466,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "PouchofHolding-29164230.png",
@@ -2229,7 +2476,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "PowerSink-1467371088.png",
@@ -2238,7 +2486,8 @@
     "3DFilename": "PowerSink-1467371088.png",
     "2DFilename": "2D_PowerSink-1467371088.png",
     "ItemDescription": "Power Sink",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "PreciousFlower--1180623135.png",
@@ -2247,7 +2496,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "PrepStation-1656358740.png",
@@ -2256,7 +2506,8 @@
     "3DFilename": "PrepStation-1656358740.png",
     "2DFilename": "2D_PrepStation-1656358740.png",
     "ItemDescription": "Prep Station",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "PresentStack--1889835507.png",
@@ -2265,16 +2516,18 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "PreservingStation-423254987.png",
-    "Keep": false,
+    "Keep": true,
     "ID": 250,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "3DFilename": "PreservingStation-423254987.png",
+    "2DFilename": "2D_PreservingStation-423254987.png",
+    "ItemDescription": "Preseerving Station",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "Pumpkin--1055654549.png",
@@ -2283,7 +2536,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Pumpkin--165143951-Provider.png",
@@ -2292,7 +2546,8 @@
     "3DFilename": "Pumpkin--165143951-Provider.png",
     "2DFilename": "2D_Pumpkin--165143951-Provider.png",
     "ItemDescription": "Pumpkins",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Pumpkin--621580281.png",
@@ -2301,7 +2556,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "PumpkinStack--119593913.png",
@@ -2310,7 +2566,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "RabbitPoster-555321421.png",
@@ -2319,7 +2576,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "RapidMixer--1440053805.png",
@@ -2328,7 +2586,8 @@
     "3DFilename": "RapidMixer--1440053805.png",
     "2DFilename": "2D_RapidMixer--1440053805.png",
     "ItemDescription": "Rapid Mixer",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ResearchDesk-1139247360.png",
@@ -2337,7 +2596,8 @@
     "3DFilename": "ResearchDesk-1139247360.png",
     "2DFilename": "2D_ResearchDesk-1139247360.png",
     "ItemDescription": "Research Desk",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Rice--1201769154.png",
@@ -2346,7 +2606,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Rice-1271508828-Provider.png",
@@ -2355,7 +2616,8 @@
     "3DFilename": "Rice-1271508828-Provider.png",
     "2DFilename": "2D_Rice-1271508828-Provider.png",
     "ItemDescription": "Rice",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "RobotBuffer--1723340146.png",
@@ -2364,7 +2626,8 @@
     "3DFilename": "RobotBuffer--1723340146.png",
     "2DFilename": "2D_RobotBuffer--1723340146.png",
     "ItemDescription": "Robot Buffer",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "RobotBuffer--751458770.png",
@@ -2373,7 +2636,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "RobotMop--2091039911.png",
@@ -2382,7 +2646,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "RobotMop--2147057861.png",
@@ -2391,7 +2656,8 @@
     "3DFilename": "RobotMop--2147057861.png",
     "2DFilename": "2D_RobotMop--2147057861.png",
     "ItemDescription": "Robot Mop",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "RollingPin-1738351766.png",
@@ -2400,7 +2666,8 @@
     "3DFilename": "RollingPin-1738351766.png",
     "2DFilename": "2D_RollingPin-1738351766.png",
     "ItemDescription": "Rolling Pin",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Rug--648349801.png",
@@ -2409,7 +2676,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Rug-2076966627.png",
@@ -2418,7 +2686,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Rug-591400026.png",
@@ -2427,7 +2696,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SafetyHob--349733673.png",
@@ -2436,7 +2706,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SafetyHob-1266458729.png",
@@ -2445,7 +2716,8 @@
     "3DFilename": "SafetyHob-1266458729.png",
     "2DFilename": "2D_SafetyHob-1266458729.png",
     "ItemDescription": "Safety Hob",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SafetyHob-1836107598.png",
@@ -2454,7 +2726,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SafetyHob-369884364.png",
@@ -2463,7 +2736,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ScrubbingBrush-624465484.png",
@@ -2472,7 +2746,8 @@
     "3DFilename": "ScrubbingBrush-624465484.png",
     "2DFilename": "2D_ScrubbingBrush-624465484.png",
     "ItemDescription": "Scrubbing Brush",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Seaweed-1297982178-Provider.png",
@@ -2481,7 +2756,8 @@
     "3DFilename": "Seaweed-1297982178-Provider.png",
     "2DFilename": "2D_Seaweed-1297982178-Provider.png",
     "ItemDescription": "Seaweed",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Seaweed-595306349.png",
@@ -2490,7 +2766,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ServiceCounter-638034870.png",
@@ -2499,7 +2776,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ServingBoard--626784042-Provider.png",
@@ -2508,7 +2786,8 @@
     "3DFilename": "ServingBoard--626784042-Provider.png",
     "2DFilename": "2D_ServingBoard--626784042-Provider.png",
     "ItemDescription": "Serving Boards",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "ServingBoards-235423916.png",
@@ -2517,7 +2796,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SharpCutlery-2080633647.png",
@@ -2526,7 +2806,8 @@
     "3DFilename": "SharpCutlery-2080633647.png",
     "2DFilename": "2D_SharpCutlery-2080633647.png",
     "ItemDescription": "Sharp Cutlery",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SharpKnife-2023704259.png",
@@ -2535,7 +2816,8 @@
     "3DFilename": "SharpKnife-2023704259.png",
     "2DFilename": "2D_SharpKnife-2023704259.png",
     "ItemDescription": "Sharp Knife",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Sink-1083874952.png",
@@ -2544,7 +2826,8 @@
     "3DFilename": "Sink-1083874952.png",
     "2DFilename": "2D_Sink-1083874952.png",
     "ItemDescription": "Sink",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SmartGrabber--1238047163.png",
@@ -2553,7 +2836,8 @@
     "3DFilename": "SmartGrabber--1238047163.png",
     "2DFilename": "2D_SmartGrabber--1238047163.png",
     "ItemDescription": "Smart Grabber",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SoakingSink-1860904347.png",
@@ -2562,7 +2846,8 @@
     "3DFilename": "SoakingSink-1860904347.png",
     "2DFilename": "2D_SoakingSink-1860904347.png",
     "ItemDescription": "Soaking Sink",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Spaghetti--182748008.png",
@@ -2571,7 +2856,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Spaghetti--823534126-Provider.png",
@@ -2580,7 +2866,8 @@
     "3DFilename": "Spaghetti--823534126-Provider.png",
     "2DFilename": "2D_Spaghetti--823534126-Provider.png",
     "ItemDescription": "Spaghetti",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SpecialsMenu-446555792.png",
@@ -2589,7 +2876,8 @@
     "3DFilename": "SpecialsMenu-446555792.png",
     "2DFilename": "2D_SpecialsMenu-446555792.png",
     "ItemDescription": "Specials Menu",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SpecialsTerminal--246383526.png",
@@ -2598,7 +2886,8 @@
     "3DFilename": "SpecialsTerminal--246383526.png",
     "2DFilename": "2D_SpecialsTerminal--246383526.png",
     "ItemDescription": "Specials Terminal",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "StarterBin-481495292.png",
@@ -2607,7 +2896,8 @@
     "3DFilename": "StarterBin-481495292.png",
     "2DFilename": "2D_StarterBin-481495292.png",
     "ItemDescription": "Starter Bin",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "StarterHob-1154757341.png",
@@ -2616,7 +2906,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "StarterPlates-380220741.png",
@@ -2625,7 +2916,8 @@
     "3DFilename": "StarterPlates-380220741.png",
     "2DFilename": "2D_StarterPlates-380220741.png",
     "ItemDescription": "Starter Plates",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "StarterSink--266993023.png",
@@ -2634,7 +2926,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Statue--972644436.png",
@@ -2643,7 +2936,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "StockPicture--1472471467.png",
@@ -2652,7 +2946,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Strawberries-1872560572.png",
@@ -2661,7 +2956,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Strawberry-578808284-Provider.png",
@@ -2670,7 +2966,8 @@
     "3DFilename": "Strawberry-578808284-Provider.png",
     "2DFilename": "2D_Strawberry-578808284-Provider.png",
     "ItemDescription": "Strawberries",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "StrawberrySyrup-483880621.png",
@@ -2679,7 +2976,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "Strawberry Syrup",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Sugar--2133205155.png",
@@ -2688,7 +2986,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Sugar--849164789-Provider.png",
@@ -2697,7 +2996,8 @@
     "3DFilename": "Sugar--849164789-Provider.png",
     "2DFilename": "2D_Sugar--849164789-Provider.png",
     "ItemDescription": "Sugar",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SundaeGlass-1116040881-Provider.png",
@@ -2706,7 +3006,8 @@
     "3DFilename": "SundaeGlass-1116040881-Provider.png",
     "2DFilename": "2D_SundaeGlass-1116040881-Provider.png",
     "ItemDescription": "Sundae Glasses",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SundaeGlasses-602693523.png",
@@ -2715,7 +3016,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SundaeSyrupChocolate-2105393112-Provider.png",
@@ -2724,7 +3026,8 @@
     "3DFilename": "SundaeSyrupChocolate-2105393112-Provider.png",
     "2DFilename": "2D_SundaeSyrupChocolate-2105393112-Provider.png",
     "ItemDescription": "Chocolate Syrup",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "SundaeSyrupStrawberry--764053970-Provider.png",
@@ -2733,7 +3036,8 @@
     "3DFilename": "SundaeSyrupStrawberry--764053970-Provider.png",
     "2DFilename": "2D_SundaeSyrupStrawberry--764053970-Provider.png",
     "ItemDescription": "Strawberry Syrup",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Supplies--1013770159.png",
@@ -2742,7 +3046,8 @@
     "3DFilename": "Supplies--1013770159.png",
     "2DFilename": "2D_Supplies--1013770159.png",
     "ItemDescription": "Supplies",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TableFancyCloth--2019409936.png",
@@ -2751,16 +3056,18 @@
     "3DFilename": "TableFancyCloth--2019409936.png",
     "2DFilename": "2D_TableFancyCloth--2019409936.png",
     "ItemDescription": "Table - Fancy Cloth",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TableSharingCauldron--1688921160.png",
-    "Keep": false,
+    "Keep": true,
     "ID": 304,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "3DFilename": "TableSharingCauldron--1688921160.png",
+    "2DFilename": "2D_TableSharingCauldron--1688921160.png",
+    "ItemDescription": "Table Sharing Cauldron",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "TableSimpleCloth--34659638.png",
@@ -2769,16 +3076,18 @@
     "3DFilename": "TableSimpleCloth--34659638.png",
     "2DFilename": "2D_TableSimpleCloth--34659638.png",
     "ItemDescription": "Table - Simple Cloth",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TableStone-2000892639.png",
-    "Keep": false,
+    "Keep": true,
     "ID": 306,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "3DFilename": "TableStone-2000892639.png",
+    "2DFilename": "2D_TableStone-2000892639.png",
+    "ItemDescription": "Table - Stone",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "TacoTray--1190642520-Provider.png",
@@ -2787,7 +3096,8 @@
     "3DFilename": "TacoTray--1190642520-Provider.png",
     "2DFilename": "2D_TacoTray--1190642520-Provider.png",
     "ItemDescription": "Taco Trays",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TacoTrays-745886540.png",
@@ -2796,7 +3106,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TeaBag-574857689-Provider.png",
@@ -2805,7 +3116,8 @@
     "3DFilename": "TeaBag-574857689-Provider.png",
     "2DFilename": "2D_TeaBag-574857689-Provider.png",
     "ItemDescription": "Tea Bags",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TeaCup--1721929071-Provider.png",
@@ -2814,7 +3126,8 @@
     "3DFilename": "TeaCup--1721929071-Provider.png",
     "2DFilename": "2D_TeaCup--1721929071-Provider.png",
     "ItemDescription": "Tea Cups",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TeaPot-712770280-Provider.png",
@@ -2823,7 +3136,8 @@
     "3DFilename": "TeaPot-712770280-Provider.png",
     "2DFilename": "2D_TeaPot-712770280-Provider.png",
     "ItemDescription": "Tea Pots",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Teabags--1598460622.png",
@@ -2832,7 +3146,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Teacups-1377093570.png",
@@ -2841,7 +3156,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Teapots--762638188.png",
@@ -2850,7 +3166,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Teleporter-459840623.png",
@@ -2859,7 +3176,8 @@
     "3DFilename": "Teleporter-459840623.png",
     "2DFilename": "2D_Teleporter-459840623.png",
     "ItemDescription": "Teleporter",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TestCombineItem1-1453292775-Provider.png",
@@ -2868,7 +3186,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TestCombineItem2-1135389096-Provider.png",
@@ -2877,7 +3196,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TestNonCombineItem--587882643-Provider.png",
@@ -2886,7 +3206,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Thickcutmeat--1507801323.png",
@@ -2895,7 +3216,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Thincutmeat-1800865634.png",
@@ -2904,7 +3226,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TidyPlant--1339970600.png",
@@ -2913,7 +3236,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Tinsel--380823608.png",
@@ -2922,7 +3246,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Tomato--712909563.png",
@@ -2931,7 +3256,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Tomato-1242961771-Provider.png",
@@ -2940,7 +3266,8 @@
     "3DFilename": "Tomato-1242961771-Provider.png",
     "2DFilename": "2D_Tomato-1242961771-Provider.png",
     "ItemDescription": "Tomatoes",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Tortilla-111245472-Provider.png",
@@ -2949,7 +3276,8 @@
     "3DFilename": "Tortilla-111245472-Provider.png",
     "2DFilename": "2D_Tortilla-111245472-Provider.png",
     "ItemDescription": "Tortillas",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Tortillas--5840756.png",
@@ -2958,7 +3286,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Trainers-723626409.png",
@@ -2967,7 +3296,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TrayStand-1129858275.png",
@@ -2976,7 +3306,8 @@
     "3DFilename": "TrayStand-1129858275.png",
     "2DFilename": "2D_TrayStand-1129858275.png",
     "ItemDescription": "Tray Stand",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Turkey--1506824829.png",
@@ -2985,7 +3316,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "TurkeyIngredient--1831502471-Provider.png",
@@ -2994,7 +3326,8 @@
     "3DFilename": "TurkeyIngredient--1831502471-Provider.png",
     "2DFilename": "2D_TurkeyIngredient--1831502471-Provider.png",
     "ItemDescription": "Turkey",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "UpgradeKit--26827118.png",
@@ -3003,16 +3336,18 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "VanishingCircle-1492264331.png",
-    "Keep": false,
+    "Keep": true,
     "ID": 332,
-    "3DFilename": "",
-    "2DFilename": "",
-    "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "3DFilename": "VanishingCircle-1492264331.png",
+    "2DFilename": "2D_VanishingCircle-1492264331.png",
+    "ItemDescription": "Vanishing Circle",
+    "Reason": "",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "Vase-531866927.png",
@@ -3021,7 +3356,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Cosmetic effect only"
+    "Reason": "Cosmetic effect only",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "WallLight--1628995120.png",
@@ -3030,7 +3366,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "WashBasin--214126192.png",
@@ -3039,7 +3376,8 @@
     "3DFilename": "WashBasin--214126192.png",
     "2DFilename": "2D_WashBasin--214126192.png",
     "ItemDescription": "Wash Basin",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Water-1657174953-Provider.png",
@@ -3048,7 +3386,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Wellies-1796077718.png",
@@ -3057,7 +3396,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Wine--1353971407.png",
@@ -3066,7 +3406,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "WineBottle-1387195911-Provider.png",
@@ -3075,7 +3416,8 @@
     "3DFilename": "WineBottle-1387195911-Provider.png",
     "2DFilename": "2D_WineBottle-1387195911-Provider.png",
     "ItemDescription": "Wine",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "WitchShelf--379172217.png",
@@ -3084,7 +3426,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "magic"
   },
   {
     "OriginalFileName": "Wok--2135410839-Provider.png",
@@ -3093,7 +3436,8 @@
     "3DFilename": "Wok--2135410839-Provider.png",
     "2DFilename": "2D_Wok--2135410839-Provider.png",
     "ItemDescription": "Woks",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Woks-314862254.png",
@@ -3102,7 +3446,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Duplicates of others with same icon"
+    "Reason": "Duplicates of others with same icon",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "WorkBoots-230848637.png",
@@ -3111,7 +3456,8 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item is not needed in planner"
+    "Reason": "Item is not needed in planner",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Workstation--1573577293.png",
@@ -3120,7 +3466,8 @@
     "3DFilename": "Workstation--1573577293.png",
     "2DFilename": "2D_Workstation--1573577293.png",
     "ItemDescription": "Workstation",
-    "Reason": ""
+    "Reason": "",
+    "gametype": "base"
   },
   {
     "OriginalFileName": "Wreath--302306254.png",
@@ -3129,6 +3476,7 @@
     "3DFilename": "",
     "2DFilename": "",
     "ItemDescription": "",
-    "Reason": "Item does not take space on grid"
+    "Reason": "Item does not take space on grid",
+    "gametype": "base"
   }
 ]
