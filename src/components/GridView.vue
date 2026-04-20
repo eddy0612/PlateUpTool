@@ -171,7 +171,7 @@ export default {
 
     // --- Tab colours (10 light, differentiable) ---
     const TAB_COLORS = [
-      { bg: '#fff8a0', border: '#d0c048' }, // 0 yellow
+      { bg: '#ffffff', border: '#cccccc' }, // 0 white
       { bg: '#aad6ff', border: '#5090d0' }, // 1 sky blue
       { bg: '#a0f0b8', border: '#48c870' }, // 2 green
       { bg: '#ffb0d0', border: '#d87098' }, // 3 pink
@@ -935,8 +935,8 @@ export default {
 .tab-postit.tab-color-complete.active { background: #dfdfdf; border-color: #acacac; }
 .tab-postit.add { font-weight: 700; background: #d6edff; border-color: #9cccf6; }
 /* User tab colours (10 light, differentiable) */
-.tab-user-0 { background: #fffab8; border-color: #dccc70; }
-.tab-user-0.active { background: #f4e870; border-color: #c0b040; }
+.tab-user-0 { background: #ffffff; border-color: #cccccc; }
+.tab-user-0.active { background: #ffffff; border-color: #aaaaaa; }
 .tab-user-1 { background: #bfe0ff; border-color: #7ab0da; }
 .tab-user-1.active { background: #9bcaf4; border-color: #5898c8; }
 .tab-user-2 { background: #b8f4ca; border-color: #72d890; }

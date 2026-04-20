@@ -133,12 +133,6 @@
       <GridView />
       <AppliancePalette />
     </div>
-    <div class="ad-bar">
-      <ins class="adsbygoogle"
-           style="display:inline-block; width:728px; height:90px"
-           data-ad-client="ca-pub-7670834418076181"
-           data-ad-slot="7443508808"></ins>
-    </div>
     <transition name="toast">
       <div v-if="showCopiedToast" class="copied-toast">Link copied to clipboard</div>
     </transition>
@@ -208,10 +202,6 @@ export default {
       window.addEventListener('hashchange', () => {
         loadFromHash()
         loadGridFromState()
-      })
-      // Initialise AdSense after browser has finished layout
-      requestAnimationFrame(() => {
-        try { (window.adsbygoogle = window.adsbygoogle || []).push({}) } catch {}
       })
     })
 
@@ -387,11 +377,5 @@ html, body { margin: 0; font-family: sans-serif; overflow: hidden; height: 100%;
   padding-left: 90px;
   overflow: visible;
   align-items: flex-start;
-}
-.ad-bar {
-  padding-left: 90px;
-  overflow: hidden;
-  height: 90px;
-  flex-shrink: 0;
 }
 </style>
