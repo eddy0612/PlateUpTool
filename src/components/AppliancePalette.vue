@@ -3,8 +3,7 @@
 
     <!-- Hidden file inputs for PNG import -->
     <input ref="blueprintImportInput" type="file" accept="image/png" style="display:none" @change="handleBlueprintImport" />
-    <input ref="designImportInput" type="file" accept="image/png" style="display:none" @change="handleDesignImport" />
-    <input ref="structureImportInput" type="file" accept="image/png" style="display:none" @change="handleStructureImport" />
+    <input ref="unifiedImportInput" type="file" accept="image/png" style="display:none" @change="handleUnifiedImport" />
 
     <!-- Inventory panel shown when Preview tab is active -->
     <template v-if="isPreviewTab">
@@ -147,26 +146,32 @@
 
       </div>
 
-      <div v-if="isStructureMode" class="side-controls">
-        <div class="io-row">
-          <button @click="exportStructure" title="Export room structure as a PNG with embedded wall data">⬇ Export Structure</button>
-          <button @click="triggerStructureImport" title="Import room structure from a PNG file">⬆ Import Structure</button>
-        </div>
-      </div>
-      <div v-else class="side-controls">
-        <div class="clipboard-row">
+      <div class="side-controls">
+        <div v-if="!isStructureMode" class="clipboard-row">
           <button @click="cutToClipboard">Cut</button>
           <button @click="copyToClipboard">Copy</button>
           <button @click="startPaste">Paste</button>
           <button @click="removeSelected">Delete</button>
         </div>
         <div class="io-row">
-          <button @click="exportDesign" title="Export full design as a PNG with embedded layout data">⬇ Export Design</button>
-          <button @click="triggerDesignImport" title="Import a design from a PNG file and place it as a draggable group">⬆ Import Design</button>
+          <button @click="showExportMenu($event)" title="Export to PNG">Export</button>
+          <button @click="triggerUnifiedImport" title="Import from a PNG file">Import</button>
         </div>
       </div>
       </div>
     </template>
+
+    <teleport to="body">
+      <template v-if="exportMenuVisible">
+        <div class="context-menu-backdrop" @click="closeExportMenu" @contextmenu.prevent="closeExportMenu" />
+        <div class="context-menu" :style="{ left: exportMenuPos.x + 'px', bottom: exportMenuPos.bottom + 'px' }">
+          <div class="context-menu-item" @click="doExport('tab')">{{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
+          <div class="context-menu-item" @click="doExport('all-tabs')">All appliance tabs</div>
+          <div class="context-menu-item" @click="doExport('complete')">Complete</div>
+          <div class="context-menu-item context-menu-cancel" @click="closeExportMenu">Cancel</div>
+        </div>
+      </template>
+    </teleport>
 
   </aside>
 </template>
@@ -193,7 +198,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const { palette } = useAppliancePalette()
-    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag } = useGrid()
+    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState } = useGrid()
 
     const structureTools = [
       { id: 'wall',  label: 'Wall',  description: 'Full-height wall',  },
@@ -556,22 +561,40 @@ export default {
       }
     }
 
-    // ── Design export / import ───────────────────────────────────────────────
-    const designImportInput = ref(null)
-    function triggerDesignImport() { designImportInput.value?.click() }
+    // ── Unified export / import ───────────────────────────────────────────────
 
-    async function generateDesignPreview() {
-      const CELL_PX = 28
-      const PAD = 4
+    function exportTimestamp() {
+      const d = new Date()
+      const yy = String(d.getFullYear()).slice(-2)
+      const mm = String(d.getMonth() + 1).padStart(2, '0')
+      const dd = String(d.getDate()).padStart(2, '0')
+      const hh = String(d.getHours()).padStart(2, '0')
+      const min = String(d.getMinutes()).padStart(2, '0')
+      const ss = String(d.getSeconds()).padStart(2, '0')
+      return `${yy}${mm}${dd}-${hh}${min}${ss}`
+    }
+
+    function encodePayload(obj) {
+      return btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(obj))))
+    }
+
+    function decodePayload(raw) {
+      return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0))))
+    }
+
+    // Generate a preview canvas with optional tab filter (null = all tabs) and optional walls overlay
+    async function generateGridPreview(tabId, includeWalls) {
+      const CELL_PX = 42
+      const PAD = 6
       const canvasW = state.roomWidth * CELL_PX + PAD * 2
       const canvasH = state.roomHeight * CELL_PX + PAD * 2
       const offscreen = document.createElement('canvas')
       offscreen.width = canvasW
       offscreen.height = canvasH
       const ctx = offscreen.getContext('2d')
-      ctx.fillStyle = '#e8eef8'
+      ctx.fillStyle = includeWalls ? '#f8f9fb' : '#e8eef8'
       ctx.fillRect(0, 0, canvasW, canvasH)
-      ctx.strokeStyle = '#c8d4e4'
+      ctx.strokeStyle = includeWalls ? '#d0d8e8' : '#c8d4e4'
       ctx.lineWidth = 0.5
       for (let x = 0; x <= state.roomWidth; x++) {
         ctx.beginPath(); ctx.moveTo(PAD + x * CELL_PX, PAD); ctx.lineTo(PAD + x * CELL_PX, PAD + state.roomHeight * CELL_PX); ctx.stroke()
@@ -579,10 +602,39 @@ export default {
       for (let y = 0; y <= state.roomHeight; y++) {
         ctx.beginPath(); ctx.moveTo(PAD, PAD + y * CELL_PX); ctx.lineTo(PAD + state.roomWidth * CELL_PX, PAD + y * CELL_PX); ctx.stroke()
       }
+      if (includeWalls) {
+        for (const [key, type] of Object.entries(state.walls || {})) {
+          const [orient, xStr, yStr] = key.split(',')
+          const wx = parseInt(xStr), wy = parseInt(yStr)
+          if (type === 'wall')       { ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 3; ctx.setLineDash([]) }
+          else if (type === 'hatch') { ctx.strokeStyle = '#555555'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]) }
+          else if (type === 'door')  { ctx.strokeStyle = '#c8860a'; ctx.lineWidth = 3; ctx.setLineDash([]) }
+          ctx.beginPath()
+          if (orient === 'h') {
+            ctx.moveTo(PAD + wx * CELL_PX, PAD + wy * CELL_PX)
+            ctx.lineTo(PAD + (wx + 1) * CELL_PX, PAD + wy * CELL_PX)
+          } else {
+            ctx.moveTo(PAD + wx * CELL_PX, PAD + wy * CELL_PX)
+            ctx.lineTo(PAD + wx * CELL_PX, PAD + (wy + 1) * CELL_PX)
+          }
+          ctx.stroke()
+        }
+        ctx.setLineDash([])
+        ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 3
+        ctx.strokeRect(PAD, PAD, state.roomWidth * CELL_PX, state.roomHeight * CELL_PX)
+      }
       const cells = []
-      for (let y = 0; y < grid.value.length; y++)
-        for (let x = 0; x < grid.value[y].length; x++)
-          if (grid.value[y][x]?.applianceId) cells.push({ x, y, cell: grid.value[y][x] })
+      for (let y = 0; y < grid.value.length; y++) {
+        for (let x = 0; x < (grid.value[y]?.length ?? 0); x++) {
+          const cell = grid.value[y][x]
+          if (!cell?.applianceId) continue
+          if (tabId !== null) {
+            const inTab = Array.isArray(cell.tabIds) ? cell.tabIds.includes(tabId) : cell.tabId === tabId
+            if (!inTab) continue
+          }
+          cells.push({ x, y, cell })
+        }
+      }
       await Promise.all(cells.map(({ x, y, cell }) => new Promise(resolve => {
         const entry = palette.value.find(a => a.id === cell.applianceId)
         const iconSrc = entry?.icon2D || entry?.icon
@@ -617,63 +669,8 @@ export default {
       return offscreen.toDataURL('image/png')
     }
 
-    function exportTimestamp() {
-      const d = new Date()
-      const yy = String(d.getFullYear()).slice(-2)
-      const mm = String(d.getMonth() + 1).padStart(2, '0')
-      const dd = String(d.getDate()).padStart(2, '0')
-      const hh = String(d.getHours()).padStart(2, '0')
-      const min = String(d.getMinutes()).padStart(2, '0')
-      const ss = String(d.getSeconds()).padStart(2, '0')
-      return `${yy}${mm}${dd}-${hh}${min}${ss}`
-    }
-
-    async function exportDesign() {
-      const hash = window.location.hash
-      if (!hash.startsWith('#state=')) { alert('No design to export.'); return }
-      const preview = await generateDesignPreview()
-      const bytes = dataUrlToBytes(preview)
-      const modified = writePngText(bytes, 'plateup-design', hash.slice(7))
-      downloadDataUrl(bytesToDataUrl(modified), `plateup-design-${exportTimestamp()}.png`)
-    }
-
-    async function handleDesignImport(event) {
-      const file = event.target.files?.[0]
-      if (!file) return
-      event.target.value = ''
-      if (state.activeTabId === 'complete' || state.activeTabId === 'structure') {
-        alert('Switch to a coloured tab before importing a design.')
-        return
-      }
-      try {
-        const bytes = await readFileAsBytes(file)
-        const encoded = readPngText(bytes, 'plateup-design')
-        if (!encoded) {
-          if (readPngText(bytes, 'plateup-blueprint')) alert('This is a blueprint file — use \u2b06 Import Blueprint to load it.')
-          else if (readPngText(bytes, 'plateup-structure')) alert('This is a structure file — use \u2b06 Import Structure to load it.')
-          else alert('No design data found in this image.')
-          return
-        }
-        const parsed = decodeState(encoded)
-        if (!parsed?.gridCells?.length) { alert('Invalid or empty design data.'); return }
-        let minX = Infinity, minY = Infinity
-        for (const c of parsed.gridCells) { if (c.x < minX) minX = c.x; if (c.y < minY) minY = c.y }
-        const cells = parsed.gridCells.map(c => ({
-          dx: c.x - minX, dy: c.y - minY,
-          cell: { applianceId: c.applianceId, rotation: c.rotation ?? 0, extraData: c.extraData ?? 0, tabIds: [] }
-        }))
-        startPasteFromCells(cells)
-      } catch (e) {
-        alert('Failed to read design: ' + e.message)
-      }
-    }
-
-    // ── Structure export / import ───────────────────────────────────────────
-    const structureImportInput = ref(null)
-    function triggerStructureImport() { structureImportInput.value?.click() }
-
-    async function generateStructurePreview() {
-      const CELL_PX = 24, PAD = 6
+    async function generateStructureOnlyPreview() {
+      const CELL_PX = 36, PAD = 6
       const canvasW = state.roomWidth * CELL_PX + PAD * 2
       const canvasH = state.roomHeight * CELL_PX + PAD * 2
       const offscreen = document.createElement('canvas')
@@ -681,7 +678,6 @@ export default {
       const ctx = offscreen.getContext('2d')
       ctx.fillStyle = '#f8f9fb'
       ctx.fillRect(0, 0, canvasW, canvasH)
-      // cell grid
       ctx.strokeStyle = '#d0d8e8'; ctx.lineWidth = 0.5
       for (let y = 0; y <= state.roomHeight; y++) {
         ctx.beginPath(); ctx.moveTo(PAD, PAD + y * CELL_PX); ctx.lineTo(PAD + state.roomWidth * CELL_PX, PAD + y * CELL_PX); ctx.stroke()
@@ -689,7 +685,6 @@ export default {
       for (let x = 0; x <= state.roomWidth; x++) {
         ctx.beginPath(); ctx.moveTo(PAD + x * CELL_PX, PAD); ctx.lineTo(PAD + x * CELL_PX, PAD + state.roomHeight * CELL_PX); ctx.stroke()
       }
-      // interior walls
       for (const [key, type] of Object.entries(state.walls || {})) {
         const [orient, xStr, yStr] = key.split(',')
         const wx = parseInt(xStr), wy = parseInt(yStr)
@@ -706,43 +701,221 @@ export default {
         }
         ctx.stroke()
       }
-      // border
       ctx.setLineDash([]); ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 3
       ctx.strokeRect(PAD, PAD, state.roomWidth * CELL_PX, state.roomHeight * CELL_PX)
       return offscreen.toDataURL('image/png')
     }
 
-    async function exportStructure() {
-      const preview = await generateStructurePreview()
-      const json = JSON.stringify({ roomWidth: state.roomWidth, roomHeight: state.roomHeight, walls: state.walls || {} })
-      const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
-      const bytes = dataUrlToBytes(preview)
-      const modified = writePngText(bytes, 'plateup-structure', payload)
-      downloadDataUrl(bytesToDataUrl(modified), `plateup-structure-${state.roomWidth}x${state.roomHeight}-${exportTimestamp()}.png`)
+    // ── Export popup ────────────────────────────────────────────────────────
+    const exportMenuVisible = ref(false)
+    const exportMenuPos = ref({ x: 0, bottom: 0 })
+
+    function showExportMenu(event) {
+      const rect = event.currentTarget.getBoundingClientRect()
+      exportMenuPos.value = { x: rect.left, bottom: window.innerHeight - rect.top + 4 }
+      exportMenuVisible.value = true
     }
 
-    async function handleStructureImport(event) {
+    function closeExportMenu() {
+      exportMenuVisible.value = false
+    }
+
+    async function doExport(type) {
+      closeExportMenu()
+
+      // When on the structure tab and exporting only the current layer, do a structure export
+      if (state.activeTabId === 'structure' && type === 'tab') {
+        const preview = await generateStructureOnlyPreview()
+        const payload = encodePayload({ type: 'structure', roomWidth: state.roomWidth, roomHeight: state.roomHeight, walls: state.walls || {} })
+        const bytes = dataUrlToBytes(preview)
+        let modified = writePngText(bytes, 'plateup-v2-export', payload)
+        // Also write legacy key for backward compat
+        modified = writePngText(modified, 'plateup-structure', encodePayload({ roomWidth: state.roomWidth, roomHeight: state.roomHeight, walls: state.walls || {} }))
+        downloadDataUrl(bytesToDataUrl(modified), `plateup-structure-${state.roomWidth}x${state.roomHeight}-${exportTimestamp()}.png`)
+        return
+      }
+
+      if (type === 'tab') {
+        const tabId = state.activeTabId
+        const tab = state.tabs.find(t => t.id === tabId)
+        const tabLabel = tab?.label || tabId
+        const cells = []
+        let minX = Infinity, minY = Infinity
+        for (let y = 0; y < grid.value.length; y++) {
+          for (let x = 0; x < (grid.value[y]?.length ?? 0); x++) {
+            const cell = grid.value[y][x]
+            if (!cell?.applianceId) continue
+            const inTab = Array.isArray(cell.tabIds) ? cell.tabIds.includes(tabId) : cell.tabId === tabId
+            if (!inTab) continue
+            if (x < minX) minX = x
+            if (y < minY) minY = y
+            cells.push({ x, y, cell })
+          }
+        }
+        if (cells.length === 0) { alert('No appliances on the current tab to export.'); return }
+        const exportCells = cells.map(({ x, y, cell }) => ({
+          dx: x - minX, dy: y - minY,
+          cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] }
+        }))
+        const preview = await generateGridPreview(tabId, false)
+        const payload = encodePayload({ type: 'tab', tabId, tabLabel, cells: exportCells })
+        const bytes = dataUrlToBytes(preview)
+        const modified = writePngText(bytes, 'plateup-v2-export', payload)
+        const safeName = tabLabel.replace(/[^a-z0-9_-]/gi, '_').slice(0, 30) || tabId
+        downloadDataUrl(bytesToDataUrl(modified), `plateup-tab-${safeName}-${exportTimestamp()}.png`)
+
+      } else if (type === 'all-tabs') {
+        const cells = []
+        let minX = Infinity, minY = Infinity
+        for (let y = 0; y < grid.value.length; y++) {
+          for (let x = 0; x < (grid.value[y]?.length ?? 0); x++) {
+            const cell = grid.value[y][x]
+            if (!cell?.applianceId) continue
+            if (x < minX) minX = x
+            if (y < minY) minY = y
+            cells.push({ x, y, cell })
+          }
+        }
+        if (cells.length === 0) { alert('No appliances to export.'); return }
+        const exportCells = cells.map(({ x, y, cell }) => ({
+          dx: x - minX, dy: y - minY,
+          cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] }
+        }))
+        const preview = await generateGridPreview(null, false)
+        const payload = encodePayload({ type: 'all-tabs', cells: exportCells })
+        const bytes = dataUrlToBytes(preview)
+        const modified = writePngText(bytes, 'plateup-v2-export', payload)
+        downloadDataUrl(bytesToDataUrl(modified), `plateup-all-tabs-${exportTimestamp()}.png`)
+
+      } else if (type === 'complete') {
+        const preview = await generateGridPreview(null, true)
+        const payload = encodePayload({
+          type: 'complete',
+          roomWidth: state.roomWidth,
+          roomHeight: state.roomHeight,
+          orientation: state.orientation,
+          walls: state.walls || {},
+          tabs: state.tabs,
+          gridCells: state.gridCells
+        })
+        const bytes = dataUrlToBytes(preview)
+        const modified = writePngText(bytes, 'plateup-v2-export', payload)
+        downloadDataUrl(bytesToDataUrl(modified), `plateup-complete-${exportTimestamp()}.png`)
+      }
+    }
+
+    // ── Unified import ──────────────────────────────────────────────────────
+    const unifiedImportInput = ref(null)
+    function triggerUnifiedImport() { unifiedImportInput.value?.click() }
+
+    function hasAnyContent() {
+      return state.gridCells.length > 0 || Object.keys(state.walls || {}).length > 0
+    }
+
+    async function handleUnifiedImport(event) {
       const file = event.target.files?.[0]
       if (!file) return
       event.target.value = ''
       try {
         const bytes = await readFileAsBytes(file)
-        const raw = readPngText(bytes, 'plateup-structure')
-        if (!raw) {
-          if (readPngText(bytes, 'plateup-design')) alert('This is a design file — use \u2b06 Import Design to load it.')
-          else if (readPngText(bytes, 'plateup-blueprint')) alert('This is a blueprint file — use \u2b06 Import Blueprint to load it.')
-          else alert('No structure data found in this image.')
+
+        // ── Try new unified format first ──────────────────────────────────
+        const v2raw = readPngText(bytes, 'plateup-v2-export')
+        if (v2raw) {
+          const payload = decodePayload(v2raw)
+          const { type } = payload
+
+          if (type === 'tab' || type === 'all-tabs') {
+            if (state.activeTabId === 'complete' || state.activeTabId === 'structure') {
+              alert('Switch to a coloured tab before importing appliances.')
+              return
+            }
+            const { cells } = payload
+            if (!Array.isArray(cells) || cells.length === 0) { alert('No appliance data found in this file.'); return }
+            startPasteFromCells(cells)
+            return
+          }
+
+          if (type === 'structure') {
+            const { roomWidth, roomHeight, walls } = payload
+            if (!roomWidth || !roomHeight) { alert('Invalid structure data.'); return }
+            if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) {
+              alert(`Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.\nResize the room to match before importing.`)
+              return
+            }
+            const hasWalls = Object.keys(state.walls || {}).length > 0
+            if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Proceed?')) return
+            state.walls = walls || {}
+            return
+          }
+
+          if (type === 'complete') {
+            const { roomWidth, roomHeight, orientation, walls, tabs, gridCells } = payload
+            if (!roomWidth || !roomHeight) { alert('Invalid complete export data.'); return }
+            const dimChanged = roomWidth !== state.roomWidth || roomHeight !== state.roomHeight
+            const dimNote = dimChanged ? `\n\nNote: the room will also be resized from ${state.roomWidth}×${state.roomHeight} to ${roomWidth}×${roomHeight}.` : ''
+            if (hasAnyContent() && !window.confirm(`This will replace ALL current structure and appliances. All your current design will be lost.${dimNote}\n\nProceed?`)) return
+            state.roomWidth = roomWidth
+            state.roomHeight = roomHeight
+            state.orientation = orientation ?? 0
+            state.walls = walls || {}
+            state.tabs = tabs || JSON.parse(JSON.stringify([{ id: 'complete', label: 'Preview' }, { id: 'structure', label: 'Structure' }, { id: 'main', label: 'Base' }]))
+            state.gridCells = gridCells || []
+            // Switch to first user tab
+            const firstUserTab = state.tabs.find(t => t.id !== 'complete' && t.id !== 'structure')
+            state.activeTabId = firstUserTab?.id ?? 'main'
+            // Rebuild the internal grid from the new state
+            loadGridFromState()
+            return
+          }
+
+          alert('Unknown export type in this file.')
           return
         }
-        const { roomWidth, roomHeight, walls } = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0))))
-        if (!roomWidth || !roomHeight) { alert('Invalid structure data.'); return }
-        if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) {
-          alert(`Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.\nResize the room to match before importing.`)
+
+        // ── Backward compat: legacy plateup-design (treat as all-tabs) ────
+        const legacyDesign = readPngText(bytes, 'plateup-design')
+        if (legacyDesign) {
+          if (state.activeTabId === 'complete' || state.activeTabId === 'structure') {
+            alert('Switch to a coloured tab before importing appliances.')
+            return
+          }
+          const parsed = decodeState(legacyDesign)
+          if (!parsed?.gridCells?.length) { alert('Invalid or empty design data.'); return }
+          let minX = Infinity, minY = Infinity
+          for (const c of parsed.gridCells) { if (c.x < minX) minX = c.x; if (c.y < minY) minY = c.y }
+          const cells = parsed.gridCells.map(c => ({
+            dx: c.x - minX, dy: c.y - minY,
+            cell: { applianceId: c.applianceId, rotation: c.rotation ?? 0, extraData: c.extraData ?? 0, tabIds: [] }
+          }))
+          startPasteFromCells(cells)
           return
         }
-        state.walls = walls || {}
+
+        // ── Backward compat: legacy plateup-structure ─────────────────────
+        const legacyStructure = readPngText(bytes, 'plateup-structure')
+        if (legacyStructure) {
+          const { roomWidth, roomHeight, walls } = decodePayload(legacyStructure)
+          if (!roomWidth || !roomHeight) { alert('Invalid structure data.'); return }
+          if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) {
+            alert(`Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.\nResize the room to match before importing.`)
+            return
+          }
+          const hasWalls = Object.keys(state.walls || {}).length > 0
+          if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Proceed?')) return
+          state.walls = walls || {}
+          return
+        }
+
+        // ── Blueprint file ────────────────────────────────────────────────
+        if (readPngText(bytes, 'plateup-blueprint')) {
+          alert('This is a blueprint file — use Import Blueprint in the Blueprints palette tab.')
+          return
+        }
+
+        alert('No PlateUp Tool export data found in this image.')
       } catch (e) {
-        alert('Failed to read structure: ' + e.message)
+        alert('Failed to read import file: ' + e.message)
       }
     }
 
@@ -750,8 +923,9 @@ export default {
       // blueprints
       paletteTab, blueprintFilter, filteredBlueprints, createBlueprint, applyBlueprint, deleteBlueprint, onBlueprintMouseDown,
       exportBlueprint, handleBlueprintImport, triggerBlueprintImport, blueprintImportInput,
-      exportDesign, handleDesignImport, triggerDesignImport, designImportInput,
-      exportStructure, handleStructureImport, triggerStructureImport, structureImportInput,
+      // unified export/import
+      unifiedImportInput, triggerUnifiedImport, handleUnifiedImport,
+      exportMenuVisible, exportMenuPos, showExportMenu, closeExportMenu, doExport,
     }
   }
 }
@@ -1171,5 +1345,38 @@ export default {
   font-style: italic;
   font-size: 13px;
   padding: 28px 0;
+}
+
+/* ---- Export popup menu ---- */
+.context-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: transparent;
+}
+.context-menu {
+  position: fixed;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid #b0c0d0;
+  border-radius: 6px;
+  box-shadow: 2px 4px 14px rgba(0,0,0,0.18);
+  padding: 4px 0;
+  min-width: 180px;
+  user-select: none;
+}
+.context-menu-item {
+  padding: 9px 18px;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.context-menu-item:hover {
+  background: #e8f0ff;
+}
+.context-menu-cancel {
+  color: #666;
+  border-top: 1px solid #e8e8e8;
+  margin-top: 2px;
 }
 </style>
