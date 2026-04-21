@@ -1,5 +1,5 @@
 <template>
-  <aside class="right-panel" :style="rightPanelStyle">
+  <aside class="right-panel" :style="rightPanelStyle" @contextmenu.prevent>
 
     <!-- Hidden file inputs for PNG import -->
     <input ref="blueprintImportInput" type="file" accept="image/png" style="display:none" @change="handleBlueprintImport" />
