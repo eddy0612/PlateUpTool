@@ -2,7 +2,7 @@
   <section class="left-panel">
     <div style="position:relative; width:100%;">
 
-      <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }" @mousemove="onViewportMouseMove" @mouseleave="onViewportMouseLeave">
+      <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }" :class="{ 'file-drag-over': fileDragOver }" @mousemove="onViewportMouseMove" @mouseleave="onViewportMouseLeave" @dragover.prevent="onFileDragOver" @dragleave="onFileDragLeave" @drop.prevent="onFileDrop">
         <div class="grid-centering-wrapper">
         <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive, 'paste-pending': pastePending, 'structure-mode': isStructureMode }" @mousedown="onGridMouseDown" @dragstart.prevent>
           <div
@@ -150,8 +150,9 @@
 
 <script>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useRestaurantStore } from '../store/restaurant'
-    import { useGrid, TELEPORTER_APPLIANCE_ID } from '../composables/useGrid'
+import { useRestaurantStore, decodeState } from '../store/restaurant'
+import { useGrid, TELEPORTER_APPLIANCE_ID } from '../composables/useGrid'
+import { readPngText, readFileAsBytes } from '../composables/usePngMetadata'
 export default {
   name: 'GridView',
   setup() {
@@ -162,9 +163,10 @@ export default {
       moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
       copyToClipboard, cutToClipboard,
-      pastePending, getCellPasteState, startPaste, startDuplicate, setPasteAnchor, confirmPaste, cancelPaste,
+      pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste,
       tabHasVisibleItems, deleteTabItems,
       isStructureMode, selectedStructureTool, getWallEdge, setWallEdge, clearWallEdge,
+      loadGridFromState,
       paletteDragActive, paletteDragHoverCell, isPaletteDragDropValid,
       getTeleporterPairPos
     } = useGrid()
@@ -754,6 +756,145 @@ export default {
       state.zoom = Math.min(2.5, Math.max(0.3, Math.round((state.zoom + delta) * 100) / 100))
     }
 
+    // --- File drag-and-drop import ---
+    const fileDragOver = ref(false)
+
+    function onFileDragOver(e) {
+      if (e.dataTransfer?.types?.includes('Files')) fileDragOver.value = true
+    }
+
+    function onFileDragLeave(e) {
+      // Only clear when leaving the viewport entirely (not moving over child elements)
+      if (!viewportEl.value?.contains(e.relatedTarget)) fileDragOver.value = false
+    }
+
+    async function onFileDrop(e) {
+      fileDragOver.value = false
+      const file = e.dataTransfer?.files?.[0]
+      if (!file || file.type !== 'image/png') {
+        if (file) alert('Only PNG export files can be imported by dropping onto the grid.')
+        return
+      }
+      try {
+        const bytes = await readFileAsBytes(file)
+        function decodePayload(raw) {
+          return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0))))
+        }
+
+        // ── Detect file type first so we can confirm before doing anything ─
+        const v2raw = readPngText(bytes, 'plateup-v2-export')
+        let fileDesc = null
+        let v2payload = null
+        if (v2raw) {
+          v2payload = decodePayload(v2raw)
+          const { type } = v2payload
+          if (type === 'tab' || type === 'all-tabs') fileDesc = 'appliance design'
+          else if (type === 'structure') fileDesc = 'structure'
+          else if (type === 'complete') fileDesc = 'complete export (structure + appliances)'
+        } else if (readPngText(bytes, 'plateup-design')) {
+          fileDesc = 'appliance design'
+        } else if (readPngText(bytes, 'plateup-structure')) {
+          fileDesc = 'structure'
+        } else if (readPngText(bytes, 'plateup-blueprint')) {
+          alert('This is a blueprint file — use Import Blueprint in the Blueprints palette tab.')
+          return
+        } else {
+          alert('No PlateUp Tool export data found in this image.')
+          return
+        }
+
+        if (!window.confirm(`This file contains a ${fileDesc}.\n\nWould you like to import it?`)) return
+
+        // ── New unified format ────────────────────────────────────────────
+        if (v2payload) {
+          const { type } = v2payload
+
+          if (type === 'tab' || type === 'all-tabs') {
+            if (state.activeTabId === 'complete' || state.activeTabId === 'structure') {
+              alert('Switch to a coloured tab before importing appliances.')
+              return
+            }
+            const { cells } = v2payload
+            if (!Array.isArray(cells) || cells.length === 0) { alert('No appliance data found in this file.'); return }
+            startPasteFromCells(cells)
+            return
+          }
+
+          if (type === 'structure') {
+            const { roomWidth, roomHeight, walls } = v2payload
+            if (!roomWidth || !roomHeight) { alert('Invalid structure data.'); return }
+            if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) {
+              alert(`Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.\nResize the room to match before importing.`)
+              return
+            }
+            const hasWalls = Object.keys(state.walls || {}).length > 0
+            if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Would you like to continue?')) return
+            state.walls = walls || {}
+            return
+          }
+
+          if (type === 'complete') {
+            const { roomWidth, roomHeight, orientation, walls, tabs, gridCells } = v2payload
+            if (!roomWidth || !roomHeight) { alert('Invalid complete export data.'); return }
+            const dimChanged = roomWidth !== state.roomWidth || roomHeight !== state.roomHeight
+            const dimNote = dimChanged ? `\n\nNote: the room will also be resized from ${state.roomWidth}×${state.roomHeight} to ${roomWidth}×${roomHeight}.` : ''
+            if ((state.gridCells.length > 0 || Object.keys(state.walls || {}).length > 0) &&
+                !window.confirm(`This will replace ALL current structure and appliances. All your current design will be lost.${dimNote}\n\nWould you like to continue?`)) return
+            state.roomWidth = roomWidth
+            state.roomHeight = roomHeight
+            state.orientation = orientation ?? 0
+            state.walls = walls || {}
+            state.tabs = tabs || JSON.parse(JSON.stringify([{ id: 'complete', label: 'Preview' }, { id: 'structure', label: 'Structure' }, { id: 'main', label: 'Base' }]))
+            state.gridCells = gridCells || []
+            const firstUserTab = state.tabs.find(t => t.id !== 'complete' && t.id !== 'structure')
+            state.activeTabId = firstUserTab?.id ?? 'main'
+            loadGridFromState()
+            return
+          }
+
+          alert('Unknown export type in this file.')
+          return
+        }
+
+        // ── Legacy plateup-design ─────────────────────────────────────────
+        const legacyDesign = readPngText(bytes, 'plateup-design')
+        if (legacyDesign) {
+          if (state.activeTabId === 'complete' || state.activeTabId === 'structure') {
+            alert('Switch to a coloured tab before importing appliances.')
+            return
+          }
+          const parsed = decodeState(legacyDesign)
+          if (!parsed?.gridCells?.length) { alert('Invalid or empty design data.'); return }
+          let minX = Infinity, minY = Infinity
+          for (const c of parsed.gridCells) { if (c.x < minX) minX = c.x; if (c.y < minY) minY = c.y }
+          const cells = parsed.gridCells.map(c => ({
+            dx: c.x - minX, dy: c.y - minY,
+            cell: { applianceId: c.applianceId, rotation: c.rotation ?? 0, extraData: c.extraData ?? 0, tabIds: [] }
+          }))
+          startPasteFromCells(cells)
+          return
+        }
+
+        // ── Legacy plateup-structure ──────────────────────────────────────
+        const legacyStructure = readPngText(bytes, 'plateup-structure')
+        if (legacyStructure) {
+          const { roomWidth, roomHeight, walls } = decodePayload(legacyStructure)
+          if (!roomWidth || !roomHeight) { alert('Invalid structure data.'); return }
+          if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) {
+            alert(`Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.\nResize the room to match before importing.`)
+            return
+          }
+          const hasWalls = Object.keys(state.walls || {}).length > 0
+          if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Would you like to continue?')) return
+          state.walls = walls || {}
+          return
+        }
+      } catch (err) {
+        alert('Failed to read import file: ' + err.message)
+      }
+    }
+    // --- End file drag-and-drop import ---
+
     onMounted(() => {
       window.addEventListener('keydown', onKeyDown)
       if (viewportEl.value) viewportEl.value.addEventListener('wheel', onWheel, { passive: false })
@@ -788,7 +929,8 @@ export default {
       getTabColorClass, getApplianceBgStyle,
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
       getApplianceIcon, isImageIcon, onApplianceImgError,
-      TELEPORTER_APPLIANCE_ID, teleporterPairLines
+      TELEPORTER_APPLIANCE_ID, teleporterPairLines,
+      fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
     }
   }
 }
@@ -817,6 +959,11 @@ export default {
   min-width: 0;
   min-height: 0;
   box-sizing: border-box;
+}
+.viewport-box.file-drag-over {
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.35);
+  background: #f0f6ff;
 }
 .grid-centering-wrapper {
   display: flex;
