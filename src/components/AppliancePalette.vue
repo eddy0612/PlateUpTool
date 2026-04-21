@@ -362,11 +362,11 @@ export default {
     })
 
     // Generate a small thumbnail image for a set of blueprint cells.
-    async function generateBlueprintPreview(cells) {
+    async function generateBlueprintPreview(cells, cellPx = 40) {
       if (!cells.length) return null
       const maxDx = Math.max(...cells.map(c => c.dx))
       const maxDy = Math.max(...cells.map(c => c.dy))
-      const CELL_PX = 40
+      const CELL_PX = cellPx
       const PAD = 3
       const canvasW = (maxDx + 1) * CELL_PX + PAD * 2
       const canvasH = (maxDy + 1) * CELL_PX + PAD * 2
@@ -526,12 +526,12 @@ export default {
     function triggerBlueprintImport() { blueprintImportInput.value?.click() }
 
     async function exportBlueprint(bp) {
-      let previewDataUrl = bp.preview
-      if (!previewDataUrl) previewDataUrl = await generateBlueprintPreview(bp.cells)
-      if (!previewDataUrl) { alert('Could not generate preview image.'); return }
+      // Always generate a fresh high-res image for the exported PNG (not from localStorage)
+      const exportPreview = await generateBlueprintPreview(bp.cells, 100)
+      if (!exportPreview) { alert('Could not generate preview image.'); return }
       const json = JSON.stringify({ name: bp.name, cells: bp.cells })
       const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
-      const bytes = dataUrlToBytes(previewDataUrl)
+      const bytes = dataUrlToBytes(exportPreview)
       const modified = writePngText(bytes, 'plateup-blueprint', payload)
       const safeName = bp.name.replace(/[^a-z0-9_-]/gi, '_').slice(0, 40) || 'blueprint'
       downloadDataUrl(bytesToDataUrl(modified), `plateup-blueprint-${safeName}-${exportTimestamp()}.png`)
@@ -844,7 +844,7 @@ export default {
               return
             }
             const hasWalls = Object.keys(state.walls || {}).length > 0
-            if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Proceed?')) return
+            if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Would you like to continue?')) return
             state.walls = walls || {}
             return
           }
@@ -854,7 +854,7 @@ export default {
             if (!roomWidth || !roomHeight) { alert('Invalid complete export data.'); return }
             const dimChanged = roomWidth !== state.roomWidth || roomHeight !== state.roomHeight
             const dimNote = dimChanged ? `\n\nNote: the room will also be resized from ${state.roomWidth}×${state.roomHeight} to ${roomWidth}×${roomHeight}.` : ''
-            if (hasAnyContent() && !window.confirm(`This will replace ALL current structure and appliances. All your current design will be lost.${dimNote}\n\nProceed?`)) return
+            if (hasAnyContent() && !window.confirm(`This will replace ALL current structure and appliances. All your current design will be lost.${dimNote}\n\nWould you like to continue?`)) return
             state.roomWidth = roomWidth
             state.roomHeight = roomHeight
             state.orientation = orientation ?? 0
@@ -902,7 +902,7 @@ export default {
             return
           }
           const hasWalls = Object.keys(state.walls || {}).length > 0
-          if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Proceed?')) return
+          if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Would you like to continue?')) return
           state.walls = walls || {}
           return
         }
