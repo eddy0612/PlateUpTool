@@ -375,7 +375,8 @@ export default {
       offscreen.width  = canvasW
       offscreen.height = canvasH
       const ctx = offscreen.getContext('2d')
-      ctx.fillStyle = '#f0f4ff'
+      // Use a light blue 'blueprint' background for blueprint previews and exports
+      ctx.fillStyle = '#cce7ff'
       ctx.fillRect(0, 0, canvasW, canvasH)
 
       await Promise.all(cells.map(({ dx, dy, cell }) => new Promise(resolve => {
