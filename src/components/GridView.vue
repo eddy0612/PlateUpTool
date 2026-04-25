@@ -152,7 +152,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useGrid, TELEPORTER_APPLIANCE_ID } from '../composables/useGrid'
-import { readPngText, readFileAsBytes } from '../composables/usePngMetadata'
+import { readPngText, readStegoFromBytes, readFileAsBytes } from '../composables/usePngMetadata'
 export default {
   name: 'GridView',
   setup() {
@@ -782,7 +782,7 @@ export default {
         }
 
         // ── Detect file type first so we can confirm before doing anything ─
-        const v2raw = readPngText(bytes, 'plateup-v2-export')
+        const v2raw = readPngText(bytes, 'plateup-v2-export') || await readStegoFromBytes(bytes, 'plateup-v2-export')
         let fileDesc = null
         let v2payload = null
         if (v2raw) {

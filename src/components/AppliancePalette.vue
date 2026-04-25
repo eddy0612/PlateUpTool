@@ -183,7 +183,7 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
 import { useGrid } from '../composables/useGrid'
-import { readPngText, writePngText, dataUrlToBytes, bytesToDataUrl, downloadDataUrl, readFileAsBytes } from '../composables/usePngMetadata'
+import { readPngText, writePngText, writeStegoText, readStegoFromBytes, dataUrlToBytes, bytesToDataUrl, downloadDataUrl, readFileAsBytes } from '../composables/usePngMetadata'
 
 const LS_BLUEPRINTS_KEY = 'plateup-blueprints'
 
@@ -534,7 +534,7 @@ export default {
       if (!exportPreview) { alert('Could not generate preview image.'); return }
       const json = JSON.stringify({ name: bp.name, cells: bp.cells })
       const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
-      const bytes = dataUrlToBytes(await addWatermark(exportPreview))
+      const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(exportPreview), 'plateup-blueprint', payload))
       const modified = writePngText(bytes, 'plateup-blueprint', payload)
       const safeName = bp.name.replace(/[^a-z0-9_-]/gi, '_').slice(0, 40) || 'blueprint'
       downloadDataUrl(bytesToDataUrl(modified), `plateup-blueprint-${safeName}-${exportTimestamp()}.png`)
@@ -550,7 +550,7 @@ export default {
     async function importBlueprintFromBytes(file) {
       try {
         const bytes = await readFileAsBytes(file)
-        const raw = readPngText(bytes, 'plateup-blueprint')
+        const raw = readPngText(bytes, 'plateup-blueprint') || await readStegoFromBytes(bytes, 'plateup-blueprint')
         if (!raw) {
           if (readPngText(bytes, 'plateup-design')) alert('This is a design file — use \u2b06 Import Design to load it.')
           else if (readPngText(bytes, 'plateup-structure')) alert('This is a structure file — use \u2b06 Import Structure to load it.')
@@ -830,7 +830,7 @@ export default {
       if (state.activeTabId === 'structure' && type === 'tab') {
         const preview = await generateStructureOnlyPreview()
         const payload = encodePayload({ type: 'structure', roomWidth: state.roomWidth, roomHeight: state.roomHeight, walls: state.walls || {} })
-        const bytes = dataUrlToBytes(await addWatermark(preview))
+        const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
         let modified = writePngText(bytes, 'plateup-v2-export', payload)
         // Also write legacy key for backward compat
         modified = writePngText(modified, 'plateup-structure', encodePayload({ roomWidth: state.roomWidth, roomHeight: state.roomHeight, walls: state.walls || {} }))
@@ -862,7 +862,7 @@ export default {
         }))
         const preview = await generateGridPreview(tabId, false)
         const payload = encodePayload({ type: 'tab', tabId, tabLabel, cells: exportCells })
-        const bytes = dataUrlToBytes(await addWatermark(preview))
+        const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
         const modified = writePngText(bytes, 'plateup-v2-export', payload)
         const safeName = tabLabel.replace(/[^a-z0-9_-]/gi, '_').slice(0, 30) || tabId
         downloadDataUrl(bytesToDataUrl(modified), `plateup-tab-${safeName}-${exportTimestamp()}.png`)
@@ -886,7 +886,7 @@ export default {
         }))
         const preview = await generateGridPreview(null, false)
         const payload = encodePayload({ type: 'all-tabs', cells: exportCells })
-        const bytes = dataUrlToBytes(await addWatermark(preview))
+        const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
         const modified = writePngText(bytes, 'plateup-v2-export', payload)
         downloadDataUrl(bytesToDataUrl(modified), `plateup-all-tabs-${exportTimestamp()}.png`)
 
@@ -901,7 +901,7 @@ export default {
           tabs: state.tabs,
           gridCells: state.gridCells
         })
-        const bytes = dataUrlToBytes(await addWatermark(preview))
+        const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
         const modified = writePngText(bytes, 'plateup-v2-export', payload)
         downloadDataUrl(bytesToDataUrl(modified), `plateup-complete-${exportTimestamp()}.png`)
       }
@@ -923,7 +923,7 @@ export default {
         const bytes = await readFileAsBytes(file)
 
         // ── Try new unified format first ──────────────────────────────────
-        const v2raw = readPngText(bytes, 'plateup-v2-export')
+        const v2raw = readPngText(bytes, 'plateup-v2-export') || await readStegoFromBytes(bytes, 'plateup-v2-export')
         if (v2raw) {
           const payload = decodePayload(v2raw)
           const { type } = payload

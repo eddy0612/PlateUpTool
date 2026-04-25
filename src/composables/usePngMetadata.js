@@ -105,6 +105,148 @@ export function bytesToDataUrl(bytes, mimeType = 'image/png') {
   return `data:${mimeType};base64,${btoa(bin)}`
 }
 
+// ── Steganography: LSB pixel encoding ────────────────────────────────────────
+// Encodes keyword+value into the 1 LSB of each R,G,B channel, starting at
+// pixel 0.  Format (all big-endian):
+//   4 B  magic "PLUP"
+//   4 B  totalLen  (bytes that follow)
+//   [repeating entries until totalLen exhausted]
+//     1 B  keyLen  (0 = end sentinel)
+//     N B  key (ASCII)
+//     4 B  valLen
+//     M B  val (ASCII / base64 payload)
+// Capacity = floor(width × height × 3 / 8) bytes.
+
+const _STEGO_MAGIC = [0x50, 0x4C, 0x55, 0x50] // "PLUP"
+
+/**
+ * Encode keyword+value into the LSBs of the R,G,B channels of a PNG dataUrl.
+ * Returns a Promise<string> — a new dataUrl with stego data, or the original if
+ * the payload is too large for the image.
+ * @param {string} dataUrl  PNG data URL
+ * @param {string} keyword  ASCII keyword
+ * @param {string} value    ASCII/base64 value
+ * @returns {Promise<string>}
+ */
+export function writeStegoText(dataUrl, keyword, value) {
+  return new Promise((resolve) => {
+    const img = new window.Image()
+    img.onload = () => {
+      const w = img.width, h = img.height
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      ctx.drawImage(img, 0, 0)
+      const imageData = ctx.getImageData(0, 0, w, h)
+      const px = imageData.data
+
+      // Build payload bytes
+      const keyB = Array.from(keyword, c => c.charCodeAt(0))
+      const valB = Array.from(value,   c => c.charCodeAt(0))
+      const entry = [
+        keyB.length, ...keyB,
+        (valB.length >>> 24) & 0xff, (valB.length >>> 16) & 0xff,
+        (valB.length >>>  8) & 0xff,  valB.length & 0xff,
+        ...valB,
+        0 // end sentinel (keyLen = 0)
+      ]
+      const tl = entry.length
+      const payload = [
+        ..._STEGO_MAGIC,
+        (tl >>> 24) & 0xff, (tl >>> 16) & 0xff, (tl >>> 8) & 0xff, tl & 0xff,
+        ...entry
+      ]
+
+      const capacity = Math.floor(w * h * 3 / 8)
+      if (payload.length > capacity) {
+        console.warn(`[stego] Payload ${payload.length} B > capacity ${capacity} B — skipping stego.`)
+        resolve(dataUrl)
+        return
+      }
+
+      // Write 1 bit per R/G/B channel, MSB first
+      let bi = 0
+      for (const byte of payload) {
+        for (let b = 7; b >= 0; b--) {
+          const off = Math.floor(bi / 3) * 4 + (bi % 3)
+          px[off] = (px[off] & 0xfe) | ((byte >> b) & 1)
+          bi++
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0)
+      resolve(canvas.toDataURL('image/png'))
+    }
+    img.onerror = () => resolve(dataUrl)
+    img.src = dataUrl
+  })
+}
+
+/**
+ * Read a stego-encoded value from PNG bytes for the given keyword.
+ * Returns a Promise<string|null>.
+ * @param {Uint8Array} bytes
+ * @param {string} keyword
+ * @returns {Promise<string|null>}
+ */
+export function readStegoFromBytes(bytes, keyword) {
+  return new Promise((resolve) => {
+    const img = new window.Image()
+    img.onload = () => {
+      try {
+        const w = img.width, h = img.height
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })
+        ctx.drawImage(img, 0, 0)
+        const px = ctx.getImageData(0, 0, w, h).data
+
+        let bi = 0
+        const maxBits = w * h * 3
+
+        function readByte() {
+          let byte = 0
+          for (let b = 7; b >= 0; b--) {
+            if (bi >= maxBits) return 0
+            const off = Math.floor(bi / 3) * 4 + (bi % 3)
+            byte |= (px[off] & 1) << b
+            bi++
+          }
+          return byte
+        }
+        function readU32() {
+          return ((readByte() << 24) | (readByte() << 16) | (readByte() << 8) | readByte()) >>> 0
+        }
+
+        // Verify magic
+        for (const m of _STEGO_MAGIC) { if (readByte() !== m) { resolve(null); return } }
+
+        const totalLen = readU32()
+        // Sanity: totalLen must fit in remaining bits
+        if (totalLen > Math.floor((maxBits - bi) / 8)) { resolve(null); return }
+
+        let remaining = totalLen
+        while (remaining > 0) {
+          const keyLen = readByte(); remaining--
+          if (keyLen === 0) break
+          if (keyLen > remaining) { resolve(null); return }
+          let kw = ''
+          for (let i = 0; i < keyLen; i++) { kw += String.fromCharCode(readByte()); remaining-- }
+          if (remaining < 4) { resolve(null); return }
+          const valLen = readU32(); remaining -= 4
+          if (valLen > remaining) { resolve(null); return }
+          let val = ''
+          for (let i = 0; i < valLen; i++) { val += String.fromCharCode(readByte()); remaining-- }
+          if (kw === keyword) { resolve(val); return }
+        }
+        resolve(null)
+      } catch { resolve(null) }
+    }
+    img.onerror = () => resolve(null)
+    img.src = bytesToDataUrl(bytes)
+  })
+}
+
 /** Trigger a browser file download from a data URL */
 export function downloadDataUrl(dataUrl, filename) {
   const a = document.createElement('a')
