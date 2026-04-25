@@ -97,6 +97,7 @@
 
           <!-- Blueprints tab -->
           <template v-else>
+            <div class="bp-drop-zone" :class="{ 'bp-drag-over': bpDragOver }" @dragover.prevent="onBpDragOver" @dragleave="onBpDragLeave" @drop.prevent="onBpFileDrop">
             <div class="filter">
               <input v-model="blueprintFilter" placeholder="Filter blueprints..." />
             </div>
@@ -141,6 +142,7 @@
               </div>
 
             </div>
+            </div><!-- end bp-drop-zone -->
           </template>
         </template>
 
@@ -542,6 +544,10 @@ export default {
       const file = event.target.files?.[0]
       if (!file) return
       event.target.value = ''
+      await importBlueprintFromBytes(file)
+    }
+
+    async function importBlueprintFromBytes(file) {
       try {
         const bytes = await readFileAsBytes(file)
         const raw = readPngText(bytes, 'plateup-blueprint')
@@ -561,6 +567,28 @@ export default {
         alert('Failed to read blueprint: ' + e.message)
       }
     }
+
+    // --- Blueprint palette drag-and-drop ---
+    const bpDragOver = ref(false)
+
+    function onBpDragOver(e) {
+      if (e.dataTransfer?.types?.includes('Files')) bpDragOver.value = true
+    }
+
+    function onBpDragLeave(e) {
+      if (!e.currentTarget.contains(e.relatedTarget)) bpDragOver.value = false
+    }
+
+    async function onBpFileDrop(e) {
+      bpDragOver.value = false
+      const file = e.dataTransfer?.files?.[0]
+      if (!file || file.type !== 'image/png') {
+        if (file) alert('Only PNG blueprint files can be imported by dropping here.')
+        return
+      }
+      await importBlueprintFromBytes(file)
+    }
+    // --- End blueprint drag-and-drop ---
 
     // ── Unified export / import ───────────────────────────────────────────────
 
@@ -924,6 +952,7 @@ export default {
       // blueprints
       paletteTab, blueprintFilter, filteredBlueprints, createBlueprint, applyBlueprint, deleteBlueprint, onBlueprintMouseDown,
       exportBlueprint, handleBlueprintImport, triggerBlueprintImport, blueprintImportInput,
+      bpDragOver, onBpDragOver, onBpDragLeave, onBpFileDrop,
       // unified export/import
       unifiedImportInput, triggerUnifiedImport, handleUnifiedImport,
       exportMenuVisible, exportMenuPos, showExportMenu, closeExportMenu, doExport,
@@ -1053,6 +1082,19 @@ export default {
   flex-shrink: 0;
 }
 .bp-import-btn:hover { background: #e8f0ff; border-color: #1f79ff }
+.bp-drop-zone {
+  display: contents;
+}
+.bp-drop-zone.bp-drag-over {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  border: 2px dashed #4a90d9;
+  border-radius: 6px;
+  background: #f0f6ff;
+  padding: 4px;
+}
 .bp-export-btn {
   position: absolute;
   bottom: 2px;
