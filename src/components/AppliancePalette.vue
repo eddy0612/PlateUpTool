@@ -534,7 +534,7 @@ export default {
       if (!exportPreview) { alert('Could not generate preview image.'); return }
       const json = JSON.stringify({ name: bp.name, cells: bp.cells })
       const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
-      const bytes = dataUrlToBytes(exportPreview)
+      const bytes = dataUrlToBytes(await addWatermark(exportPreview))
       const modified = writePngText(bytes, 'plateup-blueprint', payload)
       const safeName = bp.name.replace(/[^a-z0-9_-]/gi, '_').slice(0, 40) || 'blueprint'
       downloadDataUrl(bytesToDataUrl(modified), `plateup-blueprint-${safeName}-${exportTimestamp()}.png`)
@@ -591,6 +591,79 @@ export default {
     // --- End blueprint drag-and-drop ---
 
     // ── Unified export / import ───────────────────────────────────────────────
+
+    /** Adds a small branding strip to the bottom of an exported PNG data URL. */
+    function addWatermark(dataUrl) {
+      return new Promise((resolve) => {
+        const img = new window.Image()
+        img.onload = () => {
+          const STRIP_H = 28
+          const ICON_SIZE = 13
+          const FONT_SIZE = 11
+          const INNER_PAD_X = 8
+          const INNER_PAD_Y = 5
+          const TEXT = 'eddy0612.github.io/PlateUpTool'
+
+          const canvas = document.createElement('canvas')
+          canvas.width = img.width
+          canvas.height = img.height + STRIP_H
+          const ctx = canvas.getContext('2d')
+
+          // Draw original image
+          ctx.drawImage(img, 0, 0)
+
+          // Fill strip with the same light background
+          ctx.fillStyle = '#e8eef8'
+          ctx.fillRect(0, img.height, img.width, STRIP_H)
+
+          // Measure badge contents
+          ctx.font = `${FONT_SIZE}px sans-serif`
+          const textW = ctx.measureText(TEXT).width
+          const badgeW = INNER_PAD_X + ICON_SIZE + 5 + textW + INNER_PAD_X
+          const badgeH = STRIP_H - INNER_PAD_Y * 2
+          const badgeX = Math.round((img.width - badgeW) / 2)
+          const badgeY = img.height + INNER_PAD_Y
+
+          // Draw rounded badge background
+          ctx.fillStyle = '#0f1117'
+          ctx.beginPath()
+          const r = 5
+          ctx.moveTo(badgeX + r, badgeY)
+          ctx.lineTo(badgeX + badgeW - r, badgeY)
+          ctx.quadraticCurveTo(badgeX + badgeW, badgeY, badgeX + badgeW, badgeY + r)
+          ctx.lineTo(badgeX + badgeW, badgeY + badgeH - r)
+          ctx.quadraticCurveTo(badgeX + badgeW, badgeY + badgeH, badgeX + badgeW - r, badgeY + badgeH)
+          ctx.lineTo(badgeX + r, badgeY + badgeH)
+          ctx.quadraticCurveTo(badgeX, badgeY + badgeH, badgeX, badgeY + badgeH - r)
+          ctx.lineTo(badgeX, badgeY + r)
+          ctx.quadraticCurveTo(badgeX, badgeY, badgeX + r, badgeY)
+          ctx.closePath()
+          ctx.fill()
+
+          const iconImg = new window.Image()
+          iconImg.onload = () => {
+            ctx.drawImage(iconImg, badgeX + INNER_PAD_X, badgeY + (badgeH - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
+            ctx.fillStyle = '#e8eef8'
+            ctx.font = `${FONT_SIZE}px sans-serif`
+            ctx.textBaseline = 'middle'
+            ctx.textAlign = 'left'
+            ctx.fillText(TEXT, badgeX + INNER_PAD_X + ICON_SIZE + 5, badgeY + badgeH / 2)
+            resolve(canvas.toDataURL('image/png'))
+          }
+          iconImg.onerror = () => {
+            ctx.fillStyle = '#e8eef8'
+            ctx.font = `${FONT_SIZE}px sans-serif`
+            ctx.textBaseline = 'middle'
+            ctx.textAlign = 'left'
+            ctx.fillText(TEXT, badgeX + INNER_PAD_X, badgeY + badgeH / 2)
+            resolve(canvas.toDataURL('image/png'))
+          }
+          iconImg.src = '/favicon-32.png'
+        }
+        img.onerror = () => resolve(dataUrl)
+        img.src = dataUrl
+      })
+    }
 
     function exportTimestamp() {
       const d = new Date()
@@ -756,7 +829,7 @@ export default {
       if (state.activeTabId === 'structure' && type === 'tab') {
         const preview = await generateStructureOnlyPreview()
         const payload = encodePayload({ type: 'structure', roomWidth: state.roomWidth, roomHeight: state.roomHeight, walls: state.walls || {} })
-        const bytes = dataUrlToBytes(preview)
+        const bytes = dataUrlToBytes(await addWatermark(preview))
         let modified = writePngText(bytes, 'plateup-v2-export', payload)
         // Also write legacy key for backward compat
         modified = writePngText(modified, 'plateup-structure', encodePayload({ roomWidth: state.roomWidth, roomHeight: state.roomHeight, walls: state.walls || {} }))
@@ -788,7 +861,7 @@ export default {
         }))
         const preview = await generateGridPreview(tabId, false)
         const payload = encodePayload({ type: 'tab', tabId, tabLabel, cells: exportCells })
-        const bytes = dataUrlToBytes(preview)
+        const bytes = dataUrlToBytes(await addWatermark(preview))
         const modified = writePngText(bytes, 'plateup-v2-export', payload)
         const safeName = tabLabel.replace(/[^a-z0-9_-]/gi, '_').slice(0, 30) || tabId
         downloadDataUrl(bytesToDataUrl(modified), `plateup-tab-${safeName}-${exportTimestamp()}.png`)
@@ -812,7 +885,7 @@ export default {
         }))
         const preview = await generateGridPreview(null, false)
         const payload = encodePayload({ type: 'all-tabs', cells: exportCells })
-        const bytes = dataUrlToBytes(preview)
+        const bytes = dataUrlToBytes(await addWatermark(preview))
         const modified = writePngText(bytes, 'plateup-v2-export', payload)
         downloadDataUrl(bytesToDataUrl(modified), `plateup-all-tabs-${exportTimestamp()}.png`)
 
@@ -827,7 +900,7 @@ export default {
           tabs: state.tabs,
           gridCells: state.gridCells
         })
-        const bytes = dataUrlToBytes(preview)
+        const bytes = dataUrlToBytes(await addWatermark(preview))
         const modified = writePngText(bytes, 'plateup-v2-export', payload)
         downloadDataUrl(bytesToDataUrl(modified), `plateup-complete-${exportTimestamp()}.png`)
       }
