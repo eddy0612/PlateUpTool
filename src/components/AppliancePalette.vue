@@ -377,8 +377,9 @@ export default {
       offscreen.width  = canvasW
       offscreen.height = canvasH
       const ctx = offscreen.getContext('2d')
-      // Use a light blue 'blueprint' background for blueprint previews and exports
-      ctx.fillStyle = '#cce7ff'
+      const isDark = document.documentElement.classList.contains('dark')
+      // Use a blue 'blueprint' background for blueprint previews and exports
+      ctx.fillStyle = isDark ? '#0e2038' : '#cce7ff'
       ctx.fillRect(0, 0, canvasW, canvasH)
 
       await Promise.all(cells.map(({ dx, dy, cell }) => new Promise(resolve => {
@@ -388,9 +389,9 @@ export default {
         const cy = PAD + dy * CELL_PX
 
         if (!iconSrc || !isImageIcon(iconSrc)) {
-          ctx.fillStyle = '#dde3ea'
+          ctx.fillStyle = isDark ? '#1e3050' : '#dde3ea'
           ctx.fillRect(cx + 1, cy + 1, CELL_PX - 2, CELL_PX - 2)
-          ctx.fillStyle = '#555'
+          ctx.fillStyle = isDark ? '#b0c0da' : '#555'
           ctx.font = `${Math.floor(CELL_PX * 0.45)}px sans-serif`
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
@@ -604,6 +605,9 @@ export default {
           const INNER_PAD_X = 8
           const INNER_PAD_Y = 5
           const TEXT = 'eddy0612.github.io/PlateUpTool'
+          const isDark = document.documentElement.classList.contains('dark')
+          const stripBg = isDark ? '#1c2030' : '#e8eef8'
+          const stripText = isDark ? '#d0daea' : '#e8eef8'
 
           const canvas = document.createElement('canvas')
           canvas.width = img.width
@@ -613,8 +617,8 @@ export default {
           // Draw original image
           ctx.drawImage(img, 0, 0)
 
-          // Fill strip with the same light background
-          ctx.fillStyle = '#e8eef8'
+          // Fill strip with the theme background
+          ctx.fillStyle = stripBg
           ctx.fillRect(0, img.height, img.width, STRIP_H)
 
           // Measure badge contents
@@ -644,7 +648,7 @@ export default {
           const iconImg = new window.Image()
           iconImg.onload = () => {
             ctx.drawImage(iconImg, badgeX + INNER_PAD_X, badgeY + (badgeH - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
-            ctx.fillStyle = '#e8eef8'
+            ctx.fillStyle = stripText
             ctx.font = `${FONT_SIZE}px sans-serif`
             ctx.textBaseline = 'middle'
             ctx.textAlign = 'left'
@@ -652,7 +656,7 @@ export default {
             resolve(canvas.toDataURL('image/png'))
           }
           iconImg.onerror = () => {
-            ctx.fillStyle = '#e8eef8'
+            ctx.fillStyle = stripText
             ctx.font = `${FONT_SIZE}px sans-serif`
             ctx.textBaseline = 'middle'
             ctx.textAlign = 'left'
@@ -695,9 +699,10 @@ export default {
       offscreen.width = canvasW
       offscreen.height = canvasH
       const ctx = offscreen.getContext('2d')
-      ctx.fillStyle = includeWalls ? '#f8f9fb' : '#e8eef8'
+      const isDark = document.documentElement.classList.contains('dark')
+      ctx.fillStyle = isDark ? (includeWalls ? '#151a26' : '#1e2738') : (includeWalls ? '#f8f9fb' : '#e8eef8')
       ctx.fillRect(0, 0, canvasW, canvasH)
-      ctx.strokeStyle = includeWalls ? '#d0d8e8' : '#c8d4e4'
+      ctx.strokeStyle = isDark ? '#2a3a54' : (includeWalls ? '#d0d8e8' : '#c8d4e4')
       ctx.lineWidth = 0.5
       for (let x = 0; x <= state.roomWidth; x++) {
         ctx.beginPath(); ctx.moveTo(PAD + x * CELL_PX, PAD); ctx.lineTo(PAD + x * CELL_PX, PAD + state.roomHeight * CELL_PX); ctx.stroke()
@@ -709,9 +714,9 @@ export default {
         for (const [key, type] of Object.entries(state.walls || {})) {
           const [orient, xStr, yStr] = key.split(',')
           const wx = parseInt(xStr), wy = parseInt(yStr)
-          if (type === 'wall')       { ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 3; ctx.setLineDash([]) }
-          else if (type === 'hatch') { ctx.strokeStyle = '#555555'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]) }
-          else if (type === 'door')  { ctx.strokeStyle = '#c8860a'; ctx.lineWidth = 3; ctx.setLineDash([]) }
+          if (type === 'wall')       { ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3; ctx.setLineDash([]) }
+          else if (type === 'hatch') { ctx.strokeStyle = isDark ? '#a0b4cc' : '#555555'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]) }
+          else if (type === 'door')  { ctx.strokeStyle = isDark ? '#f0a830' : '#c8860a'; ctx.lineWidth = 3; ctx.setLineDash([]) }
           ctx.beginPath()
           if (orient === 'h') {
             ctx.moveTo(PAD + wx * CELL_PX, PAD + wy * CELL_PX)
@@ -723,7 +728,7 @@ export default {
           ctx.stroke()
         }
         ctx.setLineDash([])
-        ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 3
+        ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3
         ctx.strokeRect(PAD, PAD, state.roomWidth * CELL_PX, state.roomHeight * CELL_PX)
       }
       const cells = []
@@ -743,9 +748,9 @@ export default {
         const iconSrc = entry?.icon2D || entry?.icon
         const cx = PAD + x * CELL_PX, cy = PAD + y * CELL_PX
         if (!iconSrc || !isImageIcon(iconSrc)) {
-          ctx.fillStyle = '#dde3ea'
+          ctx.fillStyle = isDark ? '#2a3a54' : '#dde3ea'
           ctx.fillRect(cx + 1, cy + 1, CELL_PX - 2, CELL_PX - 2)
-          ctx.fillStyle = '#555'
+          ctx.fillStyle = isDark ? '#b0c0da' : '#555'
           ctx.font = `${Math.floor(CELL_PX * 0.4)}px sans-serif`
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
           ctx.fillText((entry?.label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
@@ -779,9 +784,10 @@ export default {
       const offscreen = document.createElement('canvas')
       offscreen.width = canvasW; offscreen.height = canvasH
       const ctx = offscreen.getContext('2d')
-      ctx.fillStyle = '#f8f9fb'
+      const isDark = document.documentElement.classList.contains('dark')
+      ctx.fillStyle = isDark ? '#151a26' : '#f8f9fb'
       ctx.fillRect(0, 0, canvasW, canvasH)
-      ctx.strokeStyle = '#d0d8e8'; ctx.lineWidth = 0.5
+      ctx.strokeStyle = isDark ? '#2a3a54' : '#d0d8e8'; ctx.lineWidth = 0.5
       for (let y = 0; y <= state.roomHeight; y++) {
         ctx.beginPath(); ctx.moveTo(PAD, PAD + y * CELL_PX); ctx.lineTo(PAD + state.roomWidth * CELL_PX, PAD + y * CELL_PX); ctx.stroke()
       }
@@ -791,9 +797,9 @@ export default {
       for (const [key, type] of Object.entries(state.walls || {})) {
         const [orient, xStr, yStr] = key.split(',')
         const wx = parseInt(xStr), wy = parseInt(yStr)
-        if (type === 'wall')       { ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 3; ctx.setLineDash([]) }
-        else if (type === 'hatch') { ctx.strokeStyle = '#555555'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]) }
-        else if (type === 'door')  { ctx.strokeStyle = '#c8860a'; ctx.lineWidth = 3; ctx.setLineDash([]) }
+        if (type === 'wall')       { ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3; ctx.setLineDash([]) }
+        else if (type === 'hatch') { ctx.strokeStyle = isDark ? '#a0b4cc' : '#555555'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]) }
+        else if (type === 'door')  { ctx.strokeStyle = isDark ? '#f0a830' : '#c8860a'; ctx.lineWidth = 3; ctx.setLineDash([]) }
         ctx.beginPath()
         if (orient === 'h') {
           ctx.moveTo(PAD + wx * CELL_PX, PAD + wy * CELL_PX)
@@ -804,7 +810,7 @@ export default {
         }
         ctx.stroke()
       }
-      ctx.setLineDash([]); ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 3
+      ctx.setLineDash([]); ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3
       ctx.strokeRect(PAD, PAD, state.roomWidth * CELL_PX, state.roomHeight * CELL_PX)
       return offscreen.toDataURL('image/png')
     }

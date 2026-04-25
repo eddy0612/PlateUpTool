@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="root">
+  <div :class="['root', { dark: darkMode }]">
     <header class="top-bar">
       <div class="title-group">
         <h1>PlateUp Tool</h1>
@@ -43,6 +43,14 @@
             <path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5z"/>
           </svg>
           Share
+        </button>
+        <button class="darkmode-button" @click="toggleDarkMode" :title="darkMode ? 'Switch to light mode' : 'Switch to dark mode'">
+          <svg v-if="!darkMode" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+          </svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/>
+          </svg>
         </button>
         <button class="help-button" @click="showHelp = true" title="Keyboard shortcuts &amp; controls">?</button>
       </div>
@@ -215,6 +223,7 @@ export default {
     const showTutorial = ref(false)
     const showCopiedToast = ref(false)
     const showFeedbackModal = ref(false)
+    const darkMode = ref(localStorage.getItem('darkMode') === 'true')
 
     const renderer = new marked.Renderer()
     renderer.link = ({ href, text }) =>
@@ -243,6 +252,12 @@ export default {
       showFeedbackModal.value = false
     }
 
+    function toggleDarkMode() {
+      darkMode.value = !darkMode.value
+      localStorage.setItem('darkMode', darkMode.value)
+      document.documentElement.classList.toggle('dark', darkMode.value)
+    }
+
     function copyUrl() {
       navigator.clipboard.writeText(window.location.href)
       showCopiedToast.value = true
@@ -252,6 +267,7 @@ export default {
     watch(() => ({ ...state }), () => syncToHash(), { deep: true })
 
     onMounted(() => {
+      document.documentElement.classList.toggle('dark', darkMode.value)
       loadFromHash()
       loadGridFromState()
       if (!hasTutorialBeenSeen()) showTutorial.value = true
@@ -266,7 +282,7 @@ export default {
       loadGridFromState()
     }
 
-    return { startAgain, showHelp, showCredits, showTutorial, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state }
+    return { startAgain, showHelp, showCredits, showTutorial, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, darkMode, toggleDarkMode, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state }
   }
 }
 </script>
@@ -274,6 +290,7 @@ export default {
 <style>
 * { box-sizing: border-box }
 html, body { margin: 0; font-family: sans-serif; overflow: hidden; height: 100%; }
+html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
 </style>
 
 <style scoped>
@@ -517,6 +534,19 @@ html, body { margin: 0; font-family: sans-serif; overflow: hidden; height: 100%;
   overflow: hidden;
 }
 .palette-drag-ghost img { max-width: 100%; max-height: 100%; display: block; }
+.darkmode-button {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid #5b8fd9;
+  background: #eef4ff;
+  color: #2a5db0;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+.darkmode-button:hover { background: #d0e3ff; border-color: #2a5db0 }
 .main-grid {
   display: flex;
   gap: 10px;
@@ -524,4 +554,152 @@ html, body { margin: 0; font-family: sans-serif; overflow: hidden; height: 100%;
   overflow: visible;
   align-items: flex-start;
 }
+</style>
+
+<style>
+/* ─── Dark Mode Overrides ──────────────────────────────────────────────────
+   html.dark .classname specificity (0,2,1) beats Vue scoped (0,2,0)
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* ── Share / Help / Dark buttons ── */
+html.dark .share-button { border-color: #3a5a88; background: #1a2640; color: #7aaade; }
+html.dark .share-button:hover { background: #223060; border-color: #5a7aaa; }
+html.dark .help-button { border-color: #3a5a88; background: #1a2640; color: #7aaade; }
+html.dark .help-button:hover { background: #223060; border-color: #5a7aaa; }
+html.dark .darkmode-button { border-color: #3a5a88; background: #1a2640; color: #7aaade; }
+html.dark .darkmode-button:hover { background: #223060; border-color: #5a7aaa; }
+
+/* ── Tagline ── */
+html.dark .title-tagline { color: #4a5a70; }
+
+/* ── Help / Credits modal ── */
+html.dark .help-modal { background: #1c2030; }
+html.dark .help-modal-header { border-bottom-color: #2e3a52; }
+html.dark .help-modal-header h2 { color: #d0daea; }
+html.dark .help-modal-close { color: #8898b0; }
+html.dark .help-modal-close:hover { background: #2e3a52; color: #d0daea; }
+html.dark .help-modal-body section h3 { color: #5a7aaa; border-bottom-color: #2e3a52; }
+html.dark .help-modal-body dt { background: #141926; border-color: #2a3a54; color: #9ab0cc; }
+html.dark .help-modal-body dd { color: #b0c0da; }
+html.dark .credits-body { color: #b0c0da; }
+html.dark .credits-body h1 { color: #d0daea; }
+html.dark .credits-body h2 { color: #d0daea; border-bottom-color: #2e3a52; }
+html.dark .credits-body h3 { color: #5a7aaa; border-bottom-color: #2e3a52; }
+html.dark .credits-body a { color: #7aaade; }
+html.dark .credits-body a:hover { color: #a0c4f0; }
+html.dark .credits-body code { background: #141926; border-color: #2a3a54; color: #a0b8d0; }
+html.dark .credits-body blockquote { background: #141e2e; border-left-color: #3a5a88; color: #8898b0; }
+
+/* ── Feedback modal ── */
+html.dark .feedback-modal { background: #1c2030; }
+html.dark .feedback-modal-header h2 { color: #d0daea; }
+html.dark .feedback-modal-close { color: #8898b0; }
+html.dark .feedback-modal-close:hover { background: #2e3a52; color: #d0daea; }
+html.dark .feedback-modal-subtitle { color: #8898b0; }
+html.dark .feedback-option { background: #141926; border-color: #2e3a52; }
+html.dark .feedback-option--github { color: #d0daea; }
+html.dark .feedback-option--github:hover { background: #1c2a40; border-color: #4a6a88; }
+html.dark .feedback-option--discord:hover { background: #1c1e40; border-color: #5a5aaa; }
+html.dark .feedback-option--github .feedback-option-icon { background: #253040; }
+html.dark .feedback-option--discord .feedback-option-icon { background: #1e2040; }
+
+/* ── GridView ── */
+html.dark .viewport-box { background: #151a26; border-color: #2a3a54; }
+html.dark .viewport-box.file-drag-over { background: #1a2840; border-color: #4a7aaa; }
+html.dark .grid { background: #1e2738; border-color: #3a5070; }
+html.dark .grid-item { border-color: #2a3a54; }
+html.dark .grid-item.selected { background: #1a2e50; }
+html.dark .grid-item.move-source { background: #1a2e50; }
+html.dark .hover-icon-box { background: #1a2535; border-color: #2a3a54; }
+html.dark .grid-status-bar { color: #6a8ab0; background: #141926; border-color: #2a3a54; }
+html.dark .context-menu { background: #1c2030; border-color: #2e3a52; }
+html.dark .context-menu-item { color: #d0daea; }
+html.dark .context-menu-item:hover { background: #1c2a40; }
+html.dark .context-menu-cancel { color: #6a7a94; border-top-color: #2e3a52; }
+html.dark .tab-rename-input { border-bottom-color: #5a6a80; }
+
+/* Tab post-its */
+html.dark .tab-postit { background: #252015; border-color: #4a3a20; box-shadow: 2px 2px 6px rgba(0,0,0,0.5); }
+html.dark .tab-postit.tab-color-structure { background: #1e2028; border-color: #3a3e4a; }
+html.dark .tab-postit.tab-color-complete { background: #1e2028; border-color: #3a3e4a; }
+html.dark .tab-postit.add { background: #182638; border-color: #2e4060; }
+html.dark .tab-user-0 { background: #2e3340; border-color: #5a6070; }
+html.dark .tab-user-0.active { background: #363c4a; border-color: #6a7080; }
+html.dark .tab-user-1 { background: #183560; border-color: #3a68a8; }
+html.dark .tab-user-1.active { background: #1e3e70; border-color: #4a78b8; }
+html.dark .tab-user-2 { background: #163a22; border-color: #348a50; }
+html.dark .tab-user-2.active { background: #1a4428; border-color: #44a060; }
+html.dark .tab-user-3 { background: #3a1630; border-color: #884060; }
+html.dark .tab-user-3.active { background: #461a38; border-color: #a05070; }
+html.dark .tab-user-4 { background: #2a1448; border-color: #6840a0; }
+html.dark .tab-user-4.active { background: #321854; border-color: #7850b0; }
+html.dark .tab-user-5 { background: #3a2408; border-color: #906020; }
+html.dark .tab-user-5.active { background: #462c0a; border-color: #a07030; }
+html.dark .tab-user-6 { background: #103834; border-color: #308878; }
+html.dark .tab-user-6.active { background: #14423e; border-color: #409888; }
+html.dark .tab-user-7 { background: #3c1818; border-color: #904040; }
+html.dark .tab-user-7.active { background: #481e1e; border-color: #a05050; }
+html.dark .tab-user-8 { background: #103248; border-color: #3078a0; }
+html.dark .tab-user-8.active { background: #143a54; border-color: #4088b0; }
+html.dark .tab-user-9 { background: #1e3810; border-color: #508828; }
+html.dark .tab-user-9.active { background: #244214; border-color: #609832; }
+
+/* ── AppliancePalette ── */
+html.dark .side-box { background: #1c2030; border-color: #2e3a52; }
+html.dark .filter input { background: #141926; border-color: #2a3a54; color: #d0daea; }
+html.dark .filter input::placeholder { color: #5a6a80; }
+html.dark .palette-item { border-color: #2a3a54; }
+html.dark .palette-item:hover { border-color: #4a6a8a; background: #1a2030; }
+html.dark .palette-tabs { border-bottom-color: #2e3a52; }
+html.dark .palette-tab { color: #6a7a94; }
+html.dark .palette-tab:hover { color: #7aaade; }
+html.dark .blueprint-add-item { background: #141926; border-color: #2a3a54; }
+html.dark .blueprint-add-item:hover { background: #1a2840; border-color: #3a5a88; }
+html.dark .blueprint-item:hover { background: #1a2840; border-color: #3a5a88; }
+html.dark .bp-import-btn { background: #141926; border-color: #2a3a54; color: #7aaade; }
+html.dark .bp-import-btn:hover { background: #1a2840; border-color: #4a7aaa; }
+html.dark .bp-drop-zone.bp-drag-over { background: #1a2840; border-color: #4a7aaa; }
+html.dark .structure-tool-item { background: #141926; border-color: #2e3a52; }
+html.dark .structure-tool-item:hover:not(.active) { background: #1a2030; border-color: #3a4a60; }
+html.dark .structure-tool-item.active { background: #1a2e50; border-color: #1f79ff; }
+html.dark .tool-name { color: #d0daea; }
+html.dark .tool-desc { color: #6a7a94; }
+html.dark .structure-hint { color: #4a5a70; }
+html.dark .structure-header { color: #c87a7a; border-bottom-color: #4a2a2a; }
+html.dark .preview-info-banner { background: #1e1c08; border-color: #5a5010; color: #b0a060; }
+html.dark .inventory-panel { background: #1c2030; border-color: #2e3a52; }
+html.dark .inventory-header { border-bottom-color: #2e3a52; }
+html.dark .inventory-title { color: #d0daea; }
+
+/* ── TutorialModal ── */
+html.dark .tutorial-modal { background: #1c2030; }
+html.dark .tutorial-header { border-bottom-color: #2e3a52; }
+html.dark .tutorial-header h2 { color: #d0daea; }
+html.dark .tutorial-skip { color: #6a7a94; }
+html.dark .tutorial-skip:hover { color: #d0daea; }
+html.dark .tutorial-gif { border-color: #2e3a52; }
+html.dark .tutorial-text h3 { color: #d0daea; }
+html.dark .tutorial-text p { color: #8898b0; }
+html.dark .tutorial-footer { border-top-color: #2e3a52; }
+html.dark .tutorial-dot { background: #2e3a52; }
+html.dark .tutorial-nav-btn.secondary { background: #1e2838; color: #7aaade; }
+html.dark .tutorial-nav-btn.secondary:hover { background: #2a3848; }
+
+/* ── Wall / hatch / door edge markers ── */
+html.dark .edge-marker.edge-type-wall  { background: #c8d4e8; }
+html.dark .edge-marker.edge-type-hatch {
+  background: repeating-linear-gradient(45deg, #a0b4cc 0px, #a0b4cc 3px, transparent 3px, transparent 7px);
+}
+html.dark .edge-marker.edge-type-door  { background: #f0a830; }
+
+/* ── Structure palette swatches ── */
+html.dark .swatch-wall  { background: #c8d4e8; }
+html.dark .swatch-hatch {
+  background: repeating-linear-gradient(45deg, #a0b4cc 0px, #a0b4cc 4px, transparent 4px, transparent 8px);
+  border-color: #a0b4cc;
+}
+html.dark .swatch-door  { background: #f0a830; }
+
+/* ── Number inputs (room size controls in GridView) ── */
+html.dark input[type="number"] { background: #141926; border-color: #2a3a54; color: #d0daea; }
 </style>
