@@ -560,7 +560,8 @@ export default {
         const json = new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0)))
         const { name, cells } = JSON.parse(json)
         if (!name || !Array.isArray(cells) || cells.length === 0) { alert('Invalid blueprint data.'); return }
-        blueprints.value.push({ id: Date.now().toString(), name, preview: bytesToDataUrl(bytes), cells })
+        const preview = await generateBlueprintPreview(cells)
+        blueprints.value.push({ id: Date.now().toString(), name, preview, cells })
         saveBlueprintsToStorage()
         paletteTab.value = 'blueprints'
       } catch (e) {
