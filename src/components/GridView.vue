@@ -1111,6 +1111,14 @@ export default {
 .dark .tab-postit.tab-color-complete.active { background: #353535; border-color: #888; color: #fff; }
 .dark .tab-postit.add { background: #1a2a38; border-color: #3a6a8a; color: #cce6ff; }
 .dark .tab-postit { color: #eee; }
+
+/* Ensure Base tab (tab-user-0) stays white-tinged in dark mode for consistency */
+.dark .tab-user-0,
+.dark .tab-user-0.active {
+  background: #ffffff;
+  border-color: #888;
+  color: #222;
+}
 .controls-with-status { display: flex; flex-direction: row; align-items: center; gap: 8px; }
 .hover-icon-box {
   width: 72px;
