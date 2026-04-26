@@ -3,7 +3,7 @@
     <header class="top-bar">
       <div class="title-group">
         <h1>PlateUp Tool</h1>
-        <span class="title-tagline">An online planner for your restaurant</span>
+        <span class="title-tagline">An online planner for your PlateUp! restaurant</span>
       </div>
       <div class="header-right">
         <button class="reset-button" @click="startAgain" title="Clear the grid and start over">
