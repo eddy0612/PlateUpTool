@@ -1103,6 +1103,14 @@ export default {
 .tab-user-9 { background: #d9ffc4; border-color: #9ad868; }
 .tab-user-9.active { background: #b8f494; border-color: #78b848; }
 .tab-postit:hover { transform: translateX(-3px) scale(1.02) rotate(0deg) }
+
+/* Dark mode tab overrides */
+.dark .tab-postit.tab-color-structure { background: #232323; border-color: #444; color: #eee; }
+.dark .tab-postit.tab-color-structure.active { background: #353535; border-color: #888; color: #fff; }
+.dark .tab-postit.tab-color-complete { background: #232323; border-color: #444; color: #eee; }
+.dark .tab-postit.tab-color-complete.active { background: #353535; border-color: #888; color: #fff; }
+.dark .tab-postit.add { background: #1a2a38; border-color: #3a6a8a; color: #cce6ff; }
+.dark .tab-postit { color: #eee; }
 .controls-with-status { display: flex; flex-direction: row; align-items: center; gap: 8px; }
 .hover-icon-box {
   width: 72px;
