@@ -14,6 +14,7 @@ export async function getAppliancePalette() {
       id: entry.ID,
       label: entry.ItemDescription,
       icon: `${base}res/3D/${entry["3DFilename"]}`,
-      icon2D: `${base}res/2D/${entry["2DFilename"]}`
+      icon2D: `${base}res/2D/${entry["2DFilename"]}`,
+      flipPartner: entry.flipPartner ?? null
     }))
 }

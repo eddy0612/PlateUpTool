@@ -160,6 +160,7 @@ export default {
     const {
       flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon,
       rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection,
+      flipSelectionHorizontal, flipSelectionVertical,
       moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
       copyToClipboard, cutToClipboard,
@@ -707,24 +708,35 @@ export default {
 
     function onKeyDown(e) {
       const tag = document.activeElement?.tagName
+      // Normalize single-character letter keys so Shift doesn't change match
+      const key = (e.key && e.key.length === 1) ? e.key.toLowerCase() : e.key
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
       if (isStructureMode.value) return
-      if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (key === 'Delete' || key === 'Backspace') {
         e.preventDefault()
         removeSelected()
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'a') { e.preventDefault(); selectAll() }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'i') { e.preventDefault(); invertSelection() }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'c') { e.preventDefault(); copyToClipboard() }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'x') { e.preventDefault(); cutToClipboard() }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'v') { e.preventDefault(); startPaste() }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'd') { e.preventDefault(); startDuplicate() }
+      if ((e.ctrlKey || e.metaKey) && key === 'a') { e.preventDefault(); selectAll() }
+      if ((e.ctrlKey || e.metaKey) && key === 'i') { e.preventDefault(); invertSelection() }
+      if ((e.ctrlKey || e.metaKey) && key === 'c') { e.preventDefault(); copyToClipboard() }
+      if ((e.ctrlKey || e.metaKey) && key === 'x') { e.preventDefault(); cutToClipboard() }
+
+      if ((e.ctrlKey || e.metaKey) && key === 'f') {
+        e.preventDefault()
+        // Ctrl+F: flip across X axis (reverse x). Ctrl+Shift+F: flip across Y axis (reverse y).
+        const anyActive = [...selectedCells.value].some(k => { const [x, y] = k.split(',').map(Number); return !isCellGhosted(x, y) })
+        if (!anyActive) return
+        if (e.shiftKey) flipSelectionHorizontal()
+        else flipSelectionVertical()
+      }
+      if ((e.ctrlKey || e.metaKey) && key === 'v') { e.preventDefault(); startPaste() }
+      if ((e.ctrlKey || e.metaKey) && key === 'd') { e.preventDefault(); startDuplicate() }
       if (e.key === 'Escape') {
         if (pastePending.value) { cancelPaste(); return }
         closeContextMenu()
       }
-      if (e.key >= '0' && e.key <= '9') {
-        const idx = e.key === '0' ? 9 : parseInt(e.key) - 1
+      if (key >= '0' && key <= '9') {
+        const idx = key === '0' ? 9 : parseInt(key) - 1
         const userTabs = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure')
         if (idx < userTabs.length) state.activeTabId = userTabs[idx].id
       }

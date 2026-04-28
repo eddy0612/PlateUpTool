@@ -102,6 +102,7 @@
               <dl>
                 <div><dt>Right-click selection</dt><dd>Pivot 90° clockwise around clicked cell</dd></div>
                 <div><dt>Shift+Right-click selection</dt><dd>Pivot 90° counter-clockwise around clicked cell</dd></div>
+                <div><dt>Ctrl+F</dt><dd>Flip selection (Shift+Ctrl+F to flip vertically)</dd></div>
               </dl>
             </section>
             <section>
