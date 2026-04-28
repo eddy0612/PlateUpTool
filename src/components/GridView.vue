@@ -362,6 +362,78 @@ export default {
     const isMoveDragging = ref(false)
     const moveDragStartMouse = ref(null)
 
+    // --- Structure-mode drag (hold mouse to paint walls/hatches/doors) ---
+    const structureDragActive = ref(false)
+    const structureDragAction = ref(null) // 'add' | 'remove'
+    const structureDraggedEdges = ref(new Set())
+    const structureDragStartMouse = ref(null)
+    const structureDragActiveAxis = ref(null) // 'horizontal' | 'vertical' | null
+    const structureDragAnchor = ref(null) // { x, y }
+    const structureDragInitialEdge = ref(null) // 'top'|'right'|'bottom'|'left'
+    const structureDragInitialCanonical = ref(null) // { type: 'h'|'v', x, y }
+
+    function onStructureWindowMouseMove(e) {
+      if (!structureDragStartMouse.value) return
+      // Axis is fixed from mousedown; do nothing if missing
+      if (!structureDragActiveAxis.value) return
+      const el = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.grid-item')
+      if (!el) return
+      // Use canonical initial edge to derive the correct side for the current cell
+      const init = structureDragInitialCanonical.value
+      if (!init) return
+      const x = parseInt(el.dataset.x)
+      const y = parseInt(el.dataset.y)
+      // Allow cells adjacent to the canonical wall so dragging slightly across
+      // a cell boundary still paints the same physical wall.
+      if (init.type === 'h') {
+        // horizontal wall at init.y can belong to cells with y === init.y (top)
+        // or y === init.y - 1 (bottom)
+        if (y !== init.y && y !== init.y - 1) return
+      } else if (init.type === 'v') {
+        // vertical wall at init.x can belong to cells with x === init.x (left)
+        // or x === init.x - 1 (right)
+        if (x !== init.x && x !== init.x - 1) return
+      }
+      let dirToUse = null
+      if (init.type === 'v') {
+        // vertical wall at init.x; for cell (x,y) this is left if init.x === x, right if init.x === x+1
+        if (init.x === x) dirToUse = 'left'
+        else if (init.x === x + 1) dirToUse = 'right'
+        else return
+      } else if (init.type === 'h') {
+        // horizontal wall at init.y; for cell (x,y) this is top if init.y === y, bottom if init.y === y+1
+        if (init.y === y) dirToUse = 'top'
+        else if (init.y === y + 1) dirToUse = 'bottom'
+        else return
+      }
+      const edgeKey = `${x},${y},${dirToUse}`
+      // debug logging removed
+      if (structureDraggedEdges.value.has(edgeKey)) return
+      structureDraggedEdges.value.add(edgeKey)
+      const existing = getWallEdge(x, y, dirToUse)
+      const tool = selectedStructureTool.value
+      if (structureDragAction.value === 'add') {
+        if (existing !== tool) setWallEdge(x, y, dirToUse, tool)
+      } else if (structureDragAction.value === 'remove') {
+        if (existing === tool) setWallEdge(x, y, dirToUse, tool)
+      }
+    }
+
+    function onStructureWindowMouseUp() {
+      window.removeEventListener('mousemove', onStructureWindowMouseMove)
+      window.removeEventListener('mouseup', onStructureWindowMouseUp)
+      structureDragActive.value = false
+      structureDragAction.value = null
+      structureDraggedEdges.value = new Set()
+      structureDragStartMouse.value = null
+      structureDragActiveAxis.value = null
+      structureDragAnchor.value = null
+      structureDragInitialEdge.value = null
+      // Suppress the subsequent click event from toggling the edge again
+      wasDragging.value = true
+      setTimeout(() => { wasDragging.value = false }, 0)
+    }
+
     // ---- Event handlers ----
 
     // --- Paste pending tracking ---
@@ -388,6 +460,17 @@ export default {
       return minEntry[1] <= 0.38 ? minEntry[0] : null
     }
 
+    // Like detectEdgeDir but using an explicit element and coords (safe for window events)
+    function detectEdgeDirAt(el, clientX, clientY) {
+      if (!el) return null
+      const rect = el.getBoundingClientRect()
+      const relX = (clientX - rect.left) / rect.width
+      const relY = (clientY - rect.top) / rect.height
+      const d = { top: relY, bottom: 1 - relY, left: relX, right: 1 - relX }
+      const minEntry = Object.entries(d).reduce((a, b) => a[1] < b[1] ? a : b)
+      return minEntry[1] <= 0.38 ? minEntry[0] : null
+    }
+
     function onApplianceImgError(event, applianceId) {
       const img = event.target
       if (!img.dataset.fallback) {
@@ -404,6 +487,7 @@ export default {
 
     function handleCellClick(e, x, y) {
       if (isStructureMode.value) {
+        if (wasDragging.value) { wasDragging.value = false; return }
         const dir = detectEdgeDir(e)
         if (dir) setWallEdge(x, y, dir, selectedStructureTool.value)
         return
@@ -429,7 +513,41 @@ export default {
         window.addEventListener('mouseup', onRightDragMouseUp)
         return
       }
-      if (isStructureMode.value) return  // no drag/selection in structure mode
+      if (isStructureMode.value) {
+        // Start structure-mode edge paint drag: determine edge under cursor
+        if (e.button !== 0) return
+        const el = e.target.closest('.grid-item')
+        if (!el) return
+        const cx = parseInt(el.dataset.x)
+        const cy = parseInt(el.dataset.y)
+        const dir = detectEdgeDir(e)
+        if (!dir) return
+        const existing = getWallEdge(cx, cy, dir)
+        const tool = selectedStructureTool.value
+        // If existing edge equals selected tool, the drag will remove; otherwise it will add
+        structureDragAction.value = (existing === tool) ? 'remove' : 'add'
+        // Apply change for the initial edge
+        if (structureDragAction.value === 'add') {
+          if (existing !== tool) setWallEdge(cx, cy, dir, tool)
+        } else {
+          if (existing === tool) setWallEdge(cx, cy, dir, tool)
+        }
+        structureDragActive.value = true
+        structureDraggedEdges.value = new Set([`${cx},${cy},${dir}`])
+        structureDragStartMouse.value = { x: e.clientX, y: e.clientY }
+        // Save initial edge and canonical coordinates and set fixed axis/anchor
+        structureDragInitialEdge.value = dir
+        if (dir === 'top') structureDragInitialCanonical.value = { type: 'h', x: cx, y: cy }
+        else if (dir === 'bottom') structureDragInitialCanonical.value = { type: 'h', x: cx, y: cy + 1 }
+        else if (dir === 'left') structureDragInitialCanonical.value = { type: 'v', x: cx, y: cy }
+        else if (dir === 'right') structureDragInitialCanonical.value = { type: 'v', x: cx + 1, y: cy }
+        structureDragActiveAxis.value = (structureDragInitialCanonical.value.type === 'h') ? 'horizontal' : 'vertical'
+        structureDragAnchor.value = { x: cx, y: cy }
+        // debug logging removed
+        window.addEventListener('mousemove', onStructureWindowMouseMove)
+        window.addEventListener('mouseup', onStructureWindowMouseUp)
+        return
+      }
       if (state.activeTabId === 'complete') return  // no drag/selection on preview tab
       if (e.button !== 0) return
 
@@ -681,6 +799,10 @@ export default {
       if (!el) { hoverLabel.value = ''; hoverApplianceId.value = ''; return }
       const x = parseInt(el.dataset.x)
       const y = parseInt(el.dataset.y)
+      const rect = el.getBoundingClientRect()
+      const relX = (e.clientX - rect.left) / rect.width
+      const relY = (e.clientY - rect.top) / rect.height
+      // debug logging removed
       const cell = getDisplayCell(x, y)
       hoverLabel.value = cell?.applianceId ? getApplianceLabel(cell.applianceId) : ''
       hoverApplianceId.value = cell?.applianceId ?? ''
