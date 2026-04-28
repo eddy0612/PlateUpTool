@@ -14,7 +14,7 @@
                     v-if="!fallbackMap[getPreviewKey(opt)]"
                     :src="getPreviewSrc(opt)"
                     class="floor-preview"
-                    @error="() => setFallback(opt.label, isDark())"
+                    @error="() => setFallback(opt)"
                     aria-hidden="true"
                     alt="preview"
                   />
@@ -76,15 +76,16 @@ export default {
 
     function getPreviewSrc(opt) {
       const suffix = isDark() ? '-dark' : ''
-      return `/res/previews/${opt.w}x${opt.h}${suffix}.png`
+      const base = import.meta.env.BASE_URL || '/'
+      return base + `res/previews/${opt.w}x${opt.h}${suffix}.png`
     }
 
     function getPreviewKey(opt) {
       return `${opt.w}x${opt.h}${isDark() ? ':dark' : ''}`
     }
 
-    function setFallback(label, dark = false) {
-      const key = `${label}${dark ? ':dark' : ''}`
+    function setFallback(opt) {
+      const key = getPreviewKey(opt)
       fallbackMap[key] = true
     }
 
