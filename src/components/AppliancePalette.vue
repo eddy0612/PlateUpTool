@@ -169,10 +169,12 @@
         <div class="context-menu-backdrop" @click="closeExportMenu" @contextmenu.prevent="closeExportMenu" />
         <div class="context-menu" :style="{ left: exportMenuPos.x + 'px', bottom: exportMenuPos.bottom + 'px' }">
           <div class="context-menu-group-label">As file...</div>
+          <div class="context-menu-item" :class="{ disabled: !hasNonGhostSelection }" @click="exportSelectedToFile"><span class="icon">📤</span> Selected cells...</div>
           <div class="context-menu-item" @click="doExport('tab')"><span class="icon">💾</span> {{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
           <div class="context-menu-item" @click="doExport('all-tabs')"><span class="icon">💾</span> All appliance tabs</div>
           <div class="context-menu-item" @click="doExport('complete')"><span class="icon">💾</span> Complete</div>
           <div class="context-menu-group-label">To clipboard</div>
+          <div class="context-menu-item" :class="{ disabled: !hasNonGhostSelection }" @click="exportSelectedToClipboard"><span class="icon">📤</span> Selected cells...</div>
           <div class="context-menu-item" @click="doExportClipboard('tab')"><span class="icon">📋</span> {{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
           <div class="context-menu-item" @click="doExportClipboard('all-tabs')"><span class="icon">📋</span> All appliance tabs</div>
           <div class="context-menu-item" @click="doExportClipboard('complete')"><span class="icon">📋</span> Complete</div>
@@ -645,25 +647,31 @@ export default {
           const isDark = document.documentElement.classList.contains('dark')
           const stripBg = isDark ? '#1c2030' : '#e8eef8'
           const stripText = isDark ? '#d0daea' : '#e8eef8'
-
           const canvas = document.createElement('canvas')
-          canvas.width = img.width
+          // Measure text using a temporary canvas context to compute minimum badge width
+          const tmp = document.createElement('canvas')
+          const tctx = tmp.getContext('2d')
+          tctx.font = `${FONT_SIZE}px sans-serif`
+          const textW = tctx.measureText(TEXT).width
+          const badgeW = INNER_PAD_X + ICON_SIZE + 5 + textW + INNER_PAD_X
+          const badgeH = STRIP_H - INNER_PAD_Y * 2
+          const MIN_EXTRA_PAD = 16
+          const minCanvasWidth = Math.max(img.width, Math.round(badgeW + MIN_EXTRA_PAD))
+
+          canvas.width = minCanvasWidth
           canvas.height = img.height + STRIP_H
           const ctx = canvas.getContext('2d')
 
-          // Draw original image
-          ctx.drawImage(img, 0, 0)
+          // Draw original image centered if canvas was widened
+          const imgOffsetX = Math.round((canvas.width - img.width) / 2)
+          ctx.drawImage(img, imgOffsetX, 0)
 
           // Fill strip with the theme background
           ctx.fillStyle = stripBg
-          ctx.fillRect(0, img.height, img.width, STRIP_H)
+          ctx.fillRect(0, img.height, canvas.width, STRIP_H)
 
-          // Measure badge contents
-          ctx.font = `${FONT_SIZE}px sans-serif`
-          const textW = ctx.measureText(TEXT).width
-          const badgeW = INNER_PAD_X + ICON_SIZE + 5 + textW + INNER_PAD_X
-          const badgeH = STRIP_H - INNER_PAD_Y * 2
-          const badgeX = Math.round((img.width - badgeW) / 2)
+          // Position badge centered within the (possibly widened) canvas
+          const badgeX = Math.round((canvas.width - badgeW) / 2)
           const badgeY = img.height + INNER_PAD_Y
 
           // Draw rounded badge background
@@ -850,6 +858,80 @@ export default {
       ctx.setLineDash([]); ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3
       ctx.strokeRect(PAD, PAD, state.roomWidth * CELL_PX, state.roomHeight * CELL_PX)
       return offscreen.toDataURL('image/png')
+    }
+
+    const hasNonGhostSelection = computed(() => {
+      if (!selectedCells.value || selectedCells.value.size === 0) return false
+      for (const key of selectedCells.value) {
+        const [x, y] = key.split(',').map(Number)
+        if (!isCellGhosted(x, y)) {
+          const cell = grid.value[y]?.[x]
+          if (cell?.applianceId) return true
+        }
+      }
+      return false
+    })
+
+    async function exportSelectedToFile() {
+      if (!hasNonGhostSelection.value) return
+      closeExportMenu()
+      // collect non-ghosted selected cells
+      let minX = Infinity, minY = Infinity
+      const valid = []
+      for (const key of selectedCells.value) {
+        const [x, y] = key.split(',').map(Number)
+        if (!isCellGhosted(x, y)) {
+          const cell = grid.value[y]?.[x]
+          if (cell?.applianceId) {
+            if (x < minX) minX = x
+            if (y < minY) minY = y
+            valid.push({ x, y, cell })
+          }
+        }
+      }
+      if (valid.length === 0) { alert('No visible appliances are selected.'); return }
+
+      const exportCells = valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] } }))
+      const previewCells = valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { ...cell } }))
+      const preview = await generateBlueprintPreview(previewCells, 80)
+      const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: exportCells })
+      const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
+      const modified = writePngText(bytes, 'plateup-v2-export', payload)
+      downloadDataUrl(bytesToDataUrl(modified), `plateup-selection-${exportTimestamp()}.png`)
+    }
+
+    async function exportSelectedToClipboard() {
+      if (!hasNonGhostSelection.value) return
+      closeExportMenu()
+      let minX = Infinity, minY = Infinity
+      const valid = []
+      for (const key of selectedCells.value) {
+        const [x, y] = key.split(',').map(Number)
+        if (!isCellGhosted(x, y)) {
+          const cell = grid.value[y]?.[x]
+          if (cell?.applianceId) {
+            if (x < minX) minX = x
+            if (y < minY) minY = y
+            valid.push({ x, y, cell })
+          }
+        }
+      }
+      if (valid.length === 0) { alert('No visible appliances are selected.'); return }
+      const previewCells = valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { ...cell } }))
+      let dataUrl = await generateBlueprintPreview(previewCells, 80)
+      if (!dataUrl) { alert('Nothing to copy.'); return }
+      dataUrl = await addWatermark(dataUrl)
+      try {
+        const blob = await (await fetch(dataUrl)).blob()
+        await navigator.clipboard.write([
+          new window.ClipboardItem({
+            [blob.type]: blob
+          })
+        ])
+        alert('Image copied to clipboard!')
+      } catch (e) {
+        alert('Failed to copy image to clipboard: ' + e.message)
+      }
     }
 
     // ── Export popup ────────────────────────────────────────────────────────
@@ -1073,6 +1155,8 @@ export default {
       // unified export/import
       unifiedImportInput, triggerUnifiedImport, handleUnifiedImport,
       exportMenuVisible, exportMenuPos, showExportMenu, closeExportMenu, doExport, doExportClipboard,
+      // selection export
+      hasNonGhostSelection, exportSelectedToFile, exportSelectedToClipboard,
     }
   }
 }
@@ -1198,6 +1282,8 @@ export default {
   text-align: center;
   flex-shrink: 0;
 }
+/* Disabled context menu item state */
+.context-menu-item.disabled { opacity: 0.45; pointer-events: none }
 .bp-import-btn:hover { background: #e8f0ff; border-color: #1f79ff }
 .bp-drop-zone {
   display: contents;
