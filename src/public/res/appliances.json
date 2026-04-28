@@ -1547,6 +1547,7 @@
     "2DFilename": "2D_GrabberRotatingL--331651461.png",
     "ItemDescription": "Grabber - Rotating Left",
     "Reason": "",
+    "flipPartner": 346,
     "gametype": "base"
   },
   {
@@ -1557,6 +1558,7 @@
     "2DFilename": "2D_GrabberRotatingR--331651461.png",
     "ItemDescription": "Grabber - Rotating Right",
     "Reason": "",
+    "flipPartner": 154,
     "gametype": "base"
   },
   {

@@ -331,7 +331,9 @@ function flipSelectionVertical() {
     // When flipping across vertical axis (reverse x), mirror rotation: 1<->3, 0/2 unchanged
     const rot = src.rotation || 0
     const newRot = (4 - rot) % 4
-    return { tx, ty, content: { ...src, rotation: newRot } }
+    const paletteEntry = palette.value.find(p => p.id === src.applianceId)
+    const newApplianceId = paletteEntry && paletteEntry.flipPartner ? paletteEntry.flipPartner : src.applianceId
+    return { tx, ty, content: { ...src, applianceId: newApplianceId, rotation: newRot } }
   })
 
   // Clear sources then write targets
@@ -388,7 +390,9 @@ function flipSelectionHorizontal() {
     // When flipping across horizontal axis (reverse y), invert up/down: 0<->2, 1/3 unchanged
     const rot = src.rotation || 0
     const newRot = (2 - rot + 4) % 4
-    return { tx, ty, content: { ...src, rotation: newRot } }
+    const paletteEntry = palette.value.find(p => p.id === src.applianceId)
+    const newApplianceId = paletteEntry && paletteEntry.flipPartner ? paletteEntry.flipPartner : src.applianceId
+    return { tx, ty, content: { ...src, applianceId: newApplianceId, rotation: newRot } }
   })
 
   // Clear sources then write targets
