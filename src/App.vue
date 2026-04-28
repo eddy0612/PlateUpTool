@@ -186,6 +186,7 @@
       <GridView />
       <AppliancePalette />
     </div>
+    <RestaurantSizeModal v-if="showSizeModal" @choose="onSizeChosen" />
     <transition name="toast">
       <div v-if="showCopiedToast" class="copied-toast">Link copied to clipboard</div>
     </transition>
@@ -210,10 +211,12 @@ import creditsRaw from './CREDITS.md?raw'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import TutorialModal, { hasTutorialBeenSeen } from './components/TutorialModal.vue'
+import RestaurantSizeModal from './components/RestaurantSizeModal.vue'
+import { isDefaultState } from './store/restaurant'
 
 export default {
   name: 'App',
-  components: { GridView, AppliancePalette, TutorialModal },
+  components: { GridView, AppliancePalette, TutorialModal, RestaurantSizeModal },
   setup() {
     const { state, loadFromHash, syncToHash, resetState } = useRestaurantStore()
     const { loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize } = useGrid()
@@ -221,6 +224,7 @@ export default {
     const showHelp = ref(false)
     const showCredits = ref(false)
     const showTutorial = ref(false)
+    const showSizeModal = ref(false)
     const showCopiedToast = ref(false)
     const showFeedbackModal = ref(false)
     const darkMode = ref(localStorage.getItem('darkMode') === 'true')
@@ -270,7 +274,11 @@ export default {
       document.documentElement.classList.toggle('dark', darkMode.value)
       loadFromHash()
       loadGridFromState()
-      if (!hasTutorialBeenSeen()) showTutorial.value = true
+      if (!hasTutorialBeenSeen()) {
+        showTutorial.value = true
+      } else if (isDefaultState()) {
+        showSizeModal.value = true
+      }
       window.addEventListener('hashchange', () => {
         loadFromHash()
         loadGridFromState()
@@ -279,10 +287,22 @@ export default {
 
     function startAgain() {
       resetState()
-      loadGridFromState()
+      showSizeModal.value = true
     }
 
-    return { startAgain, showHelp, showCredits, showTutorial, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, darkMode, toggleDarkMode, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state }
+    function onSizeChosen({ w, h }) {
+      state.roomWidth = Number(w)
+      state.roomHeight = Number(h)
+      loadGridFromState()
+      showSizeModal.value = false
+    }
+
+    // When tutorial closes, if state is default show the size picker
+    watch(showTutorial, (v) => {
+      if (!v && isDefaultState()) showSizeModal.value = true
+    })
+
+    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, darkMode, toggleDarkMode, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen }
   }
 }
 </script>
