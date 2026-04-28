@@ -130,4 +130,21 @@ export default {
   stroke-linecap: butt;
   vector-effect: non-scaling-stroke;
 }
+
+/* Dark mode overrides when html.dark is set */
+html.dark .size-modal {
+  background: #0b1220;
+  color: #d7e8ff;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+}
+html.dark .size-card {
+  background: #071029;
+  border: 1.5px solid rgba(90,140,255,0.18);
+}
+html.dark .size-label { color: #e6f0ff }
+html.dark .size-dim { color: #9fb0c8 }
+html.dark .custom-inputs input { background: #071029; color: #e6f0ff; border: 1px solid #19314a }
+html.dark .custom-confirm { background: #2563eb }
+html.dark .floor-preview .outer { stroke: #7da7ff; stroke-width: 0.7; fill: #071029 }
+html.dark .floor-preview .grid-lines line { stroke: #9aa7b8; stroke-opacity: 0.85; stroke-width: 0.14 }
 </style>
