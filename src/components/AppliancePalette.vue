@@ -288,11 +288,46 @@ export default {
       }
       dataUrl = await addWatermark(dataUrl)
       try {
-        const blob = await (await fetch(dataUrl)).blob()
-        await navigator.clipboard.write([
-          new window.ClipboardItem({
-            [blob.type]: blob
+        // Build the same payloads and embed both stego (LSB) and tEXt metadata
+        let payload = null
+        if (state.activeTabId === 'structure' && type === 'tab') {
+          payload = encodePayload({ type: 'structure', roomWidth: state.roomWidth, roomHeight: state.roomHeight, walls: state.walls || {} })
+        } else if (type === 'tab') {
+          const tabId = state.activeTabId
+          const tab = state.tabs.find(t => t.id === tabId)
+          const tabLabel = tab?.label || tabId
+          payload = encodePayload({ type: 'tab', tabId, tabLabel, cells: [] })
+        } else if (type === 'all-tabs') {
+          payload = encodePayload({ type: 'all-tabs', cells: [] })
+        } else if (type === 'complete') {
+          payload = encodePayload({
+            type: 'complete',
+            roomWidth: state.roomWidth,
+            roomHeight: state.roomHeight,
+            orientation: state.orientation,
+            walls: state.walls || {},
+            tabs: state.tabs,
+            gridCells: state.gridCells
           })
+        }
+
+        // If we have a payload, write stego LSB and tEXt chunk like file exports
+        let finalBlob
+        if (payload) {
+          const stegoDataUrl = await writeStegoText(dataUrl, 'plateup-v2-export', payload)
+          const bytes = dataUrlToBytes(stegoDataUrl)
+          let modified = writePngText(bytes, 'plateup-v2-export', payload)
+          // structure export also writes legacy key
+          if (state.activeTabId === 'structure' && type === 'tab') {
+            modified = writePngText(modified, 'plateup-structure', encodePayload({ roomWidth: state.roomWidth, roomHeight: state.roomHeight, walls: state.walls || {} }))
+          }
+          finalBlob = new Blob([modified], { type: 'image/png' })
+        } else {
+          finalBlob = await (await fetch(dataUrl)).blob()
+        }
+
+        await navigator.clipboard.write([
+          new window.ClipboardItem({ [finalBlob.type]: finalBlob })
         ])
         alert('Image copied to clipboard!')
       } catch (e) {
@@ -922,11 +957,13 @@ export default {
       if (!dataUrl) { alert('Nothing to copy.'); return }
       dataUrl = await addWatermark(dataUrl)
       try {
-        const blob = await (await fetch(dataUrl)).blob()
+        const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] } })) })
+        const stegoDataUrl = await writeStegoText(dataUrl, 'plateup-v2-export', payload)
+        const bytes = dataUrlToBytes(stegoDataUrl)
+        const modified = writePngText(bytes, 'plateup-v2-export', payload)
+        const finalBlob = new Blob([modified], { type: 'image/png' })
         await navigator.clipboard.write([
-          new window.ClipboardItem({
-            [blob.type]: blob
-          })
+          new window.ClipboardItem({ [finalBlob.type]: finalBlob })
         ])
         alert('Image copied to clipboard!')
       } catch (e) {
