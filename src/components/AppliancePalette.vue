@@ -1,3 +1,4 @@
+
 <template>
   <aside class="right-panel" :style="rightPanelStyle" @contextmenu.prevent>
 
@@ -156,8 +157,8 @@
           <button @click="removeSelected">Delete</button>
         </div>
         <div class="io-row">
-          <button @click="showExportMenu($event)" title="Export to PNG">Export</button>
-          <button @click="triggerUnifiedImport" title="Import from a PNG file">Import</button>
+          <button @click="showExportMenu($event)" title="Save to PNG">Save</button>
+          <button @click="triggerUnifiedImport" title="Load from a PNG file">Load</button>
         </div>
       </div>
       </div>
@@ -167,9 +168,14 @@
       <template v-if="exportMenuVisible">
         <div class="context-menu-backdrop" @click="closeExportMenu" @contextmenu.prevent="closeExportMenu" />
         <div class="context-menu" :style="{ left: exportMenuPos.x + 'px', bottom: exportMenuPos.bottom + 'px' }">
-          <div class="context-menu-item" @click="doExport('tab')">{{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
-          <div class="context-menu-item" @click="doExport('all-tabs')">All appliance tabs</div>
-          <div class="context-menu-item" @click="doExport('complete')">Complete</div>
+          <div class="context-menu-group-label">As file...</div>
+          <div class="context-menu-item" @click="doExport('tab')"><span class="icon">💾</span> {{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
+          <div class="context-menu-item" @click="doExport('all-tabs')"><span class="icon">💾</span> All appliance tabs</div>
+          <div class="context-menu-item" @click="doExport('complete')"><span class="icon">💾</span> Complete</div>
+          <div class="context-menu-group-label">To clipboard</div>
+          <div class="context-menu-item" @click="doExportClipboard('tab')"><span class="icon">📋</span> {{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
+          <div class="context-menu-item" @click="doExportClipboard('all-tabs')"><span class="icon">📋</span> All appliance tabs</div>
+          <div class="context-menu-item" @click="doExportClipboard('complete')"><span class="icon">📋</span> Complete</div>
           <div class="context-menu-item context-menu-cancel" @click="closeExportMenu">Cancel</div>
         </div>
       </template>
@@ -259,6 +265,37 @@ export default {
         ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
       }
       img.src = src
+    }
+
+    // Clipboard export (uses same previews as file export but writes image to clipboard)
+    async function doExportClipboard(type) {
+      closeExportMenu()
+      let dataUrl
+      if (state.activeTabId === 'structure' && type === 'tab') {
+        dataUrl = await generateStructureOnlyPreview()
+      } else if (type === 'tab') {
+        dataUrl = await generateGridPreview(state.activeTabId, false)
+      } else if (type === 'all-tabs') {
+        dataUrl = await generateGridPreview(null, false)
+      } else if (type === 'complete') {
+        dataUrl = await generateGridPreview(null, true)
+      }
+      if (!dataUrl) {
+        alert('Nothing to copy.')
+        return
+      }
+      dataUrl = await addWatermark(dataUrl)
+      try {
+        const blob = await (await fetch(dataUrl)).blob()
+        await navigator.clipboard.write([
+          new window.ClipboardItem({
+            [blob.type]: blob
+          })
+        ])
+        alert('Image copied to clipboard!')
+      } catch (e) {
+        alert('Failed to copy image to clipboard: ' + e.message)
+      }
     }
 
     async function redrawPaletteCanvases() {
@@ -1035,7 +1072,7 @@ export default {
       bpDragOver, onBpDragOver, onBpDragLeave, onBpFileDrop,
       // unified export/import
       unifiedImportInput, triggerUnifiedImport, handleUnifiedImport,
-      exportMenuVisible, exportMenuPos, showExportMenu, closeExportMenu, doExport,
+      exportMenuVisible, exportMenuPos, showExportMenu, closeExportMenu, doExport, doExportClipboard,
     }
   }
 }
@@ -1480,26 +1517,62 @@ export default {
 .context-menu {
   position: fixed;
   z-index: 9999;
-  background: #fff;
-  border: 1px solid #b0c0d0;
-  border-radius: 6px;
-  box-shadow: 2px 4px 14px rgba(0,0,0,0.18);
-  padding: 4px 0;
-  min-width: 180px;
+  background: linear-gradient(180deg,#ffffff,#fbfdff);
+  border: 1px solid rgba(31,121,255,0.06);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(17,22,34,0.28);
+  padding: 6px;
+  min-width: 220px;
   user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+.context-menu-group-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #55606a;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 14px 6px;
 }
 .context-menu-item {
-  padding: 9px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
   cursor: pointer;
   font-size: 14px;
   white-space: nowrap;
+  color: #17202a;
+  border-radius: 8px;
+  transition: background 0.12s, transform 0.06s;
+}
+.context-menu-item .icon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  opacity: 0.95;
 }
 .context-menu-item:hover {
-  background: #e8f0ff;
+  background: rgba(31,121,255,0.06);
 }
+.context-menu-item:active { transform: translateY(1px) }
+.context-menu-item:focus { outline: none; box-shadow: inset 0 0 0 2px rgba(31,121,255,0.08) }
 .context-menu-cancel {
-  color: #666;
-  border-top: 1px solid #e8e8e8;
-  margin-top: 2px;
+  display: block;
+  margin-top: 8px;
+  padding: 10px 14px;
+  color: #6b7280;
+  border-radius: 8px;
+  border-top: 1px solid #eef3f8;
+  background: linear-gradient(180deg,#fff,#fbfdff);
+  text-align: center;
 }
+.context-menu-cancel:hover { background: rgba(0,0,0,0.02) }
+
+/* subtle separators between groups */
+.context-menu-sep { height: 8px }
 </style>
