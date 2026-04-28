@@ -1517,26 +1517,62 @@ export default {
 .context-menu {
   position: fixed;
   z-index: 9999;
-  background: #fff;
-  border: 1px solid #b0c0d0;
-  border-radius: 6px;
-  box-shadow: 2px 4px 14px rgba(0,0,0,0.18);
-  padding: 4px 0;
-  min-width: 180px;
+  background: linear-gradient(180deg,#ffffff,#fbfdff);
+  border: 1px solid rgba(31,121,255,0.06);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(17,22,34,0.28);
+  padding: 6px;
+  min-width: 220px;
   user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+.context-menu-group-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #55606a;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 14px 6px;
 }
 .context-menu-item {
-  padding: 9px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
   cursor: pointer;
   font-size: 14px;
   white-space: nowrap;
+  color: #17202a;
+  border-radius: 8px;
+  transition: background 0.12s, transform 0.06s;
+}
+.context-menu-item .icon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  opacity: 0.95;
 }
 .context-menu-item:hover {
-  background: #e8f0ff;
+  background: rgba(31,121,255,0.06);
 }
+.context-menu-item:active { transform: translateY(1px) }
+.context-menu-item:focus { outline: none; box-shadow: inset 0 0 0 2px rgba(31,121,255,0.08) }
 .context-menu-cancel {
-  color: #666;
-  border-top: 1px solid #e8e8e8;
-  margin-top: 2px;
+  display: block;
+  margin-top: 8px;
+  padding: 10px 14px;
+  color: #6b7280;
+  border-radius: 8px;
+  border-top: 1px solid #eef3f8;
+  background: linear-gradient(180deg,#fff,#fbfdff);
+  text-align: center;
 }
+.context-menu-cancel:hover { background: rgba(0,0,0,0.02) }
+
+/* subtle separators between groups */
+.context-menu-sep { height: 8px }
 </style>
