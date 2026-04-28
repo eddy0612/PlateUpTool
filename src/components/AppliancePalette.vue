@@ -1,3 +1,4 @@
+
 <template>
   <aside class="right-panel" :style="rightPanelStyle" @contextmenu.prevent>
 
@@ -156,8 +157,8 @@
           <button @click="removeSelected">Delete</button>
         </div>
         <div class="io-row">
-          <button @click="showExportMenu($event)" title="Export to PNG">Export</button>
-          <button @click="triggerUnifiedImport" title="Import from a PNG file">Import</button>
+          <button @click="showExportMenu($event)" title="Save to PNG">Save</button>
+          <button @click="triggerUnifiedImport" title="Load from a PNG file">Load</button>
         </div>
       </div>
       </div>
@@ -167,9 +168,14 @@
       <template v-if="exportMenuVisible">
         <div class="context-menu-backdrop" @click="closeExportMenu" @contextmenu.prevent="closeExportMenu" />
         <div class="context-menu" :style="{ left: exportMenuPos.x + 'px', bottom: exportMenuPos.bottom + 'px' }">
-          <div class="context-menu-item" @click="doExport('tab')">{{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
-          <div class="context-menu-item" @click="doExport('all-tabs')">All appliance tabs</div>
-          <div class="context-menu-item" @click="doExport('complete')">Complete</div>
+          <div class="context-menu-group-label">As file...</div>
+          <div class="context-menu-item" @click="doExport('tab')"><span class="icon">💾</span> {{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
+          <div class="context-menu-item" @click="doExport('all-tabs')"><span class="icon">💾</span> All appliance tabs</div>
+          <div class="context-menu-item" @click="doExport('complete')"><span class="icon">💾</span> Complete</div>
+          <div class="context-menu-group-label">To clipboard</div>
+          <div class="context-menu-item" @click="doExportClipboard('tab')"><span class="icon">📋</span> {{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
+          <div class="context-menu-item" @click="doExportClipboard('all-tabs')"><span class="icon">📋</span> All appliance tabs</div>
+          <div class="context-menu-item" @click="doExportClipboard('complete')"><span class="icon">📋</span> Complete</div>
           <div class="context-menu-item context-menu-cancel" @click="closeExportMenu">Cancel</div>
         </div>
       </template>
@@ -259,6 +265,37 @@ export default {
         ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
       }
       img.src = src
+    }
+
+    // Clipboard export (uses same previews as file export but writes image to clipboard)
+    async function doExportClipboard(type) {
+      closeExportMenu()
+      let dataUrl
+      if (state.activeTabId === 'structure' && type === 'tab') {
+        dataUrl = await generateStructureOnlyPreview()
+      } else if (type === 'tab') {
+        dataUrl = await generateGridPreview(state.activeTabId, false)
+      } else if (type === 'all-tabs') {
+        dataUrl = await generateGridPreview(null, false)
+      } else if (type === 'complete') {
+        dataUrl = await generateGridPreview(null, true)
+      }
+      if (!dataUrl) {
+        alert('Nothing to copy.')
+        return
+      }
+      dataUrl = await addWatermark(dataUrl)
+      try {
+        const blob = await (await fetch(dataUrl)).blob()
+        await navigator.clipboard.write([
+          new window.ClipboardItem({
+            [blob.type]: blob
+          })
+        ])
+        alert('Image copied to clipboard!')
+      } catch (e) {
+        alert('Failed to copy image to clipboard: ' + e.message)
+      }
     }
 
     async function redrawPaletteCanvases() {
@@ -1035,7 +1072,7 @@ export default {
       bpDragOver, onBpDragOver, onBpDragLeave, onBpFileDrop,
       // unified export/import
       unifiedImportInput, triggerUnifiedImport, handleUnifiedImport,
-      exportMenuVisible, exportMenuPos, showExportMenu, closeExportMenu, doExport,
+      exportMenuVisible, exportMenuPos, showExportMenu, closeExportMenu, doExport, doExportClipboard,
     }
   }
 }
