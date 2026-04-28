@@ -153,9 +153,9 @@
         <div v-if="isStructureMode" class="seed-row">
           <div class="seed-header">Load structure by seed</div>
           <div class="seed-controls">
-                <div style="position:relative; width:100%">
-                  <input v-model="seedValue" maxlength="8" placeholder="enter seed (max 8 chars)" @input="onSeedInput" @keydown="onSeedKeydown" @blur="onSeedBlur" @focus="seedSuggestionsOpen = true" />
-                  <div v-if="seedSuggestionsOpen && filteredSeedOptions.length" class="seed-suggestions">
+                <div style="position:relative; width:100%" ref="seedWrapper">
+                  <input ref="seedInput" v-model="seedValue" maxlength="8" placeholder="enter seed (max 8 chars)" @input="onSeedInput" @keydown="onSeedKeydown" @blur="onSeedBlur" @focus="openSeedSuggestions" />
+                  <div v-if="seedSuggestionsOpen && filteredSeedOptions.length" class="seed-suggestions" :style="seedSuggestionStyle">
                     <div v-for="(s, idx) in filteredSeedOptions" :key="s.id" :class="['seed-suggestion', { active: selectedSuggestionIndex === idx }]" @click="applySuggestion(s, idx)">
                       <div class="suggest-id">{{ s.id }}</div>
                     </div>
@@ -1210,6 +1210,10 @@ export default {
     const seeds = ref([])
     const seedSuggestionsOpen = ref(false)
     const selectedSuggestionIndex = ref(-1)
+    const seedInput = ref(null)
+    const seedWrapper = ref(null)
+    const seedSuggestionStyle = ref({ position: 'fixed', top: '-9999px', left: '0px', width: '120px', zIndex: 2000 })
+    const seedOpenDirection = ref(null) // 'up' | 'down' | null
 
     const filteredSeedOptions = computed(() => {
       const q = (seedValue.value || '').trim().toLowerCase()
@@ -1236,6 +1240,8 @@ export default {
 
     onUnmounted(() => {
       if (seedClearTimer.value) { clearTimeout(seedClearTimer.value); seedClearTimer.value = null }
+      // cleanup global listeners added for suggestion positioning
+      try { window.removeEventListener('resize', onWindowScrollOrResize); window.removeEventListener('scroll', onWindowScrollOrResize, true) } catch (_) {}
     })
 
     onMounted(async () => {
@@ -1343,9 +1349,71 @@ export default {
       const lowered = raw.toLowerCase().slice(0, 8)
       seedValue.value = lowered
       clearSeedStatusNow()
-      seedSuggestionsOpen.value = true
+      openSeedSuggestions()
       selectedSuggestionIndex.value = -1
     }
+
+    function openSeedSuggestions() {
+      seedSuggestionsOpen.value = true
+      // update position after DOM renders
+      nextTick(updateSeedSuggestionPosition)
+    }
+
+    async function updateSeedSuggestionPosition(forceRecalc = false) {
+      try {
+        await nextTick()
+        const inp = seedInput.value || document.querySelector('.seed-controls input')
+        const list = document.querySelector('.seed-suggestions')
+        if (!inp || !list) return
+        const rect = inp.getBoundingClientRect()
+        const listH = Math.min(list.scrollHeight || list.offsetHeight || 200, 200)
+        const margin = 8
+        const style = {
+          position: 'fixed',
+          left: rect.left + 'px',
+          width: rect.width + 'px',
+          zIndex: 2000,
+        }
+        // decide direction: if caller forces recalculation or we don't have a direction yet,
+        // compute preferred direction; otherwise honor previous direction unless it no longer fits.
+        let dir = seedOpenDirection.value
+        if (forceRecalc || !dir) {
+          dir = (rect.bottom + listH + margin <= window.innerHeight) ? 'down' : 'up'
+        }
+
+        if (dir === 'down') {
+          if (rect.bottom + listH + margin <= window.innerHeight) {
+            style.top = Math.max(rect.bottom + 2, 0) + 'px'
+          } else if (rect.top - listH - 2 >= 0) {
+            // flip if it doesn't fit down but fits up
+            style.top = rect.top - listH - 2 + 'px'
+            dir = 'up'
+          } else {
+            // clamp into viewport
+            style.top = Math.max(window.innerHeight - listH - margin, 8) + 'px'
+          }
+        } else {
+          // dir === 'up'
+          if (rect.top - listH - 2 >= 0) {
+            style.top = rect.top - listH - 2 + 'px'
+          } else if (rect.bottom + listH + margin <= window.innerHeight) {
+            // flip if it doesn't fit up but fits down
+            style.top = Math.max(rect.bottom + 2, 0) + 'px'
+            dir = 'down'
+          } else {
+            style.top = Math.max(8, rect.top - listH - 2) + 'px'
+          }
+        }
+
+        seedOpenDirection.value = dir
+        seedSuggestionStyle.value = style
+      } catch (_) {}
+    }
+
+    // update on resize/scroll while open
+    function onWindowScrollOrResize() { if (seedSuggestionsOpen.value) nextTick(updateSeedSuggestionPosition) }
+    window.addEventListener('resize', onWindowScrollOrResize)
+    window.addEventListener('scroll', onWindowScrollOrResize, true)
 
     function applySuggestion(s, idx = -1) {
       seedValue.value = s.id
@@ -1354,6 +1422,11 @@ export default {
       clearSeedStatusNow()
     }
 
+    // keep position when options change (typing)
+    watch(filteredSeedOptions, () => {
+      if (seedSuggestionsOpen.value) nextTick(() => updateSeedSuggestionPosition(false))
+    })
+
     function onSeedBlur() {
       // defer closing so click handlers on suggestions can fire
       setTimeout(() => { seedSuggestionsOpen.value = false }, 120)
@@ -1361,7 +1434,7 @@ export default {
 
     function onSeedKeydown(e) {
       if (!seedSuggestionsOpen.value) {
-        if (e.key === 'ArrowDown') seedSuggestionsOpen.value = true
+        if (e.key === 'ArrowDown') openSeedSuggestions()
         else if (e.key === 'Enter') { e.preventDefault(); loadSeed(); }
         return
       }
@@ -1411,7 +1484,7 @@ export default {
       // seed UI
       seedValue, seedStatus, seedLoading, loadSeed, onSeedInput,
       seeds, filteredSeedOptions, seedSuggestionsOpen, applySuggestion,
-      selectedSuggestionIndex, onSeedKeydown, onSeedBlur,
+      selectedSuggestionIndex, onSeedKeydown, onSeedBlur, openSeedSuggestions, seedSuggestionStyle,
     }
   }
 }
@@ -1965,15 +2038,11 @@ export default {
 
 /* Seed suggestion dropdown */
 .seed-suggestions {
-  position: absolute;
-  top: 36px;
-  left: 0;
-  right: 0;
+  /* positioning is set dynamically via inline styles */
   background: #fff;
   border: 1px solid #d9e3ef;
   max-height: 200px;
   overflow: auto;
-  z-index: 20;
 }
 .seed-suggestion {
   padding: 6px 8px;
