@@ -1244,7 +1244,10 @@ export default {
         const resp = await fetch(base + 'res/seeds/seeds.json')
         if (resp.ok) {
           const j = await resp.json()
-          if (Array.isArray(j)) seeds.value = j.map(x => ({ id: String(x.id || x).toLowerCase(), label: x.label || '' }))
+          if (Array.isArray(j)) {
+            seeds.value = j.map(x => ({ id: String(x.id || x).toLowerCase(), label: x.label || '' }))
+            seeds.value.sort((a, b) => a.id.localeCompare(b.id))
+          }
         }
       } catch (e) {
         // ignore
@@ -1983,4 +1986,13 @@ export default {
 .seed-suggestion .suggest-id { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace }
 .seed-suggestion .suggest-label { color: #6b7a8d; font-size: 12px }
 .seed-suggestion.active { background: #e8f4ff; outline: 1px solid rgba(31,121,255,0.12) }
+
+/* Dark mode for suggestions */
+.dark .seed-suggestions {
+  background: #071029;
+  border-color: #19314a;
+}
+.dark .seed-suggestion { color: #dbe9ff }
+.dark .seed-suggestion:hover { background: #0b2a46 }
+.dark .seed-suggestion.active { background: #123a6b; outline-color: rgba(90,140,255,0.18) }
 </style>
