@@ -150,12 +150,30 @@
       </div>
 
       <div class="side-controls">
-        <div v-if="!isStructureMode" class="clipboard-row">
+        <div v-if="isStructureMode" class="seed-row">
+          <div class="seed-header">Load structure by seed</div>
+          <div class="seed-controls">
+                <div style="position:relative; width:100%">
+                  <input v-model="seedValue" maxlength="8" placeholder="enter seed (max 8 chars)" @input="onSeedInput" @keydown="onSeedKeydown" @blur="onSeedBlur" @focus="seedSuggestionsOpen = true" />
+                  <div v-if="seedSuggestionsOpen && filteredSeedOptions.length" class="seed-suggestions">
+                    <div v-for="(s, idx) in filteredSeedOptions" :key="s.id" :class="['seed-suggestion', { active: selectedSuggestionIndex === idx }]" @click="applySuggestion(s, idx)">
+                      <div class="suggest-id">{{ s.id }}</div>
+                    </div>
+                  </div>
+                </div>
+                <button :disabled="seedLoading" @click="loadSeed">Load</button>
+          </div>
+          <div class="seed-hint">Lowercase a-z and 0-9 only (max 8 characters).</div>
+          <div class="seed-status" v-if="seedStatus">{{ seedStatus }}</div>
+        </div>
+
+        <div v-else class="clipboard-row">
           <button @click="cutToClipboard">Cut</button>
           <button @click="copyToClipboard">Copy</button>
           <button @click="startPaste">Paste</button>
           <button @click="removeSelected">Delete</button>
         </div>
+
         <div class="io-row">
           <button @click="showExportMenu($event)" title="Save to PNG">Save</button>
           <button @click="triggerUnifiedImport" title="Load from a PNG file">Load</button>
@@ -1184,6 +1202,199 @@ export default {
       }
     }
 
+    // ── Seed import helpers ───────────────────────────────────────────────
+    const seedValue = ref('')
+    const seedStatus = ref('')
+    const seedLoading = ref(false)
+    const seedClearTimer = ref(null)
+    const seeds = ref([])
+    const seedSuggestionsOpen = ref(false)
+    const selectedSuggestionIndex = ref(-1)
+
+    const filteredSeedOptions = computed(() => {
+      const q = (seedValue.value || '').trim().toLowerCase()
+      if (!q) return seeds.value.slice(0, 20)
+      return seeds.value.filter(s => s.id.startsWith(q) || (s.label || '').toLowerCase().includes(q)).slice(0, 20)
+    })
+
+    // Reset selected suggestion index when options change
+    watch(filteredSeedOptions, (v) => {
+      if (!v || v.length === 0) selectedSuggestionIndex.value = -1
+      else selectedSuggestionIndex.value = 0
+    })
+
+    function setSeedStatus(msg) {
+      seedStatus.value = msg
+      if (seedClearTimer.value) clearTimeout(seedClearTimer.value)
+      seedClearTimer.value = window.setTimeout(() => { seedStatus.value = ''; seedClearTimer.value = null }, 60000)
+    }
+
+    function clearSeedStatusNow() {
+      seedStatus.value = ''
+      if (seedClearTimer.value) { clearTimeout(seedClearTimer.value); seedClearTimer.value = null }
+    }
+
+    onUnmounted(() => {
+      if (seedClearTimer.value) { clearTimeout(seedClearTimer.value); seedClearTimer.value = null }
+    })
+
+    onMounted(async () => {
+      try {
+        const base = import.meta.env.BASE_URL || '/'
+        const resp = await fetch(base + 'res/seeds/seeds.json')
+        if (resp.ok) {
+          const j = await resp.json()
+          if (Array.isArray(j)) seeds.value = j.map(x => ({ id: String(x.id || x).toLowerCase(), label: x.label || '' }))
+        }
+      } catch (e) {
+        // ignore
+      }
+    })
+
+    async function importStructureBytes(bytes) {
+      try {
+        const v2raw = readPngText(bytes, 'plateup-v2-export') || await readStegoFromBytes(bytes, 'plateup-v2-export')
+        if (v2raw) {
+          const payload = decodePayload(v2raw)
+          const { type } = payload
+          if (type === 'structure') {
+            const { roomWidth, roomHeight, walls } = payload
+            if (!roomWidth || !roomHeight) return { success: false, message: 'Invalid structure data.' }
+            if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) return { success: false, message: `Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.` }
+            const hasWalls = Object.keys(state.walls || {}).length > 0
+            if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Would you like to continue?')) return { success: false, message: 'Import cancelled.' }
+            state.walls = walls || {}
+            return { success: true, message: 'Structure imported.' }
+          }
+          if (type === 'complete') {
+            const { roomWidth, roomHeight, orientation, walls, tabs, gridCells } = payload
+            if (!roomWidth || !roomHeight) return { success: false, message: 'Invalid complete export data.' }
+            const dimChanged = roomWidth !== state.roomWidth || roomHeight !== state.roomHeight
+            const dimNote = dimChanged ? `\n\nNote: the room will also be resized from ${state.roomWidth}×${state.roomHeight} to ${roomWidth}×${roomHeight}.` : ''
+            if (hasAnyContent() && !window.confirm(`This will replace ALL current structure and appliances. All your current design will be lost.${dimNote}\n\nWould you like to continue?`)) return { success: false, message: 'Import cancelled.' }
+            state.roomWidth = roomWidth
+            state.roomHeight = roomHeight
+            state.orientation = orientation ?? 0
+            state.walls = walls || {}
+            state.tabs = tabs || JSON.parse(JSON.stringify([{ id: 'complete', label: 'Preview' }, { id: 'structure', label: 'Structure' }, { id: 'main', label: 'Base' }]))
+            state.gridCells = gridCells || []
+            const firstUserTab = state.tabs.find(t => t.id !== 'complete' && t.id !== 'structure')
+            state.activeTabId = firstUserTab?.id ?? 'main'
+            loadGridFromState()
+            return { success: true, message: 'Complete import applied.' }
+          }
+        }
+
+        // legacy structure chunk
+        const legacyStructure = readPngText(bytes, 'plateup-structure')
+        if (legacyStructure) {
+          const { roomWidth, roomHeight, walls } = decodePayload(legacyStructure)
+          if (!roomWidth || !roomHeight) return { success: false, message: 'Invalid structure data.' }
+          if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) return { success: false, message: `Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.` }
+          const hasWalls = Object.keys(state.walls || {}).length > 0
+          if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Would you like to continue?')) return { success: false, message: 'Import cancelled.' }
+          state.walls = walls || {}
+          return { success: true, message: 'Structure imported.' }
+        }
+
+        return { success: false, message: 'No structure data found in file.' }
+      } catch (e) {
+        return { success: false, message: 'Failed to parse file: ' + e.message }
+      }
+    }
+
+    async function loadSeed() {
+      clearSeedStatusNow()
+      const s = (seedValue.value || '').trim()
+      if (!/^[a-z0-9]{1,8}$/.test(s)) { setSeedStatus('Invalid seed — use up to 8 chars: a-z0-9.'); return }
+      seedLoading.value = true
+      try {
+        const base = import.meta.env.BASE_URL || '/'
+        const url = base + `res/seeds/${s}.png`
+        const resp = await fetch(url)
+        if (!resp.ok) {
+          setSeedStatus('Unknown seed — submit via Feedback to request adding this seed.')
+          return
+        }
+        const ab = await resp.arrayBuffer()
+        const bytes = new Uint8Array(ab)
+        const res = await importStructureBytes(bytes)
+        if (res.success) setSeedStatus('Seed imported successfully.')
+        else {
+          if (res.message && res.message.includes('No structure data')) setSeedStatus('Unknown seed — submit via Feedback to request adding this seed.')
+          else setSeedStatus(res.message || 'Failed to import seed.')
+        }
+        // close suggestions after a successful or failed attempt
+        seedSuggestionsOpen.value = false
+        selectedSuggestionIndex.value = -1
+      } catch (e) {
+        setSeedStatus('Failed to load seed: ' + e.message)
+      } finally {
+        seedLoading.value = false
+      }
+    }
+
+    function onSeedInput(e) {
+      // auto-lowercase and trim to maxlength
+      const raw = e.target.value || ''
+      const lowered = raw.toLowerCase().slice(0, 8)
+      seedValue.value = lowered
+      clearSeedStatusNow()
+      seedSuggestionsOpen.value = true
+      selectedSuggestionIndex.value = -1
+    }
+
+    function applySuggestion(s, idx = -1) {
+      seedValue.value = s.id
+      seedSuggestionsOpen.value = false
+      selectedSuggestionIndex.value = -1
+      clearSeedStatusNow()
+    }
+
+    function onSeedBlur() {
+      // defer closing so click handlers on suggestions can fire
+      setTimeout(() => { seedSuggestionsOpen.value = false }, 120)
+    }
+
+    function onSeedKeydown(e) {
+      if (!seedSuggestionsOpen.value) {
+        if (e.key === 'ArrowDown') seedSuggestionsOpen.value = true
+        else if (e.key === 'Enter') { e.preventDefault(); loadSeed(); }
+        return
+      }
+      const len = filteredSeedOptions.value.length
+      if (len === 0) return
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        selectedSuggestionIndex.value = (selectedSuggestionIndex.value + 1) % len
+        scrollSuggestionIntoView()
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        selectedSuggestionIndex.value = (selectedSuggestionIndex.value - 1 + len) % len
+        scrollSuggestionIntoView()
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        const s = filteredSeedOptions.value[selectedSuggestionIndex.value]
+        if (s) applySuggestion(s, selectedSuggestionIndex.value)
+        else loadSeed()
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        seedSuggestionsOpen.value = false
+      }
+    }
+
+    function scrollSuggestionIntoView() {
+      // try to keep highlighted suggestion visible
+      nextTick(() => {
+        try {
+          const list = document.querySelector('.seed-suggestions')
+          if (!list) return
+          const active = list.querySelector('.seed-suggestion.active')
+          if (active) active.scrollIntoView({ block: 'nearest' })
+        } catch (_) {}
+      })
+    }
+
     return { state, filteredPalette, addToGrid, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemMouseDown, rightPanelStyle, paletteGridStyle,
       // blueprints
       paletteTab, blueprintFilter, filteredBlueprints, createBlueprint, applyBlueprint, deleteBlueprint, onBlueprintMouseDown,
@@ -1194,6 +1405,10 @@ export default {
       exportMenuVisible, exportMenuPos, showExportMenu, closeExportMenu, doExport, doExportClipboard,
       // selection export
       hasNonGhostSelection, exportSelectedToFile, exportSelectedToClipboard,
+      // seed UI
+      seedValue, seedStatus, seedLoading, loadSeed, onSeedInput,
+      seeds, filteredSeedOptions, seedSuggestionsOpen, applySuggestion,
+      selectedSuggestionIndex, onSeedKeydown, onSeedBlur,
     }
   }
 }
@@ -1493,6 +1708,52 @@ export default {
   padding-top: 4px;
 }
 
+/* ---- Seed loader (structure tab) ---- */
+.seed-row {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.seed-header {
+  font-weight: 800;
+  font-size: 14px;
+  color: #2b4758;
+}
+.seed-controls {
+  display: flex;
+  gap: 8px;
+}
+.seed-controls input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #cbd6e5;
+  border-radius: 6px;
+}
+.seed-controls button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background: #1f79ff;
+  color: white;
+  cursor: pointer;
+}
+.dark .seed-row {
+  border-color: #2b3442;
+  background: #0f1620;
+}
+.dark .seed-header { color: #d6e6ff }
+.dark .seed-controls input { background: #0c1117; color: #dbe9ff; border-color: #2b3442 }
+.dark .seed-controls button { background: #2c7bff }
+.dark .seed-hint { color: #94a6bd }
+.dark .seed-status { color: #cfe3ff }
+.seed-hint { font-size: 11px; color: #8a9ab0 }
+.seed-status { font-size: 12px; color: #334; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace; font-size: 11px }
+
 /* ---- Preview wrapper (banner + inventory, fixed to viewport height) ---- */
 .preview-wrapper {
   display: flex;
@@ -1698,4 +1959,28 @@ export default {
 
 /* subtle separators between groups */
 .context-menu-sep { height: 8px }
+
+/* Seed suggestion dropdown */
+.seed-suggestions {
+  position: absolute;
+  top: 36px;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #d9e3ef;
+  max-height: 200px;
+  overflow: auto;
+  z-index: 20;
+}
+.seed-suggestion {
+  padding: 6px 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+}
+.seed-suggestion:hover { background: #f3f6fb; }
+.seed-suggestion .suggest-id { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace }
+.seed-suggestion .suggest-label { color: #6b7a8d; font-size: 12px }
+.seed-suggestion.active { background: #e8f4ff; outline: 1px solid rgba(31,121,255,0.12) }
 </style>
