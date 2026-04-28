@@ -325,7 +325,14 @@ function flipSelectionVertical() {
     if (grid.value[ty]?.[tx]?.applianceId && !sourcePositions.has(tKey)) return false
   }
 
-  const moveData = moves.map(({ sx, sy, tx, ty }) => ({ tx, ty, content: grid.value[sy][sx] ? { ...grid.value[sy][sx] } : null }))
+  const moveData = moves.map(({ sx, sy, tx, ty }) => {
+    const src = grid.value[sy][sx]
+    if (!src) return { tx, ty, content: null }
+    // When flipping across vertical axis (reverse x), mirror rotation: 1<->3, 0/2 unchanged
+    const rot = src.rotation || 0
+    const newRot = (4 - rot) % 4
+    return { tx, ty, content: { ...src, rotation: newRot } }
+  })
 
   // Clear sources then write targets
   for (const { sx, sy } of moves) grid.value[sy][sx] = null
@@ -375,7 +382,14 @@ function flipSelectionHorizontal() {
     if (grid.value[ty]?.[tx]?.applianceId && !sourcePositions.has(tKey)) return false
   }
 
-  const moveData = moves.map(({ sx, sy, tx, ty }) => ({ tx, ty, content: grid.value[sy][sx] ? { ...grid.value[sy][sx] } : null }))
+  const moveData = moves.map(({ sx, sy, tx, ty }) => {
+    const src = grid.value[sy][sx]
+    if (!src) return { tx, ty, content: null }
+    // When flipping across horizontal axis (reverse y), invert up/down: 0<->2, 1/3 unchanged
+    const rot = src.rotation || 0
+    const newRot = (2 - rot + 4) % 4
+    return { tx, ty, content: { ...src, rotation: newRot } }
+  })
 
   // Clear sources then write targets
   for (const { sx, sy } of moves) grid.value[sy][sx] = null
