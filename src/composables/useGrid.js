@@ -289,6 +289,106 @@ function rotateGroupAroundCellCCW(pivotX, pivotY) {
   return true
 }
 
+// Flip selected non-ghosted cells vertically (mirror across vertical axis — reverse x)
+function flipSelectionVertical() {
+  const activeKeys = [...selectedCells.value].filter(key => {
+    const [x, y] = key.split(',').map(Number)
+    return !isCellGhosted(x, y)
+  })
+  if (activeKeys.length === 0) return false
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+  for (const key of activeKeys) {
+    const [x, y] = key.split(',').map(Number)
+    if (x < minX) minX = x
+    if (x > maxX) maxX = x
+    if (y < minY) minY = y
+    if (y > maxY) maxY = y
+  }
+
+  const moves = []
+  for (const key of activeKeys) {
+    const [x, y] = key.split(',').map(Number)
+    const tx = minX + (maxX - x)
+    const ty = y
+    moves.push({ sx: x, sy: y, tx, ty })
+  }
+
+  // Validate
+  const sourcePositions = new Set(moves.map(m => cellKey(m.sx, m.sy)))
+  const targetPositions = new Set()
+  for (const { tx, ty } of moves) {
+    if (tx < 0 || tx >= state.roomWidth || ty < 0 || ty >= state.roomHeight) return false
+    const tKey = cellKey(tx, ty)
+    if (targetPositions.has(tKey)) return false
+    targetPositions.add(tKey)
+    if (grid.value[ty]?.[tx]?.applianceId && !sourcePositions.has(tKey)) return false
+  }
+
+  const moveData = moves.map(({ sx, sy, tx, ty }) => ({ tx, ty, content: grid.value[sy][sx] ? { ...grid.value[sy][sx] } : null }))
+
+  // Clear sources then write targets
+  for (const { sx, sy } of moves) grid.value[sy][sx] = null
+  for (const { tx, ty, content } of moveData) grid.value[ty][tx] = content
+
+  const ghostedKeys = [...selectedCells.value].filter(key => {
+    const [x, y] = key.split(',').map(Number); return isCellGhosted(x, y)
+  })
+  selectedCells.value = new Set([...moves.map(m => cellKey(m.tx, m.ty)), ...ghostedKeys])
+  anchorCell.value = null
+  return true
+}
+
+// Flip selected non-ghosted cells horizontally (mirror across horizontal axis — reverse y)
+function flipSelectionHorizontal() {
+  const activeKeys = [...selectedCells.value].filter(key => {
+    const [x, y] = key.split(',').map(Number)
+    return !isCellGhosted(x, y)
+  })
+  if (activeKeys.length === 0) return false
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+  for (const key of activeKeys) {
+    const [x, y] = key.split(',').map(Number)
+    if (x < minX) minX = x
+    if (x > maxX) maxX = x
+    if (y < minY) minY = y
+    if (y > maxY) maxY = y
+  }
+
+  const moves = []
+  for (const key of activeKeys) {
+    const [x, y] = key.split(',').map(Number)
+    const tx = x
+    const ty = minY + (maxY - y)
+    moves.push({ sx: x, sy: y, tx, ty })
+  }
+
+  // Validate
+  const sourcePositions = new Set(moves.map(m => cellKey(m.sx, m.sy)))
+  const targetPositions = new Set()
+  for (const { tx, ty } of moves) {
+    if (tx < 0 || tx >= state.roomWidth || ty < 0 || ty >= state.roomHeight) return false
+    const tKey = cellKey(tx, ty)
+    if (targetPositions.has(tKey)) return false
+    targetPositions.add(tKey)
+    if (grid.value[ty]?.[tx]?.applianceId && !sourcePositions.has(tKey)) return false
+  }
+
+  const moveData = moves.map(({ sx, sy, tx, ty }) => ({ tx, ty, content: grid.value[sy][sx] ? { ...grid.value[sy][sx] } : null }))
+
+  // Clear sources then write targets
+  for (const { sx, sy } of moves) grid.value[sy][sx] = null
+  for (const { tx, ty, content } of moveData) grid.value[ty][tx] = content
+
+  const ghostedKeys = [...selectedCells.value].filter(key => {
+    const [x, y] = key.split(',').map(Number); return isCellGhosted(x, y)
+  })
+  selectedCells.value = new Set([...moves.map(m => cellKey(m.tx, m.ty)), ...ghostedKeys])
+  anchorCell.value = null
+  return true
+}
+
 // Returns false if the cell has an appliance belonging to a different tab (i.e. would appear ghosted).
 // Empty cells are always selectable.
 function isCellOnActiveTab(x, y) {
@@ -967,5 +1067,5 @@ function getTeleporterPairPos(x, y) {
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos }
+  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal }
 }

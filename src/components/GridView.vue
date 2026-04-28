@@ -160,6 +160,7 @@ export default {
     const {
       flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon,
       rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection,
+      flipSelectionHorizontal, flipSelectionVertical,
       moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
       copyToClipboard, cutToClipboard,
@@ -717,6 +718,19 @@ export default {
       if ((e.ctrlKey || e.metaKey) && e.key === 'i') { e.preventDefault(); invertSelection() }
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') { e.preventDefault(); copyToClipboard() }
       if ((e.ctrlKey || e.metaKey) && e.key === 'x') { e.preventDefault(); cutToClipboard() }
+      
+      if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+        e.preventDefault()
+        // Flip horizontally (reverse y) when there's an active non-ghosted selection
+        const anyActive = [...selectedCells.value].some(k => { const [x, y] = k.split(',').map(Number); return !isCellGhosted(x, y) })
+        if (anyActive) flipSelectionHorizontal()
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+        e.preventDefault()
+        // Flip vertically (reverse x) when there's an active non-ghosted selection
+        const anyActive = [...selectedCells.value].some(k => { const [x, y] = k.split(',').map(Number); return !isCellGhosted(x, y) })
+        if (anyActive) flipSelectionVertical()
+      }
       if ((e.ctrlKey || e.metaKey) && e.key === 'v') { e.preventDefault(); startPaste() }
       if ((e.ctrlKey || e.metaKey) && e.key === 'd') { e.preventDefault(); startDuplicate() }
       if (e.key === 'Escape') {
