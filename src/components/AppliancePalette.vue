@@ -761,7 +761,8 @@ export default {
             ctx.fillText(TEXT, badgeX + INNER_PAD_X, badgeY + badgeH / 2)
             resolve(canvas.toDataURL('image/png'))
           }
-          iconImg.src = '/favicon-32.png'
+          const faviconEl = document.querySelector('link[rel="icon"]')
+          iconImg.src = (faviconEl && faviconEl.href) ? faviconEl.href : '/favicon-32.png'
         }
         img.onerror = () => resolve(dataUrl)
         img.src = dataUrl
