@@ -687,86 +687,97 @@ export default {
     // ── Unified export / import ───────────────────────────────────────────────
 
     /** Adds a small branding strip to the bottom of an exported PNG data URL. */
-    function addWatermark(dataUrl) {
-      return new Promise((resolve) => {
+    async function addWatermark(dataUrl) {
+      try {
         const img = new window.Image()
-        img.onload = () => {
-          const STRIP_H = 28
-          const ICON_SIZE = 13
-          const FONT_SIZE = 11
-          const INNER_PAD_X = 8
-          const INNER_PAD_Y = 5
-          const TEXT = 'eddy0612.github.io/PlateUpTool'
-          const isDark = document.documentElement.classList.contains('dark')
-          const stripBg = isDark ? '#1c2030' : '#e8eef8'
-          const stripText = isDark ? '#d0daea' : '#e8eef8'
-          const canvas = document.createElement('canvas')
-          // Measure text using a temporary canvas context to compute minimum badge width
-          const tmp = document.createElement('canvas')
-          const tctx = tmp.getContext('2d')
-          tctx.font = `${FONT_SIZE}px sans-serif`
-          const textW = tctx.measureText(TEXT).width
-          const badgeW = INNER_PAD_X + ICON_SIZE + 5 + textW + INNER_PAD_X
-          const badgeH = STRIP_H - INNER_PAD_Y * 2
-          const MIN_EXTRA_PAD = 16
-          const minCanvasWidth = Math.max(img.width, Math.round(badgeW + MIN_EXTRA_PAD))
+        await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = dataUrl })
 
-          canvas.width = minCanvasWidth
-          canvas.height = img.height + STRIP_H
-          const ctx = canvas.getContext('2d')
+        const STRIP_H = 28
+        const ICON_SIZE = 13
+        const FONT_SIZE = 11
+        const INNER_PAD_X = 8
+        const INNER_PAD_Y = 5
+        const TEXT = 'eddy0612.github.io/PlateUpTool'
+        const isDark = document.documentElement.classList.contains('dark')
+        const stripBg = isDark ? '#1c2030' : '#e8eef8'
+        const stripText = isDark ? '#d0daea' : '#e8eef8'
+        const canvas = document.createElement('canvas')
 
-          // Draw original image centered if canvas was widened
-          const imgOffsetX = Math.round((canvas.width - img.width) / 2)
-          ctx.drawImage(img, imgOffsetX, 0)
+        // Measure text using a temporary canvas context to compute minimum badge width
+        const tmp = document.createElement('canvas')
+        const tctx = tmp.getContext('2d')
+        tctx.font = `${FONT_SIZE}px sans-serif`
+        const textW = tctx.measureText(TEXT).width
+        const badgeW = INNER_PAD_X + ICON_SIZE + 5 + textW + INNER_PAD_X
+        const badgeH = STRIP_H - INNER_PAD_Y * 2
+        const MIN_EXTRA_PAD = 16
+        const minCanvasWidth = Math.max(img.width, Math.round(badgeW + MIN_EXTRA_PAD))
 
-          // Fill strip with the theme background
-          ctx.fillStyle = stripBg
-          ctx.fillRect(0, img.height, canvas.width, STRIP_H)
+        canvas.width = minCanvasWidth
+        canvas.height = img.height + STRIP_H
+        const ctx = canvas.getContext('2d')
 
-          // Position badge centered within the (possibly widened) canvas
-          const badgeX = Math.round((canvas.width - badgeW) / 2)
-          const badgeY = img.height + INNER_PAD_Y
+        // Draw original image centered if canvas was widened
+        const imgOffsetX = Math.round((canvas.width - img.width) / 2)
+        ctx.drawImage(img, imgOffsetX, 0)
 
-          // Draw rounded badge background
-          ctx.fillStyle = '#0f1117'
-          ctx.beginPath()
-          const r = 5
-          ctx.moveTo(badgeX + r, badgeY)
-          ctx.lineTo(badgeX + badgeW - r, badgeY)
-          ctx.quadraticCurveTo(badgeX + badgeW, badgeY, badgeX + badgeW, badgeY + r)
-          ctx.lineTo(badgeX + badgeW, badgeY + badgeH - r)
-          ctx.quadraticCurveTo(badgeX + badgeW, badgeY + badgeH, badgeX + badgeW - r, badgeY + badgeH)
-          ctx.lineTo(badgeX + r, badgeY + badgeH)
-          ctx.quadraticCurveTo(badgeX, badgeY + badgeH, badgeX, badgeY + badgeH - r)
-          ctx.lineTo(badgeX, badgeY + r)
-          ctx.quadraticCurveTo(badgeX, badgeY, badgeX + r, badgeY)
-          ctx.closePath()
-          ctx.fill()
+        // Fill strip with the theme background
+        ctx.fillStyle = stripBg
+        ctx.fillRect(0, img.height, canvas.width, STRIP_H)
 
-          const iconImg = new window.Image()
-          iconImg.onload = () => {
-            ctx.drawImage(iconImg, badgeX + INNER_PAD_X, badgeY + (badgeH - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
-            ctx.fillStyle = stripText
-            ctx.font = `${FONT_SIZE}px sans-serif`
-            ctx.textBaseline = 'middle'
-            ctx.textAlign = 'left'
-            ctx.fillText(TEXT, badgeX + INNER_PAD_X + ICON_SIZE + 5, badgeY + badgeH / 2)
-            resolve(canvas.toDataURL('image/png'))
+        // Position badge centered within the (possibly widened) canvas
+        const badgeX = Math.round((canvas.width - badgeW) / 2)
+        const badgeY = img.height + INNER_PAD_Y
+
+        // Draw rounded badge background
+        ctx.fillStyle = '#0f1117'
+        ctx.beginPath()
+        const r = 5
+        ctx.moveTo(badgeX + r, badgeY)
+        ctx.lineTo(badgeX + badgeW - r, badgeY)
+        ctx.quadraticCurveTo(badgeX + badgeW, badgeY, badgeX + badgeW, badgeY + r)
+        ctx.lineTo(badgeX + badgeW, badgeY + badgeH - r)
+        ctx.quadraticCurveTo(badgeX + badgeW, badgeY + badgeH, badgeX + badgeW - r, badgeY + badgeH)
+        ctx.lineTo(badgeX + r, badgeY + badgeH)
+        ctx.quadraticCurveTo(badgeX, badgeY + badgeH, badgeX, badgeY + badgeH - r)
+        ctx.lineTo(badgeX, badgeY + r)
+        ctx.quadraticCurveTo(badgeX, badgeY, badgeX + r, badgeY)
+        ctx.closePath()
+        ctx.fill()
+
+        // Resolve favicon URL relative to the document base so builds with non-root bases work
+        const faviconEl = document.querySelector('link[rel="icon"]')
+        const iconUrl = (faviconEl && faviconEl.href) ? faviconEl.href : new URL('favicon-32.png', document.baseURI).href
+
+        // Try fetching the favicon first to avoid tainting the canvas if it's cross-origin
+        try {
+          const resp = await fetch(iconUrl, { mode: 'cors', credentials: 'same-origin' })
+          if (resp.ok) {
+            const blob = await resp.blob()
+            const iconBlobUrl = URL.createObjectURL(blob)
+            try {
+              const iconImg = new window.Image()
+              await new Promise((res, rej) => { iconImg.onload = res; iconImg.onerror = rej; iconImg.src = iconBlobUrl })
+              ctx.drawImage(iconImg, badgeX + INNER_PAD_X, badgeY + (badgeH - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
+              URL.revokeObjectURL(iconBlobUrl)
+            } catch (e) {
+              try { URL.revokeObjectURL(iconBlobUrl) } catch (__) {}
+            }
           }
-          iconImg.onerror = () => {
-            ctx.fillStyle = stripText
-            ctx.font = `${FONT_SIZE}px sans-serif`
-            ctx.textBaseline = 'middle'
-            ctx.textAlign = 'left'
-            ctx.fillText(TEXT, badgeX + INNER_PAD_X, badgeY + badgeH / 2)
-            resolve(canvas.toDataURL('image/png'))
-          }
-          const faviconEl = document.querySelector('link[rel="icon"]')
-          iconImg.src = (faviconEl && faviconEl.href) ? faviconEl.href : '/favicon-32.png'
+        } catch (e) {
+          // Fetch failed (likely CORS) — skip icon and render text-only
         }
-        img.onerror = () => resolve(dataUrl)
-        img.src = dataUrl
-      })
+
+        ctx.fillStyle = stripText
+        ctx.font = `${FONT_SIZE}px sans-serif`
+        ctx.textBaseline = 'middle'
+        ctx.textAlign = 'left'
+        // Draw text (position assumes icon space reserved)
+        ctx.fillText(TEXT, badgeX + INNER_PAD_X + ICON_SIZE + 5, badgeY + badgeH / 2)
+        return canvas.toDataURL('image/png')
+      } catch (e) {
+        return dataUrl
+      }
     }
 
     function exportTimestamp() {
