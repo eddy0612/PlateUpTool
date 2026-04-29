@@ -219,7 +219,7 @@ export default {
   name: 'App',
   components: { GridView, AppliancePalette, TutorialModal, RestaurantSizeModal },
   setup() {
-    const { state, loadFromHash, syncToHash, resetState } = useRestaurantStore()
+    const { state, loadFromHash, syncToHash } = useRestaurantStore()
     const { loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize } = useGrid()
 
     const showHelp = ref(false)
@@ -287,8 +287,13 @@ export default {
     })
 
     function startAgain() {
-      resetState()
-      showSizeModal.value = true
+      // If there are any modifications (appliances/walls), confirm before discarding them
+      if (!isDefaultState()) {
+        const confirmed = window.confirm('This will discard any unsaved changes and reset the planner. Continue?')
+        if (!confirmed) return
+      }
+      // Navigate to the base URL (remove hash and query) without adding a history entry
+      window.location.replace(window.location.origin + window.location.pathname)
     }
 
     function onSizeChosen({ w, h }) {

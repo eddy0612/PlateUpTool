@@ -286,13 +286,10 @@ function loadFromHash() {
   }
 }
 
-function resetState() {
-  Object.assign(state, JSON.parse(JSON.stringify(DEFAULT_STATE)))
-  syncToHash()
-}
+
 
 export function useRestaurantStore() {
-  return { state, loadFromHash, syncToHash, resetState }
+  return { state, loadFromHash, syncToHash }
 }
 
 export { encodeState, decodeState, isDefaultState }
