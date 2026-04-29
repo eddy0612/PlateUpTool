@@ -641,8 +641,8 @@ html.dark .viewport-box { background: #151a26; border-color: #2a3a54; }
 html.dark .viewport-box.file-drag-over { background: #1a2840; border-color: #4a7aaa; }
 html.dark .grid { background: #1e2738; border-color: #3a5070; }
 html.dark .grid-item { border-color: #2a3a54; }
-html.dark .grid-item.selected { background: #1a2e50; }
-html.dark .grid-item.move-source { background: #1a2e50; }
+html.dark .grid-item.selected { background: #11263f; border: 2px dashed #ffffff; box-shadow: none; }
+html.dark .grid-item.move-source { background: #11263f; border: 2px dashed #ffffff; box-shadow: none; }
 html.dark .hover-icon-box { background: #1a2535; border-color: #2a3a54; }
 html.dark .grid-status-bar { color: #6a8ab0; background: #141926; border-color: #2a3a54; }
 html.dark .context-menu { background: #1c2030; border-color: #2e3a52; }

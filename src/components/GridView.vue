@@ -1136,11 +1136,11 @@ export default {
   box-sizing: border-box;
   position: relative;
 }
-.grid-item.selected { border: 2px solid #1f79ff; background: #dde9ff }
+.grid-item.selected { border: 2px dashed #000000; background: #dde9ff }
 .grid-item.selected { cursor: grab }
-.grid-item.selected.ghosted { border: 2px solid #999; background: #e4e4e4 }
+.grid-item.selected.ghosted { border: 2px dashed #000000; background: #e4e4e4 }
 .grid.move-dragging .grid-item { cursor: grabbing }
-.grid-item.move-source { border: 2px dashed #1f79ff; background: #dde9ff }
+.grid-item.move-source { border: 2px dashed #000000; background: #dde9ff }
 .grid-item.move-source .cell-content { opacity: 0.35; }
 .grid-item.move-delete-preview { border: 2px dashed #d93025; background: rgba(217, 48, 37, 0.15) }
 .grid-item.move-delete-preview .cell-content { opacity: 0.35; }
