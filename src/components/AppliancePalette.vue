@@ -261,14 +261,14 @@ export default {
 
     const inventoryTotal = computed(() => inventoryList.value.reduce((s, i) => s + i.count, 0))
 
-    // Canvas image drawing with top-crop
+    // Canvas image drawing with top-crop (but avoid top-crop for 2D icons)
     function cropAndDrawImage(canvas, src) {
       if (!canvas || !src) return
       const ctx = canvas.getContext('2d')
       const img = new window.Image()
       img.crossOrigin = 'anonymous'
       img.onload = function () {
-        const cropTop = 50
+        const cropTop = (typeof src === 'string' && src.includes('2D_')) ? 0 : 50
         const sx = 0, sy = cropTop, sw = img.width, sh = Math.max(img.height - cropTop, 1)
         const rect = canvas.getBoundingClientRect()
         canvas.width = rect.width || 100
@@ -494,7 +494,8 @@ export default {
         const img = new window.Image()
         img.crossOrigin = 'anonymous'
         img.onload = () => {
-          const cropTop = 50
+          // Avoid top-cropping for 2D icons
+          const cropTop = (typeof iconSrc === 'string' && iconSrc.includes('2D_')) ? 0 : 50
           const sx = 0, sy = cropTop, sw = img.width, sh = Math.max(img.height - cropTop, 1)
           const rot = cell.rotation || 0
           ctx.save()
@@ -870,13 +871,16 @@ export default {
         img.crossOrigin = 'anonymous'
         img.onload = () => {
           const rot = cell.rotation || 0
+          // For 2D icons we should not apply the top-crop used for 3D icons
+          const cropTop = (typeof iconSrc === 'string' && iconSrc.includes('2D_')) ? 0 : 50
+          const sH = Math.max(img.height - cropTop, 1)
           ctx.save()
           if (rot > 0) {
             ctx.translate(cx + CELL_PX / 2, cy + CELL_PX / 2)
             ctx.rotate(rot * Math.PI / 2)
-            ctx.drawImage(img, 0, 50, img.width, Math.max(img.height - 50, 1), -CELL_PX / 2, -CELL_PX / 2, CELL_PX, CELL_PX)
+            ctx.drawImage(img, 0, cropTop, img.width, sH, -CELL_PX / 2, -CELL_PX / 2, CELL_PX, CELL_PX)
           } else {
-            ctx.drawImage(img, 0, 50, img.width, Math.max(img.height - 50, 1), cx, cy, CELL_PX, CELL_PX)
+            ctx.drawImage(img, 0, cropTop, img.width, sH, cx, cy, CELL_PX, CELL_PX)
           }
           ctx.restore()
           resolve()
