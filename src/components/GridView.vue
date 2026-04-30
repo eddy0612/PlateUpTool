@@ -740,6 +740,10 @@ export default {
         const userTabs = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure')
         if (idx < userTabs.length) state.activeTabId = userTabs[idx].id
       }
+      if (key === 't') {
+        e.preventDefault()
+        showTeleporterLinesAlways.value = !showTeleporterLinesAlways.value
+      }
     }
 
     // --- Context menu for ghosted cells ---
@@ -782,6 +786,8 @@ export default {
     // --- Teleporter pair line overlay ---
     // Returns an array of { x1, y1, x2, y2 } in grid-pixel coordinates for each
     // selected paired teleporter, so GridView can draw a dashed connector line.
+    const showTeleporterLinesAlways = ref(false)
+
     const teleporterPairLines = computed(() => {
       const lines = []
       const cs = cellSize.value * state.zoom
@@ -791,12 +797,30 @@ export default {
       const th = (H * cs - (H - 1) * 2) / H
       const cx = x => x * (tw + 2) + tw / 2
       const cy = y => y * (th + 2) + th / 2
-      for (const key of selectedCells.value) {
-        const [x, y] = key.split(',').map(Number)
-        const cell = getDisplayCell(x, y)
-        if (cell?.applianceId === TELEPORTER_APPLIANCE_ID && (cell.extraData || 0) > 0) {
-          const partner = getTeleporterPairPos(x, y)
-          if (partner) lines.push({ x1: cx(x), y1: cy(y), x2: cx(partner.x), y2: cy(partner.y) })
+
+      if (showTeleporterLinesAlways.value) {
+        // Show lines for every teleporter pair (dedupe pairs)
+        const seen = new Set()
+        for (const cellInfo of flatGrid.value) {
+          const x = cellInfo.x, y = cellInfo.y
+          const cell = getDisplayCell(x, y)
+          if (cell?.applianceId === TELEPORTER_APPLIANCE_ID && (cell.extraData || 0) > 0) {
+            const partner = getTeleporterPairPos(x, y)
+            if (!partner) continue
+            const key = `${Math.min(x, partner.x)},${Math.min(y, partner.y)},${Math.max(x, partner.x)},${Math.max(y, partner.y)}`
+            if (seen.has(key)) continue
+            seen.add(key)
+            lines.push({ x1: cx(x), y1: cy(y), x2: cx(partner.x), y2: cy(partner.y) })
+          }
+        }
+      } else {
+        for (const key of selectedCells.value) {
+          const [x, y] = key.split(',').map(Number)
+          const cell = getDisplayCell(x, y)
+          if (cell?.applianceId === TELEPORTER_APPLIANCE_ID && (cell.extraData || 0) > 0) {
+            const partner = getTeleporterPairPos(x, y)
+            if (partner) lines.push({ x1: cx(x), y1: cy(y), x2: cx(partner.x), y2: cy(partner.y) })
+          }
         }
       }
       return lines
@@ -1032,6 +1056,8 @@ export default {
     onMounted(() => {
       window.addEventListener('keydown', onKeyDown)
       if (viewportEl.value) viewportEl.value.addEventListener('wheel', onWheel, { passive: false })
+      // Initialize teleporter lines toggle from localStorage
+      try { showTeleporterLinesAlways.value = localStorage.getItem('teleporterLines') === '1' } catch (e) {}
     })
 
     onUnmounted(() => {
@@ -1046,6 +1072,11 @@ export default {
       cancelMoveDrag()
       cancelPaste()
       if (tabRenameTimer) clearTimeout(tabRenameTimer)
+    })
+
+    // Persist teleporter-lines toggle to localStorage
+    watch(showTeleporterLinesAlways, (v) => {
+      try { localStorage.setItem('teleporterLines', v ? '1' : '0') } catch (e) {}
     })
 
     return {
@@ -1063,7 +1094,7 @@ export default {
       getTabColorClass, getApplianceBgStyle,
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
       getApplianceIcon, isImageIcon, onApplianceImgError,
-      TELEPORTER_APPLIANCE_ID, teleporterPairLines,
+      TELEPORTER_APPLIANCE_ID, teleporterPairLines, showTeleporterLinesAlways,
       fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
     }
   }
