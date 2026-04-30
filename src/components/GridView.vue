@@ -105,8 +105,7 @@
             <input type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom" />
           </div>
           <div class="control-size">
-            <label>W: <input type="number" :value="state.roomWidth" min="10" max="50" style="width:48px" @change="state.roomWidth = Math.min(50, Math.max(10, parseInt($event.target.value) || 10)); $event.target.value = state.roomWidth" /></label>
-            <label>H: <input type="number" :value="state.roomHeight" min="6" max="50" style="width:48px" @change="state.roomHeight = Math.min(50, Math.max(6, parseInt($event.target.value) || 6)); $event.target.value = state.roomHeight" /></label>
+            <!-- Room size inputs moved to App palette toolbox -->
           </div>
         </div>
         <div class="grid-status-bar">{{ hoverLabel }}</div>
@@ -140,7 +139,12 @@
           </button>
 
           <button class="toolbox-button" data-help-id="invert" @click="invertSelection" title="Invert selection — Ctrl+I">
-            <span class="toolbox-char" aria-hidden="true">⇄</span>
+            <svg class="hp-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect x="2.5" y="2.5" width="19" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2" />
+              <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              <polyline points="9,9 6,12 9,15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              <polyline points="15,9 18,12 15,15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
           </button>
 
           <button class="toolbox-button" data-help-id="rotate-left" @click="rotateSelectionLeft" title="Rotate selection left — Shift + Right-click">
@@ -152,7 +156,7 @@
           </button>
 
           <button class="toolbox-button" data-help-id="flip-h" @click="flipSelectionHorizontal" title="Flip selection horizontally — Ctrl+Shift+F">
-            <span class="toolbox-char" aria-hidden="true">⇵</span>
+            <span class="toolbox-char rotate-90" aria-hidden="true">⇋</span>
           </button>
 
           <button class="toolbox-button" data-help-id="flip-v" @click="flipSelectionVertical" title="Flip selection vertically — Ctrl+F">
@@ -927,10 +931,10 @@ export default {
         case 'duplicate': return '<span class="hp-char">⎘</span>'
         case 'box-select': return '<svg class="hp-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
         case 'select-all': return '<span class="hp-char">▣</span>'
-        case 'invert': return '<span class="hp-char">⇄</span>'
+        case 'invert': return '<svg class="hp-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/><line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><polyline points="9,9 6,12 9,15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><polyline points="15,9 18,12 15,15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
         case 'rotate-left': return '<span class="hp-char">⟲</span>'
         case 'rotate-right': return '<span class="hp-char">⟳</span>'
-        case 'flip-h': return '<span class="hp-char">⇵</span>'
+        case 'flip-h': return '<span class="hp-char rotate-90">⇋</span>'
         case 'flip-v': return '<span class="hp-char">⇋</span>'
         case 'delete': return '<span class="hp-char">🗑</span>'
         case 'help': return '<span class="hp-char">?</span>'
@@ -1559,6 +1563,8 @@ export default {
   text-overflow: ellipsis;
 }
 .control-compass, .control-mode, .control-zoom, .control-size { display: flex; align-items: center; gap: 6px }
+.control-zoom { min-width: 320px; display: flex; align-items: center; gap: 6px }
+.control-zoom input[type="range"] { flex: 1; width: auto; max-width: none }
 .compass { display: inline-block; transition: transform 0.2s }
 .tab-rename-input {
   width: 100%;
@@ -1724,6 +1730,9 @@ export default {
 .help-popup { display: flex; align-items: flex-start; gap: 8px }
 .help-popup-icon { width: 44px; height: 44px; flex: 0 0 44px; display: flex; align-items: center; justify-content: center; background: #f4f8fb; border-radius: 6px; border: 1px solid #dceaf7; color: #21313a }
 .help-popup-icon .hp-char { font-size: 20px }
+.help-popup-icon .rotate-90 { display: inline-block; transform: rotate(90deg); }
+.rotate-90 { display: inline-block; transform: rotate(90deg); }
+.toolbox-button .hp-svg { width: 18px; height: 18px }
 .help-popup-icon .hp-svg { width: 28px; height: 28px }
 .help-popup-body { min-width: 140px }
 .help-popup-title { font-weight: 700; margin-bottom: 4px }
@@ -1757,6 +1766,10 @@ export default {
 .help-list-divider-li { grid-column: 1 / -1; padding: 6px 0 }
 .help-list-divider { height: 2px; background: rgba(31,121,255,0.14); border-radius: 2px }
 .dark .help-list-divider { background: rgba(255,255,255,0.08) }
+
+/* Dark-mode help modal adjustments */
+.dark .help-modal { background: #172127; color: #e6fff0; box-shadow: 0 12px 40px rgba(0,0,0,0.6) }
+.dark .help-modal-actions button { background: #2b3338; border: 1px solid #444d55; color: #eef6f1 }
 
 @media (max-width: 640px) {
   .help-modal { width: 92% }
