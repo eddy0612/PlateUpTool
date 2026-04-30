@@ -177,12 +177,17 @@
         <div class="help-modal" @click.stop>
           <h3 class="help-modal-title">Toolbar help</h3>
           <ul class="help-list">
-            <li v-for="item in helpItems" :key="item.id" class="help-list-item">
-              <span class="help-list-icon" v-html="helpIcon(item.id)"></span>
-              <div class="help-list-text">
-                <div class="help-popup-title">{{ item.title }}</div>
-                <div class="help-popup-desc">{{ item.desc }}</div>
-              </div>
+            <li v-for="(item, idx) in helpItems" :key="item.id || ('div-' + idx)" :class="item.divider ? 'help-list-divider-li' : 'help-list-item'">
+              <template v-if="item.divider">
+                <div class="help-list-divider" />
+              </template>
+              <template v-else>
+                <span class="help-list-icon" v-html="helpIcon(item.id)"></span>
+                <div class="help-list-text">
+                  <div class="help-popup-title">{{ item.id === 'dark-mode' ? (isDark ? 'Light Mode' : 'Dark Mode') : item.title }}</div>
+                  <div class="help-popup-desc">{{ item.id === 'dark-mode' ? (isDark ? 'Switch to light theme.' : 'Toggle the UI dark theme.') : item.desc }}</div>
+                </div>
+              </template>
             </li>
           </ul>
           <div class="help-modal-actions"><button @click="hideHelp">Close</button></div>
@@ -897,10 +902,21 @@ export default {
       { id: 'flip-h', title: 'Flip H', desc: 'Flip selection horizontally.' },
       { id: 'flip-v', title: 'Flip V', desc: 'Flip selection vertically.' },
       { id: 'delete', title: 'Delete', desc: 'Delete the selected cells.' },
-      { id: 'help', title: 'Help', desc: 'Show this help overlay.' }
+      { id: 'help', title: 'Help', desc: 'Show this help overlay.' },
+      { divider: true },
+      { id: 'dark-mode', title: 'Dark Mode', desc: 'Toggle the UI dark theme.' },
+      { id: 'teleporter-lines', title: 'Teleporter lines', desc: 'Show or hide teleporter connector lines (T).' }
     ]
 
     // Single-modal help UI — no per-popup positions required
+    // Track current dark-mode state by observing <html> class so help can show the
+    // appropriate opposite-mode toggle wording/icon.
+    const isDark = ref(typeof document !== 'undefined' && document.documentElement.classList.contains('dark'))
+    let __darkModeObserver = null
+    try {
+      __darkModeObserver = new MutationObserver(() => { isDark.value = document.documentElement.classList.contains('dark') })
+      __darkModeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    } catch (e) {}
 
     function helpIcon(id) {
       // return small HTML (SVG or emoji) matching the toolbox button
@@ -918,6 +934,14 @@ export default {
         case 'flip-v': return '<span class="hp-char">⇋</span>'
         case 'delete': return '<span class="hp-char">🗑</span>'
         case 'help': return '<span class="hp-char">?</span>'
+        case 'dark-mode':
+          // If we're currently in dark mode, show the "light mode" (sun) icon so
+          // the button indicates the action it will perform.
+          if (isDark.value) {
+            return '<svg class="hp-svg" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zM8 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zM16 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 16 8zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zM12.657 2.343a.5.5 0 0 1 0 .707l-1.414 1.414a.5.5 0 1 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zM4.464 11.536a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zM12.657 13.657a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/></svg>'
+          }
+          return '<svg class="hp-svg" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg>'
+        case 'teleporter-lines': return '<svg class="hp-svg" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2" stroke-linecap="round"/><circle cx="2" cy="2" r="2" fill="currentColor"/><circle cx="14" cy="14" r="2" fill="currentColor"/></svg>'
         default: return '<span class="hp-char">•</span>'
       }
     }
@@ -936,6 +960,10 @@ export default {
     function hideHelp() { helpActive.value = false }
     function toggleHelp() { helpActive.value ? hideHelp() : showHelp() }
     // no dynamic repositioning required for modal help
+
+    onUnmounted(() => {
+      try { if (__darkModeObserver) __darkModeObserver.disconnect() } catch (e) {}
+    })
 
     // --- Group flash (red flash when group rotation is blocked) ---
     const groupFlashing = ref(false)
@@ -1310,7 +1338,7 @@ export default {
       flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
       boxSelectArmed, armBoxSelect,
       // Help overlay API
-      helpActive, toggleHelp, hideHelp, helpItems, helpIcon,
+      helpActive, toggleHelp, hideHelp, helpItems, helpIcon, isDark,
       fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
     }
   }
@@ -1691,6 +1719,8 @@ export default {
   color: #21313a;
   pointer-events: auto;
 }
+.help-list-divider { height: 1px; background: rgba(31,121,255,0.08); margin: 10px 0; border-radius: 1px }
+.dark .help-list-divider { background: rgba(255,255,255,0.06) }
 .help-popup { display: flex; align-items: flex-start; gap: 8px }
 .help-popup-icon { width: 44px; height: 44px; flex: 0 0 44px; display: flex; align-items: center; justify-content: center; background: #f4f8fb; border-radius: 6px; border: 1px solid #dceaf7; color: #21313a }
 .help-popup-icon .hp-char { font-size: 20px }
@@ -1712,7 +1742,7 @@ export default {
   background: #fff;
   border-radius: 10px;
   padding: 18px 18px;
-  width: 520px;
+  width: 650px; /* 25% wider than previous 520px */
   max-width: calc(100% - 32px);
   box-shadow: 0 12px 40px rgba(0,0,0,0.25);
 }
@@ -1722,7 +1752,11 @@ export default {
 .help-list-item + .help-list-item { margin-top: 0 }
 .help-list-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f6fbff; border-radius: 6px; border: 1px solid #cfe6ff; flex: 0 0 40px; box-shadow: 0 2px 6px rgba(17,24,39,0.06), inset 0 1px 0 rgba(255,255,255,0.6) }
 .dark .help-list-icon { background: #172127; border: 1px solid #2b3b45; box-shadow: 0 2px 8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02); color: #d9f6ff }
-.help-list-text { min-width: 0 }
+.help-list-text { min-width: 0; display: flex; flex-direction: column; justify-content: center }
+
+.help-list-divider-li { grid-column: 1 / -1; padding: 6px 0 }
+.help-list-divider { height: 2px; background: rgba(31,121,255,0.14); border-radius: 2px }
+.dark .help-list-divider { background: rgba(255,255,255,0.08) }
 
 @media (max-width: 640px) {
   .help-modal { width: 92% }
