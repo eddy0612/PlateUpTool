@@ -121,6 +121,10 @@
             <span class="toolbox-char" aria-hidden="true">📋</span>
           </button>
 
+          <button class="toolbox-button" @click="startDuplicate" title="Duplicate selection — Ctrl+D">
+            <span class="toolbox-char" aria-hidden="true">⎘</span>
+          </button>
+
           <button class="toolbox-button" @click="selectAll" title="Select all — Ctrl+A">
             <span class="toolbox-char" aria-hidden="true">▣</span>
           </button>
