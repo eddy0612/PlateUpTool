@@ -110,7 +110,6 @@
                 <div><dt>Ctrl+X</dt><dd>Cut selected cells</dd></div>
                 <div><dt>Ctrl+V</dt><dd>Paste</dd></div>
                 <div><dt>Ctrl+D</dt><dd>Duplicate</dd></div>
-                <div><dt>Escape</dt><dd>Cancel pending paste</dd></div>
               </dl>
             </section>
             <section>
@@ -135,7 +134,7 @@
                 <div><dt>Right-drag</dt><dd>Pan the viewport</dd></div>
               </dl>
             </section>
-es            <section>
+            <section>
               <h3>Other</h3>
               <dl>
                 <div><dt>T</dt><dd>Toggle teleporter connector lines (always show)</dd></div>
