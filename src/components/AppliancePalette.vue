@@ -409,6 +409,8 @@ export default {
 
     function onPaletteItemMouseDown(item, e) {
       if (e.button !== 0) return
+      // Prevent the browser from selecting the label text when starting a drag
+      try { e.preventDefault() } catch (err) {}
       if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
       const startX = e.clientX, startY = e.clientY
       let dragStarted = false
@@ -644,6 +646,8 @@ export default {
 
     function onBlueprintMouseDown(bp, e) {
       if (e.button !== 0) return
+      // Prevent the browser from selecting the blueprint name when starting a drag
+      try { e.preventDefault() } catch (err) {}
       if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
       const startX = e.clientX, startY = e.clientY
       let dragStarted = false
@@ -1722,6 +1726,13 @@ export default {
   width: 100%;
   box-sizing: border-box;
   text-align: center;
+}
+/* Prevent text selection inside palette items to avoid drag visual issues */
+.palette-item, .palette-item * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 .item-icon {
   width: 100%;
