@@ -121,6 +121,10 @@
             <span class="toolbox-char" aria-hidden="true">📋</span>
           </button>
 
+          <button class="toolbox-button" @click="startPaste" title="Paste — Ctrl+V">
+            <span class="toolbox-char" aria-hidden="true">📥</span>
+          </button>
+
           <button class="toolbox-button" @click="startDuplicate" title="Duplicate selection — Ctrl+D">
             <span class="toolbox-char" aria-hidden="true">⎘</span>
           </button>
@@ -133,24 +137,12 @@
             <span class="toolbox-char" aria-hidden="true">⇄</span>
           </button>
 
-          <button class="toolbox-button" @click="startPaste" title="Paste — Ctrl+V">
-            <span class="toolbox-char" aria-hidden="true">📥</span>
-          </button>
-
-          <button class="toolbox-button" @click="removeSelected" title="Delete selection — Delete / Backspace">
-            <span class="toolbox-char" aria-hidden="true">🗑</span>
-          </button>
-
           <button class="toolbox-button" @click="rotateSelectionLeft" title="Rotate selection left — Shift + Right-click">
             <span class="toolbox-char" aria-hidden="true">⟲</span>
           </button>
 
-          <button class="toolbox-button" @click="toggleTeleporterLines" :aria-pressed="showTeleporterLinesAlways" title="Toggle teleporter connector lines — T">
-            <svg class="toolbox-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-              <line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" stroke-linecap="round" />
-              <circle cx="2" cy="2" r="3" fill="currentColor" />
-              <circle cx="14" cy="14" r="3" fill="currentColor" />
-            </svg>
+          <button class="toolbox-button" @click="rotateSelectionRight" title="Rotate selection right — Right-click">
+            <span class="toolbox-char" aria-hidden="true">⟳</span>
           </button>
 
           <button class="toolbox-button" @click="flipSelectionHorizontal" title="Flip selection horizontally — Ctrl+Shift+F">
@@ -161,8 +153,16 @@
             <span class="toolbox-char" aria-hidden="true">⇵</span>
           </button>
 
-          <button class="toolbox-button" @click="rotateSelectionRight" title="Rotate selection right — Right-click">
-            <span class="toolbox-char" aria-hidden="true">⟳</span>
+          <button class="toolbox-button" @click="removeSelected" title="Delete selection — Delete / Backspace">
+            <span class="toolbox-char" aria-hidden="true">🗑</span>
+          </button>
+
+          <button class="toolbox-button" @click="toggleTeleporterLines" :aria-pressed="showTeleporterLinesAlways" title="Toggle teleporter connector lines — T">
+            <svg class="toolbox-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+              <line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" stroke-linecap="round" />
+              <circle cx="2" cy="2" r="3" fill="currentColor" />
+              <circle cx="14" cy="14" r="3" fill="currentColor" />
+            </svg>
           </button>
         </div>
       </div>
