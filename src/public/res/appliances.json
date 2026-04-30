@@ -3182,6 +3182,16 @@
     "gametype": "base"
   },
   {
+    "OriginalFileName": "Teleporter-459840623.png",
+    "Keep": true,
+    "ID": 348,
+    "3DFilename": "Teleporter-459840623.png",
+    "2DFilename": "2D_Teleporter-459840623.png",
+    "ItemDescription": "Teleporter (Unbound)",
+    "Reason": "",
+    "gametype": "base"
+  },
+  {
     "OriginalFileName": "TestCombineItem1-1453292775-Provider.png",
     "Keep": false,
     "ID": 316,
