@@ -432,7 +432,8 @@ export default {
       if (!structureDragStartMouse.value) return
       // Axis is fixed from mousedown; do nothing if missing
       if (!structureDragActiveAxis.value) return
-      const el = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.grid-item')
+      const _hit = document.elementFromPoint(e.clientX, e.clientY)
+      const el = _hit && _hit.closest ? _hit.closest('.grid-item') : null
       if (!el) return
       // Use canonical initial edge to derive the correct side for the current cell
       const init = structureDragInitialCanonical.value
@@ -471,7 +472,11 @@ export default {
       if (structureDragAction.value === 'add') {
         if (existing !== tool) setWallEdge(x, y, dirToUse, tool)
       } else if (structureDragAction.value === 'remove') {
-        if (existing === tool) setWallEdge(x, y, dirToUse, tool)
+        if (tool === 'nothing') {
+          if (existing) clearWallEdge(x, y, dirToUse)
+        } else {
+          if (existing === tool) setWallEdge(x, y, dirToUse, tool)
+        }
       }
     }
 
@@ -494,7 +499,8 @@ export default {
 
     // --- Paste pending tracking ---
     function onPasteMouseMove(e) {
-      const el = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.grid-item')
+      const _hit = document.elementFromPoint(e.clientX, e.clientY)
+      const el = _hit && _hit.closest ? _hit.closest('.grid-item') : null
       if (el && el.dataset.x !== undefined) {
         setPasteAnchor(parseInt(el.dataset.x), parseInt(el.dataset.y))
       }
@@ -545,7 +551,14 @@ export default {
       if (isStructureMode.value) {
         if (wasDragging.value) { wasDragging.value = false; return }
         const dir = detectEdgeDir(e)
-        if (dir) setWallEdge(x, y, dir, selectedStructureTool.value)
+        if (dir) {
+          const tool = selectedStructureTool.value
+          if (tool === 'nothing') {
+            clearWallEdge(x, y, dir)
+          } else {
+            setWallEdge(x, y, dir, tool)
+          }
+        }
         return
       }
       if (state.activeTabId === 'complete') return  // no selection on preview tab
@@ -580,14 +593,21 @@ export default {
         if (!dir) return
         const existing = getWallEdge(cx, cy, dir)
         const tool = selectedStructureTool.value
-        // If existing edge equals selected tool, the drag will remove; otherwise it will add
-        structureDragAction.value = (existing === tool) ? 'remove' : 'add'
-        // Apply change for the initial edge
-        if (structureDragAction.value === 'add') {
-          if (existing !== tool) setWallEdge(cx, cy, dir, tool)
+
+        // Decide whether this drag is adding or removing edges
+        if (tool === 'nothing') {
+          structureDragAction.value = 'remove'
+          if (existing) clearWallEdge(cx, cy, dir)
         } else {
-          if (existing === tool) setWallEdge(cx, cy, dir, tool)
+          if (existing === tool) {
+            structureDragAction.value = 'remove'
+            clearWallEdge(cx, cy, dir)
+          } else {
+            structureDragAction.value = 'add'
+            setWallEdge(cx, cy, dir, tool)
+          }
         }
+
         structureDragActive.value = true
         structureDraggedEdges.value = new Set([`${cx},${cy},${dir}`])
         structureDragStartMouse.value = { x: e.clientX, y: e.clientY }
@@ -599,7 +619,6 @@ export default {
         else if (dir === 'right') structureDragInitialCanonical.value = { type: 'v', x: cx + 1, y: cy }
         structureDragActiveAxis.value = (structureDragInitialCanonical.value.type === 'h') ? 'horizontal' : 'vertical'
         structureDragAnchor.value = { x: cx, y: cy }
-        // debug logging removed
         window.addEventListener('mousemove', onStructureWindowMouseMove)
         window.addEventListener('mouseup', onStructureWindowMouseUp)
         return
@@ -657,7 +676,8 @@ export default {
           startMoveDrag()
         }
         if (isMoveDragging.value) {
-          const el = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.grid-item')
+          const _hit = document.elementFromPoint(e.clientX, e.clientY)
+          const el = _hit && _hit.closest ? _hit.closest('.grid-item') : null
           if (el && el.dataset.x !== undefined) {
             updateMoveDragOffset(
               parseInt(el.dataset.x) - pendingMoveCell.value.x,
