@@ -201,7 +201,7 @@
               </svg>
             </button>
 
-            <button class="toolbox-button" @click="toggleTeleporterLines" title="Toggle teleporter connector lines (T)">
+            <button :class="['toolbox-button', { active: teleporterLines }]" @click="toggleTeleporterLines" title="Toggle teleporter connector lines (T)">
               <svg class="toolbox-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
                 <line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" stroke-linecap="round" />
                 <circle cx="2" cy="2" r="3" fill="currentColor" />
@@ -254,6 +254,7 @@ export default {
     const showCopiedToast = ref(false)
     const showFeedbackModal = ref(false)
     const darkMode = ref(localStorage.getItem('darkMode') === 'true')
+    const teleporterLines = ref(localStorage.getItem('teleporterLines') === '1')
 
 
     const renderer = new marked.Renderer()
@@ -326,8 +327,8 @@ export default {
 
     function toggleTeleporterLines() {
       try {
-        const cur = localStorage.getItem('teleporterLines') === '1'
-        const next = !cur
+        teleporterLines.value = !teleporterLines.value
+        const next = teleporterLines.value
         localStorage.setItem('teleporterLines', next ? '1' : '0')
         window.dispatchEvent(new CustomEvent('teleporter-lines-changed', { detail: next }))
       } catch (e) {}
@@ -345,7 +346,7 @@ export default {
       if (!v && isDefaultState()) showSizeModal.value = true
     })
 
-    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, darkMode, toggleDarkMode, toggleTeleporterLines, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen }
+    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, darkMode, toggleDarkMode, toggleTeleporterLines, teleporterLines, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen }
   }
 }
 </script>
@@ -628,6 +629,9 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
 .palette-toolbox .toolbox-button { background: #fff; border: 1px solid #c8d6e8; border-radius: 6px; padding: 8px 10px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 0 rgba(0,0,0,0.03); color: #21313a; display: inline-flex; align-items: center; justify-content: center }
 .toolbox-icon { width: 22px; height: 22px; display: block }
 .dark .palette-toolbox .toolbox-button { background: #2b3338; border-color: #444d55; color: #eef6f1 }
+/* Active state for toolbox buttons (e.g., teleporter lines) */
+.palette-toolbox .toolbox-button.active { background: #1f79ff; color: #fff; border-color: #1766d6 }
+.dark .palette-toolbox .toolbox-button.active { background: #1a5fe0; color: #fff; border-color: #0f4fb8 }
 
 </style>
 
