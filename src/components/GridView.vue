@@ -132,6 +132,11 @@
           <button class="toolbox-button" @click="selectAll" title="Select all — Ctrl+A">
             <span class="toolbox-char" aria-hidden="true">▣</span>
           </button>
+          <button class="toolbox-button" @click="armBoxSelect" :aria-pressed="boxSelectArmed" :class="{ active: boxSelectArmed }" aria-label="Box select" title="Box Select (Shift or Ctrl + left click and drag)">
+            <svg class="toolbox-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+              <rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
 
           <button class="toolbox-button" @click="invertSelection" title="Invert selection — Ctrl+I">
             <span class="toolbox-char" aria-hidden="true">⇄</span>
@@ -403,6 +408,13 @@ export default {
     const dragStart = ref(null)
     const dragEnd = ref(null)
 
+    // Toolbox-armed box-select: when true the next click in the grid starts a box selection
+    const boxSelectArmed = ref(false)
+
+    function armBoxSelect() {
+      boxSelectArmed.value = !boxSelectArmed.value
+    }
+
     const dragRectStyle = computed(() => {
       if (!dragStart.value || !dragEnd.value) return {}
       return {
@@ -623,6 +635,21 @@ export default {
         window.addEventListener('mouseup', onStructureWindowMouseUp)
         return
       }
+
+      // If the box-select toolbox button was armed, the next click should start a box-select drag
+      if (boxSelectArmed.value) {
+        if (e.button !== 0) { boxSelectArmed.value = false; return }
+        const el = e.target.closest('.grid-item')
+        if (!el) { boxSelectArmed.value = false; return }
+        // Start box-select drag exactly like shift/ctrl modifiers would
+        dragStart.value = { x: e.clientX, y: e.clientY }
+        dragEnd.value = { x: e.clientX, y: e.clientY }
+        isDragging.value = false
+        window.addEventListener('mousemove', onWindowMouseMove)
+        window.addEventListener('mouseup', onWindowMouseUp)
+        // keep `boxSelectArmed` true so the button remains highlighted until mouseup
+        return
+      }
       if (state.activeTabId === 'complete') return  // no drag/selection on preview tab
       if (e.button !== 0) return
 
@@ -737,6 +764,8 @@ export default {
         setTimeout(() => { wasDragging.value = false }, 0)
         isDragging.value = false
       }
+      // If box-select was armed, clear it now that mouse has been released
+      if (boxSelectArmed.value) boxSelectArmed.value = false
       dragStart.value = null
       dragEnd.value = null
     }
@@ -1200,6 +1229,7 @@ export default {
       getApplianceIcon, isImageIcon, onApplianceImgError,
       TELEPORTER_APPLIANCE_ID, teleporterPairLines, showTeleporterLinesAlways,
       toggleTeleporterLines, flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
+      boxSelectArmed, armBoxSelect,
       fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
     }
   }
@@ -1291,10 +1321,11 @@ export default {
 .grid-item.ghosted .cell-content > span { opacity: 0.3; filter: grayscale(0.7); }
 .drag-select-overlay {
   position: fixed;
-  border: 1.5px solid #1f79ff;
-  background: rgba(31, 121, 255, 0.12);
+  border: 2px dashed #1f79ff;
+  background: transparent;
   pointer-events: none;
   z-index: 9999;
+  border-radius: 4px;
 }
 .cell-label { font-size: 10px; color: #bbb; position: absolute; top: 2px; left: 2px; }
 .teleporter-pair-number {
