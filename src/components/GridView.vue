@@ -113,12 +113,24 @@
       </div>
       <div class="toolbox-box" title="Toolbox (mouse-friendly controls)">
         <div class="toolbox" role="toolbar" aria-label="Touch toolbox">
-          <button class="toolbox-button" @click="rotateSelectionLeft" title="Rotate selection left — Shift + Right-click">
-            <span class="toolbox-char" aria-hidden="true">⟲</span>
+          <button class="toolbox-button" @click="cutToClipboard" title="Cut selection — Ctrl+X">
+            <span class="toolbox-char" aria-hidden="true">✂</span>
           </button>
 
-          <button class="toolbox-button" @click="startDuplicate" title="Duplicate selection — Ctrl+D">
-            <span class="toolbox-char" aria-hidden="true">⎘</span>
+          <button class="toolbox-button" @click="copyToClipboard" title="Copy selection — Ctrl+C">
+            <span class="toolbox-char" aria-hidden="true">📋</span>
+          </button>
+
+          <button class="toolbox-button" @click="startPaste" title="Paste — Ctrl+V">
+            <span class="toolbox-char" aria-hidden="true">📥</span>
+          </button>
+
+          <button class="toolbox-button" @click="removeSelected" title="Delete selection — Delete / Backspace">
+            <span class="toolbox-char" aria-hidden="true">🗑</span>
+          </button>
+
+          <button class="toolbox-button" @click="rotateSelectionLeft" title="Rotate selection left — Shift + Right-click">
+            <span class="toolbox-char" aria-hidden="true">⟲</span>
           </button>
 
           <button class="toolbox-button" @click="toggleTeleporterLines" :aria-pressed="showTeleporterLinesAlways" title="Toggle teleporter connector lines — T">
@@ -1155,7 +1167,7 @@ export default {
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
       getApplianceIcon, isImageIcon, onApplianceImgError,
       TELEPORTER_APPLIANCE_ID, teleporterPairLines, showTeleporterLinesAlways,
-      toggleTeleporterLines, flipSelectionHorizontal, flipSelectionVertical, startDuplicate, rotateSelectionLeft, rotateSelectionRight,
+      toggleTeleporterLines, flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, rotateSelectionLeft, rotateSelectionRight,
       fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
     }
   }
