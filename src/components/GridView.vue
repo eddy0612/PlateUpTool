@@ -113,57 +113,79 @@
       </div>
       <div class="toolbox-box" title="Toolbox (mouse-friendly controls)">
         <div class="toolbox" role="toolbar" aria-label="Touch toolbox">
-          <button class="toolbox-button" @click="cutToClipboard" title="Cut selection — Ctrl+X">
+          <button class="toolbox-button" data-help-id="cut" @click="cutToClipboard" title="Cut selection — Ctrl+X">
             <span class="toolbox-char" aria-hidden="true">✂</span>
           </button>
 
-          <button class="toolbox-button" @click="copyToClipboard" title="Copy selection — Ctrl+C">
+          <button class="toolbox-button" data-help-id="copy" @click="copyToClipboard" title="Copy selection — Ctrl+C">
             <span class="toolbox-char" aria-hidden="true">📋</span>
           </button>
 
-          <button class="toolbox-button" @click="startPaste" title="Paste — Ctrl+V">
+          <button class="toolbox-button" data-help-id="paste" @click="startPaste" title="Paste — Ctrl+V">
             <span class="toolbox-char" aria-hidden="true">📥</span>
           </button>
 
-          <button class="toolbox-button" @click="startDuplicate" title="Duplicate selection — Ctrl+D">
+          <button class="toolbox-button" data-help-id="duplicate" @click="startDuplicate" title="Duplicate selection — Ctrl+D">
             <span class="toolbox-char" aria-hidden="true">⎘</span>
           </button>
 
-          <button class="toolbox-button" @click="armBoxSelect" :aria-pressed="boxSelectArmed" :class="{ active: boxSelectArmed }" aria-label="Box select" title="Box Select (Shift or Ctrl + left click and drag)">
+          <button class="toolbox-button" data-help-id="box-select" @click="armBoxSelect" :aria-pressed="boxSelectArmed" :class="{ active: boxSelectArmed }" aria-label="Box select" title="Box Select (Shift or Ctrl + left click and drag)">
             <svg class="toolbox-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
               <rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </button>
 
-          <button class="toolbox-button" @click="selectAll" title="Select all — Ctrl+A">
+          <button class="toolbox-button" data-help-id="select-all" @click="selectAll" title="Select all — Ctrl+A">
             <span class="toolbox-char" aria-hidden="true">▣</span>
           </button>
 
-          <button class="toolbox-button" @click="invertSelection" title="Invert selection — Ctrl+I">
+          <button class="toolbox-button" data-help-id="invert" @click="invertSelection" title="Invert selection — Ctrl+I">
             <span class="toolbox-char" aria-hidden="true">⇄</span>
           </button>
 
-          <button class="toolbox-button" @click="rotateSelectionLeft" title="Rotate selection left — Shift + Right-click">
+          <button class="toolbox-button" data-help-id="rotate-left" @click="rotateSelectionLeft" title="Rotate selection left — Shift + Right-click">
             <span class="toolbox-char" aria-hidden="true">⟲</span>
           </button>
 
-          <button class="toolbox-button" @click="rotateSelectionRight" title="Rotate selection right — Right-click">
+          <button class="toolbox-button" data-help-id="rotate-right" @click="rotateSelectionRight" title="Rotate selection right — Right-click">
             <span class="toolbox-char" aria-hidden="true">⟳</span>
           </button>
 
-          <button class="toolbox-button" @click="flipSelectionHorizontal" title="Flip selection horizontally — Ctrl+Shift+F">
+          <button class="toolbox-button" data-help-id="flip-h" @click="flipSelectionHorizontal" title="Flip selection horizontally — Ctrl+Shift+F">
             <span class="toolbox-char" aria-hidden="true">⇵</span>
           </button>
 
-          <button class="toolbox-button" @click="flipSelectionVertical" title="Flip selection vertically — Ctrl+F">
+          <button class="toolbox-button" data-help-id="flip-v" @click="flipSelectionVertical" title="Flip selection vertically — Ctrl+F">
             <span class="toolbox-char" aria-hidden="true">⇋</span>
           </button>
 
-          <button class="toolbox-button" @click="removeSelected" title="Delete selection — Delete / Backspace">
+          <button class="toolbox-button" data-help-id="delete" @click="removeSelected" title="Delete selection — Delete / Backspace">
             <span class="toolbox-char" aria-hidden="true">🗑</span>
           </button>
 
+          <!-- Help button -->
+          <button class="toolbox-button" data-help-id="help" @click.stop="toggleHelp" :aria-pressed="helpActive" title="Show help for toolbox">
+            <span class="toolbox-char" aria-hidden="true">?</span>
+          </button>
+
           <!-- teleporter toggle moved to palette area; GridView listens for changes -->
+        </div>
+      </div>
+
+      <!-- Help modal: single centered list of toolbar items -->
+      <div v-if="helpActive" class="help-backdrop" @click="hideHelp">
+        <div class="help-modal" @click.stop>
+          <h3 class="help-modal-title">Toolbar help</h3>
+          <ul class="help-list">
+            <li v-for="item in helpItems" :key="item.id" class="help-list-item">
+              <span class="help-list-icon" v-html="helpIcon(item.id)"></span>
+              <div class="help-list-text">
+                <div class="help-popup-title">{{ item.title }}</div>
+                <div class="help-popup-desc">{{ item.desc }}</div>
+              </div>
+            </li>
+          </ul>
+          <div class="help-modal-actions"><button @click="hideHelp">Close</button></div>
         </div>
       </div>
     </div>
@@ -859,6 +881,62 @@ export default {
       contextMenuVisible.value = false
     }
 
+    // --- Inline help overlay for toolbox ---
+    const helpActive = ref(false)
+    // overlaySize unused with single-modal help
+    const helpItems = [
+      { id: 'cut', title: 'Cut', desc: 'Remove selection and copy to clipboard.' },
+      { id: 'copy', title: 'Copy', desc: 'Copy selection to clipboard.' },
+      { id: 'paste', title: 'Paste', desc: 'Paste clipboard contents into grid.' },
+      { id: 'duplicate', title: 'Duplicate', desc: 'Duplicate the selected cells.' },
+      { id: 'box-select', title: 'Box Select', desc: 'Click and drag to select multiple cells.' },
+      { id: 'select-all', title: 'Select All', desc: 'Select every cell in the grid.' },
+      { id: 'invert', title: 'Invert', desc: 'Invert the current selection.' },
+      { id: 'rotate-left', title: 'Rotate Left', desc: 'Rotate selection counter-clockwise.' },
+      { id: 'rotate-right', title: 'Rotate Right', desc: 'Rotate selection clockwise.' },
+      { id: 'flip-h', title: 'Flip H', desc: 'Flip selection horizontally.' },
+      { id: 'flip-v', title: 'Flip V', desc: 'Flip selection vertically.' },
+      { id: 'delete', title: 'Delete', desc: 'Delete the selected cells.' },
+      { id: 'help', title: 'Help', desc: 'Show this help overlay.' }
+    ]
+
+    // Single-modal help UI — no per-popup positions required
+
+    function helpIcon(id) {
+      // return small HTML (SVG or emoji) matching the toolbox button
+      switch (id) {
+        case 'cut': return '<span class="hp-char">✂</span>'
+        case 'copy': return '<span class="hp-char">📋</span>'
+        case 'paste': return '<span class="hp-char">📥</span>'
+        case 'duplicate': return '<span class="hp-char">⎘</span>'
+        case 'box-select': return '<svg class="hp-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        case 'select-all': return '<span class="hp-char">▣</span>'
+        case 'invert': return '<span class="hp-char">⇄</span>'
+        case 'rotate-left': return '<span class="hp-char">⟲</span>'
+        case 'rotate-right': return '<span class="hp-char">⟳</span>'
+        case 'flip-h': return '<span class="hp-char">⇵</span>'
+        case 'flip-v': return '<span class="hp-char">⇋</span>'
+        case 'delete': return '<span class="hp-char">🗑</span>'
+        case 'help': return '<span class="hp-char">?</span>'
+        default: return '<span class="hp-char">•</span>'
+      }
+    }
+
+    function computeHelpPositions() {
+      // Deprecated for single-modal help UI. Keep as no-op to avoid errors.
+      helpLines.value = []
+      popupPositions.value = {}
+    }
+
+    function popupStyle(id) {
+      return { left: '0px', top: '0px' }
+    }
+
+    function showHelp() { helpActive.value = true }
+    function hideHelp() { helpActive.value = false }
+    function toggleHelp() { helpActive.value ? hideHelp() : showHelp() }
+    // no dynamic repositioning required for modal help
+
     // --- Group flash (red flash when group rotation is blocked) ---
     const groupFlashing = ref(false)
 
@@ -1202,6 +1280,7 @@ export default {
       if (vp) vp.removeEventListener('wheel', onWheel)
       // remove palette teleporter handler
       if (window.__teleHandlerGridView) { window.removeEventListener('teleporter-lines-changed', window.__teleHandlerGridView); delete window.__teleHandlerGridView }
+      // help overlay listeners removed (no-op positioning for modal)
       cancelMoveDrag()
       cancelPaste()
       if (tabRenameTimer) clearTimeout(tabRenameTimer)
@@ -1230,6 +1309,8 @@ export default {
       TELEPORTER_APPLIANCE_ID, teleporterPairLines, showTeleporterLinesAlways,
       flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
       boxSelectArmed, armBoxSelect,
+      // Help overlay API
+      helpActive, toggleHelp, hideHelp, helpItems, helpIcon,
       fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
     }
   }
@@ -1583,4 +1664,69 @@ export default {
   color: #eef6f1;
 }
 .dark .toolbox-button[aria-pressed="true"] { background: #114226; border-color: #1f7a44; color: #e6fff0 }
+/* Help overlay popups and connector lines */
+.help-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: auto;
+}
+.help-lines {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.help-popup {
+  position: absolute;
+  max-width: 220px;
+  background: #ffffff;
+  border: 1px solid #c8d6e8;
+  border-radius: 8px;
+  padding: 8px 10px;
+  box-shadow: 2px 4px 14px rgba(0,0,0,0.12);
+  color: #21313a;
+  pointer-events: auto;
+}
+.help-popup { display: flex; align-items: flex-start; gap: 8px }
+.help-popup-icon { width: 44px; height: 44px; flex: 0 0 44px; display: flex; align-items: center; justify-content: center; background: #f4f8fb; border-radius: 6px; border: 1px solid #dceaf7; color: #21313a }
+.help-popup-icon .hp-char { font-size: 20px }
+.help-popup-icon .hp-svg { width: 28px; height: 28px }
+.help-popup-body { min-width: 140px }
+.help-popup-title { font-weight: 700; margin-bottom: 4px }
+.help-popup-desc { font-size: 13px; color: #42556a }
+/* Single-modal help styles */
+.help-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12,18,28,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+.help-modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px 18px;
+  width: 520px;
+  max-width: calc(100% - 32px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+}
+.help-modal-title { margin: 0 0 8px 0; font-size: 16px }
+.help-list { list-style: none; padding: 0; margin: 8px 0 12px 0; max-height: 64vh; overflow: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px }
+.help-list-item { display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; align-items: center }
+.help-list-item + .help-list-item { margin-top: 0 }
+.help-list-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f6fbff; border-radius: 6px; border: 1px solid #e6f0ff; flex: 0 0 40px }
+.help-list-text { min-width: 0 }
+
+@media (max-width: 640px) {
+  .help-modal { width: 92% }
+  .help-list { grid-template-columns: 1fr }
+}
+.help-modal-actions { text-align: right }
+.help-modal-actions button { padding: 8px 12px; border-radius: 6px; border: 1px solid #cbdffb; background: #f6fbff }
 </style>
