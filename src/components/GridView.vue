@@ -121,6 +121,14 @@
             <span class="toolbox-char" aria-hidden="true">📋</span>
           </button>
 
+          <button class="toolbox-button" @click="selectAll" title="Select all — Ctrl+A">
+            <span class="toolbox-char" aria-hidden="true">▣</span>
+          </button>
+
+          <button class="toolbox-button" @click="invertSelection" title="Invert selection — Ctrl+I">
+            <span class="toolbox-char" aria-hidden="true">⇄</span>
+          </button>
+
           <button class="toolbox-button" @click="startPaste" title="Paste — Ctrl+V">
             <span class="toolbox-char" aria-hidden="true">📥</span>
           </button>
@@ -1167,7 +1175,7 @@ export default {
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
       getApplianceIcon, isImageIcon, onApplianceImgError,
       TELEPORTER_APPLIANCE_ID, teleporterPairLines, showTeleporterLinesAlways,
-      toggleTeleporterLines, flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, rotateSelectionLeft, rotateSelectionRight,
+      toggleTeleporterLines, flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
       fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
     }
   }
