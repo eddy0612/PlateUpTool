@@ -1720,7 +1720,8 @@ export default {
 .help-list { list-style: none; padding: 0; margin: 8px 0 12px 0; max-height: 64vh; overflow: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px }
 .help-list-item { display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; align-items: center }
 .help-list-item + .help-list-item { margin-top: 0 }
-.help-list-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f6fbff; border-radius: 6px; border: 1px solid #e6f0ff; flex: 0 0 40px }
+.help-list-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f6fbff; border-radius: 6px; border: 1px solid #cfe6ff; flex: 0 0 40px; box-shadow: 0 2px 6px rgba(17,24,39,0.06), inset 0 1px 0 rgba(255,255,255,0.6) }
+.dark .help-list-icon { background: #172127; border: 1px solid #2b3b45; box-shadow: 0 2px 8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02); color: #d9f6ff }
 .help-list-text { min-width: 0 }
 
 @media (max-width: 640px) {
