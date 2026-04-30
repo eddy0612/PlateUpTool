@@ -152,11 +152,11 @@
           </button>
 
           <button class="toolbox-button" @click="flipSelectionHorizontal" title="Flip selection horizontally — Ctrl+Shift+F">
-            <span class="toolbox-char" aria-hidden="true">⇋</span>
+            <span class="toolbox-char" aria-hidden="true">⇵</span>
           </button>
 
           <button class="toolbox-button" @click="flipSelectionVertical" title="Flip selection vertically — Ctrl+F">
-            <span class="toolbox-char" aria-hidden="true">⇵</span>
+            <span class="toolbox-char" aria-hidden="true">⇋</span>
           </button>
 
           <button class="toolbox-button" @click="removeSelected" title="Delete selection — Delete / Backspace">
