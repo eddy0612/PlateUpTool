@@ -163,13 +163,7 @@
             <span class="toolbox-char" aria-hidden="true">🗑</span>
           </button>
 
-          <button class="toolbox-button" @click="toggleTeleporterLines" :aria-pressed="showTeleporterLinesAlways" title="Toggle teleporter connector lines — T">
-            <svg class="toolbox-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-              <line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" stroke-linecap="round" />
-              <circle cx="2" cy="2" r="3" fill="currentColor" />
-              <circle cx="14" cy="14" r="3" fill="currentColor" />
-            </svg>
-          </button>
+          <!-- teleporter toggle moved to palette area; GridView listens for changes -->
         </div>
       </div>
     </div>
@@ -1190,6 +1184,11 @@ export default {
       if (viewportEl.value) viewportEl.value.addEventListener('wheel', onWheel, { passive: false })
       // Initialize teleporter lines toggle from localStorage
       try { showTeleporterLinesAlways.value = localStorage.getItem('teleporterLines') === '1' } catch (e) {}
+      // Listen for teleporter toggle events from App
+      const teleHandler = (ev) => { try { showTeleporterLinesAlways.value = !!ev.detail } catch (e) {} }
+      window.addEventListener('teleporter-lines-changed', teleHandler)
+      // keep a ref to remove later
+      window.__teleHandlerGridView = teleHandler
     })
 
     onUnmounted(() => {
@@ -1201,6 +1200,8 @@ export default {
       window.removeEventListener('mousemove', onPasteMouseMove)
       const vp = viewportEl.value
       if (vp) vp.removeEventListener('wheel', onWheel)
+      // remove palette teleporter handler
+      if (window.__teleHandlerGridView) { window.removeEventListener('teleporter-lines-changed', window.__teleHandlerGridView); delete window.__teleHandlerGridView }
       cancelMoveDrag()
       cancelPaste()
       if (tabRenameTimer) clearTimeout(tabRenameTimer)
@@ -1227,7 +1228,7 @@ export default {
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
       getApplianceIcon, isImageIcon, onApplianceImgError,
       TELEPORTER_APPLIANCE_ID, teleporterPairLines, showTeleporterLinesAlways,
-      toggleTeleporterLines, flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
+      flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
       boxSelectArmed, armBoxSelect,
       fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
     }

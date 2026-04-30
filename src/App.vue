@@ -49,14 +49,7 @@
           </svg>
           Share
         </button>
-        <button class="darkmode-button" @click="toggleDarkMode" :title="darkMode ? 'Switch to light mode' : 'Switch to dark mode'">
-          <svg v-if="!darkMode" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
-          </svg>
-          <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/>
-          </svg>
-        </button>
+
         <button class="help-button" @click="showHelp = true" title="Keyboard shortcuts &amp; controls">?</button>
       </div>
     </header>
@@ -142,7 +135,7 @@
                 <div><dt>Right-drag</dt><dd>Pan the viewport</dd></div>
               </dl>
             </section>
-            <section>
+es            <section>
               <h3>Other</h3>
               <dl>
                 <div><dt>T</dt><dd>Toggle teleporter connector lines (always show)</dd></div>
@@ -196,7 +189,29 @@
 
     <div class="main-grid">
       <GridView />
-      <AppliancePalette />
+      <div class="palette-column">
+        <AppliancePalette />
+        <div class="palette-toolbox-box" title="Palette toolbox (controls)">
+          <div class="palette-toolbox" role="toolbar" aria-label="Palette toolbox">
+            <button class="toolbox-button" @click="toggleDarkMode" :title="darkMode ? 'Switch to light mode' : 'Switch to dark mode'">
+              <svg v-if="!darkMode" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zM8 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zM16 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 16 8zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zM12.657 2.343a.5.5 0 0 1 0 .707l-1.414 1.414a.5.5 0 1 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zM4.464 11.536a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zM12.657 13.657a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/>
+              </svg>
+            </button>
+
+            <button class="toolbox-button" @click="toggleTeleporterLines" title="Toggle teleporter connector lines (T)">
+              <svg class="toolbox-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" stroke-linecap="round" />
+                <circle cx="2" cy="2" r="3" fill="currentColor" />
+                <circle cx="14" cy="14" r="3" fill="currentColor" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     <RestaurantSizeModal v-if="showSizeModal" @choose="onSizeChosen" />
     <transition name="toast">
@@ -241,6 +256,7 @@ export default {
     const showFeedbackModal = ref(false)
     const darkMode = ref(localStorage.getItem('darkMode') === 'true')
 
+
     const renderer = new marked.Renderer()
     renderer.link = ({ href, text }) =>
       `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`
@@ -273,6 +289,8 @@ export default {
       localStorage.setItem('darkMode', darkMode.value)
       document.documentElement.classList.toggle('dark', darkMode.value)
     }
+
+
 
     function copyUrl() {
       navigator.clipboard.writeText(window.location.href)
@@ -307,6 +325,15 @@ export default {
       window.location.replace(window.location.origin + window.location.pathname)
     }
 
+    function toggleTeleporterLines() {
+      try {
+        const cur = localStorage.getItem('teleporterLines') === '1'
+        const next = !cur
+        localStorage.setItem('teleporterLines', next ? '1' : '0')
+        window.dispatchEvent(new CustomEvent('teleporter-lines-changed', { detail: next }))
+      } catch (e) {}
+    }
+
     function onSizeChosen({ w, h }) {
       state.roomWidth = Number(w)
       state.roomHeight = Number(h)
@@ -319,7 +346,7 @@ export default {
       if (!v && isDefaultState()) showSizeModal.value = true
     })
 
-    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, darkMode, toggleDarkMode, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen }
+    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, darkMode, toggleDarkMode, toggleTeleporterLines, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen }
   }
 }
 </script>
@@ -593,6 +620,15 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
   overflow: visible;
   align-items: flex-start;
 }
+
+/* Palette column + toolbox (palette toolbox sits below the palette, right-aligned) */
+.palette-column { display:flex; flex-direction:column; gap:8px; align-items:stretch }
+.palette-toolbox-box { margin-left: auto; display:flex; align-items:center; padding:6px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9; margin-top: 10px }
+.palette-toolbox { display:flex; gap:8px; align-items:center }
+.palette-toolbox .toolbox-button { background: #fff; border: 1px solid #c8d6e8; border-radius: 6px; padding: 8px 10px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 0 rgba(0,0,0,0.03); color: #21313a; display: inline-flex; align-items: center; justify-content: center }
+.toolbox-icon { width: 22px; height: 22px; display: block }
+.dark .palette-toolbox .toolbox-button { background: #2b3338; border-color: #444d55; color: #eef6f1 }
+
 </style>
 
 <style>

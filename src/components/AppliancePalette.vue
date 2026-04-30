@@ -174,6 +174,7 @@
           <button @click="triggerUnifiedImport" title="Load from a PNG file">Load</button>
         </div>
       </div>
+        <!-- Palette toolbox moved to App layout (below the palette) -->
       </div>
     </template>
 
@@ -398,6 +399,8 @@ export default {
     }))
 
     const suppressNextClick = ref(false)
+
+    // Dark mode & teleporter controls moved to App-level toolbox
 
     function onPaletteItemClick(item) {
       if (suppressNextClick.value) { suppressNextClick.value = false; return }
@@ -1644,6 +1647,7 @@ export default {
       seedValue, seedStatus, seedLoading, loadSeed, onSeedInput,
       seeds, filteredSeedOptions, seedSuggestionsOpen, applySuggestion,
       selectedSuggestionIndex, onSeedKeydown, onSeedBlur, openSeedSuggestions, seedSuggestionStyle,
+      // palette toolbox state removed (handled in App)
     }
   }
 }
@@ -1657,6 +1661,9 @@ export default {
   height: 100%;
   flex-shrink: 0;
 }
+
+/* ensure absolute-positioned toolbox anchors to the right-panel */
+.right-panel { position: relative }
 .side-panel-wrapper {
   display: flex;
   flex-direction: column;
@@ -1682,6 +1689,8 @@ export default {
   gap: 10px;
   align-items: stretch;
 }
+
+/* Palette toolbox moved to App.vue */
 .filter input {
   width: 100%;
   padding: 6px;
