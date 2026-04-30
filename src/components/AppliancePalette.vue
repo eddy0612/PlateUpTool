@@ -226,7 +226,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const { palette } = useAppliancePalette()
-    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState } = useGrid()
+    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState, getTeleporterPairPos } = useGrid()
 
     const structureTools = [
       { id: 'wall',  label: 'Wall',  description: 'Full-height wall',  },
@@ -488,6 +488,27 @@ export default {
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
           ctx.fillText((entry?.label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
+          // Draw teleporter pair number if present
+          try {
+            if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
+              const num = String(cell.extraData)
+              const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
+              ctx.save()
+              ctx.fillStyle = '#000'
+              ctx.globalAlpha = 0.6
+              const r = Math.floor(CELL_PX * 0.35)
+              ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill()
+              ctx.restore()
+              ctx.save()
+              ctx.fillStyle = '#fff'
+              ctx.font = `700 ${Math.floor(CELL_PX * 0.45)}px sans-serif`
+              ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+              ctx.shadowColor = 'rgba(0,0,0,0.6)'
+              ctx.shadowBlur = 4
+              ctx.fillText(num, nx, ny)
+              ctx.restore()
+            }
+          } catch (e) {}
           return resolve()
         }
 
@@ -507,11 +528,63 @@ export default {
             ctx.drawImage(img, sx, sy, sw, sh, cx, cy, CELL_PX, CELL_PX)
           }
           ctx.restore()
+          try {
+            if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
+              const num = String(cell.extraData)
+              const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
+              ctx.save()
+              ctx.fillStyle = '#000'
+              ctx.globalAlpha = 0.6
+              const r = Math.floor(CELL_PX * 0.35)
+              ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill()
+              ctx.restore()
+              ctx.save()
+              ctx.fillStyle = '#fff'
+              ctx.font = `700 ${Math.floor(CELL_PX * 0.45)}px sans-serif`
+              ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+              ctx.shadowColor = 'rgba(0,0,0,0.6)'
+              ctx.shadowBlur = 4
+              ctx.fillText(num, nx, ny)
+              ctx.restore()
+            }
+          } catch (e) {}
           resolve()
         }
         img.onerror = () => resolve()
         img.src = iconSrc
       })))
+
+      // If teleporter-line overlay toggle is set, draw connector lines for paired teleporters
+      try {
+        if (localStorage.getItem('teleporterLines') === '1') {
+          const ctx = offscreen.getContext('2d')
+          ctx.save()
+          ctx.strokeStyle = '#4dbb5f'
+          ctx.lineWidth = 2
+          ctx.setLineDash([7,4])
+          const seen = new Set()
+          const cx = x => PAD + x * CELL_PX + CELL_PX / 2
+          const cy = y => PAD + y * CELL_PX + CELL_PX / 2
+          // cells here are relative (dx, dy)
+          for (const a of cells) {
+            const x = a.dx, y = a.dy
+            const cell = a.cell
+            if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
+              // find partner within blueprint
+              const partner = cells.find(c => (c.cell?.applianceId === 315) && (c.cell.extraData || 0) === cell.extraData && (c.dx !== x || c.dy !== y))
+              if (!partner) continue
+              const key = `${Math.min(x, partner.dx)},${Math.min(y, partner.dy)},${Math.max(x, partner.dx)},${Math.max(y, partner.dy)}`
+              if (seen.has(key)) continue
+              seen.add(key)
+              ctx.beginPath()
+              ctx.moveTo(cx(x), cy(y))
+              ctx.lineTo(cx(partner.dx), cy(partner.dy))
+              ctx.stroke()
+            }
+          }
+          ctx.restore()
+        }
+      } catch (e) {}
 
       return offscreen.toDataURL('image/png')
     }
@@ -865,6 +938,27 @@ export default {
           ctx.font = `${Math.floor(CELL_PX * 0.4)}px sans-serif`
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
           ctx.fillText((entry?.label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
+          // Draw teleporter pair number if present
+          try {
+            if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
+              const num = String(cell.extraData)
+              const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
+              ctx.save()
+              ctx.fillStyle = '#000'
+              ctx.globalAlpha = 0.6
+              const r = Math.floor(CELL_PX * 0.35)
+              ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill()
+              ctx.restore()
+              ctx.save()
+              ctx.fillStyle = '#fff'
+              ctx.font = `700 ${Math.floor(CELL_PX * 0.45)}px sans-serif`
+              ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+              ctx.shadowColor = 'rgba(0,0,0,0.6)'
+              ctx.shadowBlur = 4
+              ctx.fillText(num, nx, ny)
+              ctx.restore()
+            }
+          } catch (e) {}
           return resolve()
         }
         const img = new window.Image()
@@ -883,11 +977,64 @@ export default {
             ctx.drawImage(img, 0, cropTop, img.width, sH, cx, cy, CELL_PX, CELL_PX)
           }
           ctx.restore()
+          // Draw teleporter pair number if present
+          try {
+            if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
+              const num = String(cell.extraData)
+              const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
+              ctx.save()
+              ctx.fillStyle = '#000'
+              ctx.globalAlpha = 0.6
+              const r = Math.floor(CELL_PX * 0.35)
+              ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill()
+              ctx.restore()
+              ctx.save()
+              ctx.fillStyle = '#fff'
+              ctx.font = `700 ${Math.floor(CELL_PX * 0.45)}px sans-serif`
+              ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+              ctx.shadowColor = 'rgba(0,0,0,0.6)'
+              ctx.shadowBlur = 4
+              ctx.fillText(num, nx, ny)
+              ctx.restore()
+            }
+          } catch (e) {}
           resolve()
         }
         img.onerror = () => resolve()
         img.src = iconSrc
       })))
+      // Draw teleporter connector lines when toggle enabled
+      try {
+        if (localStorage.getItem('teleporterLines') === '1') {
+          const ctx = offscreen.getContext('2d')
+          ctx.save()
+          ctx.strokeStyle = '#4dbb5f'
+          ctx.lineWidth = 2
+          ctx.setLineDash([7,4])
+          const seen = new Set()
+          const cx = x => PAD + x * CELL_PX + CELL_PX / 2
+          const cy = y => PAD + y * CELL_PX + CELL_PX / 2
+          for (let y = 0; y < grid.value.length; y++) {
+            for (let x = 0; x < (grid.value[y]?.length ?? 0); x++) {
+              const cell = grid.value[y][x]
+              if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
+                // find partner using getTeleporterPairPos
+                const partner = getTeleporterPairPos(x, y)
+                if (!partner) continue
+                const key = `${Math.min(x, partner.x)},${Math.min(y, partner.y)},${Math.max(x, partner.x)},${Math.max(y, partner.y)}`
+                if (seen.has(key)) continue
+                seen.add(key)
+                ctx.beginPath()
+                ctx.moveTo(cx(x), cy(y))
+                ctx.lineTo(cx(partner.x), cy(partner.y))
+                ctx.stroke()
+              }
+            }
+          }
+          ctx.restore()
+        }
+      } catch (e) {}
+
       return offscreen.toDataURL('image/png')
     }
 
