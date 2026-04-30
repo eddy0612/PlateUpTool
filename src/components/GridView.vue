@@ -117,12 +117,24 @@
             <span class="toolbox-char" aria-hidden="true">⟲</span>
           </button>
 
+          <button class="toolbox-button" @click="startDuplicate" title="Duplicate selection — Ctrl+D">
+            <span class="toolbox-char" aria-hidden="true">⎘</span>
+          </button>
+
           <button class="toolbox-button" @click="toggleTeleporterLines" :aria-pressed="showTeleporterLinesAlways" title="Toggle teleporter connector lines — T">
             <svg class="toolbox-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
               <line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" stroke-linecap="round" />
               <circle cx="2" cy="2" r="3" fill="currentColor" />
               <circle cx="14" cy="14" r="3" fill="currentColor" />
             </svg>
+          </button>
+
+          <button class="toolbox-button" @click="flipSelectionHorizontal" title="Flip selection horizontally — Ctrl+Shift+F">
+            <span class="toolbox-char" aria-hidden="true">⇋</span>
+          </button>
+
+          <button class="toolbox-button" @click="flipSelectionVertical" title="Flip selection vertically — Ctrl+F">
+            <span class="toolbox-char" aria-hidden="true">⇵</span>
           </button>
 
           <button class="toolbox-button" @click="rotateSelectionRight" title="Rotate selection right — Right-click">
@@ -1143,7 +1155,7 @@ export default {
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
       getApplianceIcon, isImageIcon, onApplianceImgError,
       TELEPORTER_APPLIANCE_ID, teleporterPairLines, showTeleporterLinesAlways,
-      toggleTeleporterLines, rotateSelectionLeft, rotateSelectionRight,
+      toggleTeleporterLines, flipSelectionHorizontal, flipSelectionVertical, startDuplicate, rotateSelectionLeft, rotateSelectionRight,
       fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
     }
   }
