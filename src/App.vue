@@ -192,6 +192,11 @@
         <AppliancePalette />
         <div class="palette-toolbox-box" title="Palette toolbox (controls)">
           <div class="palette-toolbox" role="toolbar" aria-label="Palette toolbox">
+            <div class="toolbox-size" title="Room size">
+              <label class="size-label">W: <input type="number" :value="state.roomWidth" min="10" max="50" @change="setRoomWidth($event)" /></label>
+              <label class="size-label">H: <input type="number" :value="state.roomHeight" min="6" max="50" @change="setRoomHeight($event)" /></label>
+            </div>
+
             <button class="toolbox-button" @click="toggleDarkMode" :title="darkMode ? 'Switch to light mode' : 'Switch to dark mode'">
               <svg class="toolbox-icon" v-if="!darkMode" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                 <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
@@ -290,6 +295,18 @@ export default {
       document.documentElement.classList.toggle('dark', darkMode.value)
     }
 
+    function setRoomWidth(e) {
+      const v = Math.min(50, Math.max(10, parseInt(e.target.value) || 10))
+      state.roomWidth = v
+      e.target.value = v
+    }
+
+    function setRoomHeight(e) {
+      const v = Math.min(50, Math.max(6, parseInt(e.target.value) || 6))
+      state.roomHeight = v
+      e.target.value = v
+    }
+
 
 
     function copyUrl() {
@@ -346,7 +363,7 @@ export default {
       if (!v && isDefaultState()) showSizeModal.value = true
     })
 
-    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, darkMode, toggleDarkMode, toggleTeleporterLines, teleporterLines, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen }
+    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, darkMode, toggleDarkMode, toggleTeleporterLines, teleporterLines, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen, setRoomWidth, setRoomHeight }
   }
 }
 </script>
@@ -623,7 +640,7 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
 
 /* Palette column + toolbox (palette toolbox sits below the palette, right-aligned) */
 .palette-column { display:flex; flex-direction:column; gap:8px; align-items:stretch }
-.palette-toolbox-box { margin-left: auto; display:flex; align-items:center; padding:6px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9; margin-top: 10px }
+  .palette-toolbox-box { margin-left: auto; display:flex; align-items:center; padding:5px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9; margin-top: 10px }
 .dark .palette-toolbox-box { background: #1e2629; border-color: #33393d }
 .palette-toolbox { display:flex; gap:8px; align-items:center }
 .palette-toolbox .toolbox-button { background: #fff; border: 1px solid #c8d6e8; border-radius: 6px; padding: 8px 10px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 0 rgba(0,0,0,0.03); color: #21313a; display: inline-flex; align-items: center; justify-content: center }
@@ -632,6 +649,18 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
 /* Active state for toolbox buttons (e.g., teleporter lines) */
 .palette-toolbox .toolbox-button.active { background: #1f79ff; color: #fff; border-color: #1766d6 }
 .dark .palette-toolbox .toolbox-button.active { background: #1a5fe0; color: #fff; border-color: #0f4fb8 }
+/* Room size inputs inside palette toolbox (horizontal: W then H) */
+.palette-toolbox .toolbox-size {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+.palette-toolbox .toolbox-size .size-label { font-weight:700; font-size:0.9rem; display:flex; gap:6px; align-items:center }
+.palette-toolbox .toolbox-size input[type="number"] { width:48px; padding:4px; border-radius:4px; border:1px solid #c8d6e8 }
+.dark .palette-toolbox .toolbox-size input[type="number"] { background: #2b3338; border-color:#444d55; color:#eef6f1 }
 
 </style>
 
