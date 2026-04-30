@@ -290,7 +290,8 @@ export default {
       state.activeTabId = nextId
     }
 
-    // --- Tab rename (long-press on yellow tabs) ---
+
+    // --- Tab press-and-hold: open context menu (rename/delete) ---
     const editingTabId = ref(null)
     const editingTabLabel = ref('')
     let tabRenameTimer = null
@@ -298,15 +299,12 @@ export default {
     function onTabMouseDown(tab, e) {
       if (tab.id === 'complete' || tab.id === 'structure') return
       if (e.button !== 0) return
-      if (state.activeTabId !== tab.id) return
+      // Start a press-and-hold timer to show the tab context menu instead of
+      // immediately entering rename mode.
       tabRenameTimer = setTimeout(() => {
         tabRenameTimer = null
-        editingTabId.value = tab.id
-        editingTabLabel.value = tab.label
-        nextTick(() => {
-          const el = document.querySelector('.tab-rename-input')
-          if (el) { el.focus(); el.select() }
-        })
+        // Use the same handler as right-click context menu so options match.
+        onTabContextMenu(tab, e)
       }, 500)
     }
 
