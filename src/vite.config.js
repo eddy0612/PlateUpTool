@@ -11,5 +11,8 @@ export default defineConfig(({ command }) => ({
       '@': path.resolve(__dirname)
     }
   },
-  server: { port: 5173 }
+  server: {
+    host: true,
+    port: 5173
+  }
 }))
