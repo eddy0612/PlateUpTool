@@ -129,13 +129,14 @@
             <span class="toolbox-char" aria-hidden="true">⎘</span>
           </button>
 
-          <button class="toolbox-button" @click="selectAll" title="Select all — Ctrl+A">
-            <span class="toolbox-char" aria-hidden="true">▣</span>
-          </button>
           <button class="toolbox-button" @click="armBoxSelect" :aria-pressed="boxSelectArmed" :class="{ active: boxSelectArmed }" aria-label="Box select" title="Box Select (Shift or Ctrl + left click and drag)">
             <svg class="toolbox-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
               <rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
+          </button>
+
+          <button class="toolbox-button" @click="selectAll" title="Select all — Ctrl+A">
+            <span class="toolbox-char" aria-hidden="true">▣</span>
           </button>
 
           <button class="toolbox-button" @click="invertSelection" title="Invert selection — Ctrl+I">
