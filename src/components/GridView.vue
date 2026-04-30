@@ -111,6 +111,25 @@
         </div>
         <div class="grid-status-bar">{{ hoverLabel }}</div>
       </div>
+      <div class="toolbox-box" title="Toolbox (mouse-friendly controls)">
+        <div class="toolbox" role="toolbar" aria-label="Touch toolbox">
+          <button class="toolbox-button" @click="rotateSelectionLeft" title="Rotate selection left — Shift + Right-click">
+            <span class="toolbox-char" aria-hidden="true">⟲</span>
+          </button>
+
+          <button class="toolbox-button" @click="toggleTeleporterLines" :aria-pressed="showTeleporterLinesAlways" title="Toggle teleporter connector lines — T">
+            <svg class="toolbox-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+              <line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" stroke-linecap="round" />
+              <circle cx="2" cy="2" r="3" fill="currentColor" />
+              <circle cx="14" cy="14" r="3" fill="currentColor" />
+            </svg>
+          </button>
+
+          <button class="toolbox-button" @click="rotateSelectionRight" title="Rotate selection right — Right-click">
+            <span class="toolbox-char" aria-hidden="true">⟳</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div
@@ -788,6 +807,35 @@ export default {
     // selected paired teleporter, so GridView can draw a dashed connector line.
     const showTeleporterLinesAlways = ref(false)
 
+    function toggleTeleporterLines() {
+      showTeleporterLinesAlways.value = !showTeleporterLinesAlways.value
+    }
+
+    function rotateSelectionRight() {
+      const firstKey = [...selectedCells.value][0]
+      if (!firstKey) return
+      const [x, y] = firstKey.split(',').map(Number)
+      // If group selected and more than one non-ghosted cell, rotate group around pivot
+      if (isSelected(x, y) && selectedCells.value.size > 1) {
+        const success = rotateGroupAroundCell(x, y)
+        if (!success) flashGroupRed()
+      } else {
+        rotateCell(x, y)
+      }
+    }
+
+    function rotateSelectionLeft() {
+      const firstKey = [...selectedCells.value][0]
+      if (!firstKey) return
+      const [x, y] = firstKey.split(',').map(Number)
+      if (isSelected(x, y) && selectedCells.value.size > 1) {
+        const success = rotateGroupAroundCellCCW(x, y)
+        if (!success) flashGroupRed()
+      } else {
+        rotateCellCCW(x, y)
+      }
+    }
+
     const teleporterPairLines = computed(() => {
       const lines = []
       const cs = cellSize.value * state.zoom
@@ -1095,6 +1143,7 @@ export default {
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
       getApplianceIcon, isImageIcon, onApplianceImgError,
       TELEPORTER_APPLIANCE_ID, teleporterPairLines, showTeleporterLinesAlways,
+      toggleTeleporterLines, rotateSelectionLeft, rotateSelectionRight,
       fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
     }
   }
@@ -1418,4 +1467,33 @@ export default {
 .grid-item.group-flash {
   animation: group-flash-red 0.4s ease-out;
 }
+/* Toolbox (right of status area) */
+.toolbox-box { margin-left: auto; display:flex; align-items:center; padding:6px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9 }
+.dark .toolbox-box { background: #1e2629; border-color: #33393d }
+.toolbox { display:flex; gap:8px; align-items:center; }
+.toolbox-button {
+  background: #fff;
+  border: 1px solid #c8d6e8;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+  color: #21313a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.toolbox-icon { width: 22px; height: 22px; display: block }
+.toolbox-char { font-size: 20px; line-height: 1; display: inline-block; transform: translateY(-1px) }
+.toolbox-button[aria-pressed="true"] { background: #e8f9ee; border-color: #6fd08a; color: #0a4f24 }
+.toolbox-button:hover { transform: translateY(-1px) }
+
+/* Dark mode: keep button visible */
+.dark .toolbox-button {
+  background: #2b3338;
+  border-color: #444d55;
+  color: #eef6f1;
+}
+.dark .toolbox-button[aria-pressed="true"] { background: #114226; border-color: #1f7a44; color: #e6fff0 }
 </style>
