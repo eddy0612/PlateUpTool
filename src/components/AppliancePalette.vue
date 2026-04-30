@@ -167,12 +167,7 @@
           <div class="seed-status" v-if="seedStatus">{{ seedStatus }}</div>
         </div>
 
-        <div v-else class="clipboard-row">
-          <button @click="cutToClipboard">Cut</button>
-          <button @click="copyToClipboard">Copy</button>
-          <button @click="startPaste">Paste</button>
-          <button @click="removeSelected">Delete</button>
-        </div>
+        <!-- Clipboard controls moved to the left-panel toolbox for touch/mouse use -->
 
         <div class="io-row">
           <button @click="showExportMenu($event)" title="Save to PNG">Save</button>
