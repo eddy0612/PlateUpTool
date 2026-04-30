@@ -142,6 +142,12 @@
                 <div><dt>Right-drag</dt><dd>Pan the viewport</dd></div>
               </dl>
             </section>
+            <section>
+              <h3>Other</h3>
+              <dl>
+                <div><dt>T</dt><dd>Toggle teleporter connector lines (always show)</dd></div>
+              </dl>
+            </section>
           </div>
         </div>
       </div>
