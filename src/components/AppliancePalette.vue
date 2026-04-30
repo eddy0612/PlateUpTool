@@ -224,9 +224,10 @@ export default {
     const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState, getTeleporterPairPos } = useGrid()
 
     const structureTools = [
-      { id: 'wall',  label: 'Wall',  description: 'Full-height wall',  },
-      { id: 'hatch', label: 'Hatch', description: 'Half-height wall',  },
-      { id: 'door',  label: 'Door',  description: 'Doorway / opening', },
+      { id: 'wall',    label: 'Wall',    description: 'Full-height wall' },
+      { id: 'hatch',   label: 'Hatch',   description: 'Half-height wall' },
+      { id: 'door',    label: 'Door',    description: 'Doorway / opening' },
+      { id: 'nothing', label: 'Nothing', description: 'Remove any wall, hatch or door' },
     ]
 
     const isPreviewTab = computed(() => state.activeTabId === 'complete')
@@ -1932,6 +1933,7 @@ export default {
   border: 1px solid #555;
 }
 .swatch-door  { background: #c8860a }
+.swatch-nothing { background: transparent; border: 2px solid #bfc9d8; box-sizing: border-box }
 .tool-name { font-weight: 600; font-size: 15px; color: #222 }
 .tool-desc { font-size: 12px; color: #777; margin-top: 2px }
 .structure-hint {
