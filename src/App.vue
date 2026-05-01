@@ -644,7 +644,7 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
 
 /* Palette column + toolbox (palette toolbox sits below the palette, right-aligned) */
 .palette-column { display:flex; flex-direction:column; gap:8px; align-items:stretch }
-  .palette-toolbox-box { margin-left: auto; display:flex; align-items:center; padding:5px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9; margin-top: 10px }
+  .palette-toolbox-box { margin-left: auto; display:flex; align-items:center; padding:5px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9; }
 .dark .palette-toolbox-box { background: #1e2629; border-color: #33393d }
 .palette-toolbox { display:flex; gap:8px; align-items:center }
 .palette-toolbox .toolbox-button { background: #fff; border: 1px solid #c8d6e8; border-radius: 6px; padding: 8px 10px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 0 rgba(0,0,0,0.03); color: #21313a; display: inline-flex; align-items: center; justify-content: center }
