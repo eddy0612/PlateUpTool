@@ -470,9 +470,8 @@ export default {
       offscreen.width  = canvasW
       offscreen.height = canvasH
       const ctx = offscreen.getContext('2d')
-      const isDark = document.documentElement.classList.contains('dark')
-      // Use a blue 'blueprint' background for blueprint previews and exports
-      ctx.fillStyle = isDark ? '#0e2038' : '#cce7ff'
+      // Always use the light-mode blue 'blueprint' background for previews/exports
+      ctx.fillStyle = '#cce7ff'
       ctx.fillRect(0, 0, canvasW, canvasH)
 
       await Promise.all(cells.map(({ dx, dy, cell }) => new Promise(resolve => {
@@ -482,9 +481,9 @@ export default {
         const cy = PAD + dy * CELL_PX
 
         if (!iconSrc || !isImageIcon(iconSrc)) {
-          ctx.fillStyle = isDark ? '#1e3050' : '#dde3ea'
+          ctx.fillStyle = '#dde3ea'
           ctx.fillRect(cx + 1, cy + 1, CELL_PX - 2, CELL_PX - 2)
-          ctx.fillStyle = isDark ? '#b0c0da' : '#555'
+          ctx.fillStyle = '#555'
           ctx.font = `${Math.floor(CELL_PX * 0.45)}px sans-serif`
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
