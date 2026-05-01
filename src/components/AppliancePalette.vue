@@ -181,18 +181,19 @@
     <teleport to="body">
       <template v-if="exportMenuVisible">
         <div class="context-menu-backdrop" @click="closeExportMenu" @contextmenu.prevent="closeExportMenu" />
-        <div class="context-menu" :style="{ left: exportMenuPos.x + 'px', bottom: exportMenuPos.bottom + 'px' }">
-          <div class="context-menu-group-label">As file...</div>
-          <div class="context-menu-item" :class="{ disabled: !hasNonGhostSelection }" @click="exportSelectedToFile"><span class="icon">📤</span> Selected cells...</div>
-          <div class="context-menu-item" @click="doExport('tab')"><span class="icon">💾</span> {{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
-          <div class="context-menu-item" @click="doExport('all-tabs')"><span class="icon">💾</span> All appliance tabs</div>
-          <div class="context-menu-item" @click="doExport('complete')"><span class="icon">💾</span> Complete</div>
-          <div class="context-menu-group-label">To clipboard</div>
+        <div class="context-menu" :style="exportMenuPos.top != null ? { left: exportMenuPos.x + 'px', top: exportMenuPos.top + 'px' } : { left: exportMenuPos.x + 'px', bottom: exportMenuPos.bottom + 'px' }">
+          <div class="context-menu-group-label">Copy to clipboard</div>
           <div class="context-menu-item" :class="{ disabled: !hasNonGhostSelection }" @click="exportSelectedToClipboard"><span class="icon">📤</span> Selected cells...</div>
           <div class="context-menu-item" @click="doExportClipboard('tab')"><span class="icon">📋</span> {{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
           <div class="context-menu-item" @click="doExportClipboard('all-tabs')"><span class="icon">📋</span> All appliance tabs</div>
           <div class="context-menu-item" @click="doExportClipboard('complete')"><span class="icon">📋</span> Complete</div>
-          <div class="context-menu-item context-menu-cancel" @click="closeExportMenu">Cancel</div>
+          <div class="context-menu-group-label">Save as file...</div>
+          <div class="context-menu-item" :class="{ disabled: !hasNonGhostSelection }" @click="exportSelectedToFile"><span class="icon">📤</span> Selected cells...</div>
+          <div class="context-menu-item" @click="doExport('tab')"><span class="icon">💾</span> {{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
+          <div class="context-menu-item" @click="doExport('all-tabs')"><span class="icon">💾</span> All appliance tabs</div>
+          <div class="context-menu-item" @click="doExport('complete')"><span class="icon">💾</span> Complete</div>
+          <div class="context-menu-group-label">Load</div>
+          <div class="context-menu-item" @click="loadFromMenu"><span class="icon">📂</span> Load from file...</div>
         </div>
       </template>
     </teleport>
@@ -382,6 +383,10 @@ export default {
     function onWindowResize() { windowWidth.value = window.innerWidth }
     onMounted(() => window.addEventListener('resize', onWindowResize))
     onUnmounted(() => window.removeEventListener('resize', onWindowResize))
+
+    function handleGlobalSaveLoadMenu(e) { showExportMenu(e.detail) }
+    onMounted(() => window.addEventListener('plateup-open-saveload-menu', handleGlobalSaveLoadMenu))
+    onUnmounted(() => window.removeEventListener('plateup-open-saveload-menu', handleGlobalSaveLoadMenu))
 
     const paletteColumns = computed(() => {
       const available = windowWidth.value * 0.20
@@ -1158,14 +1163,23 @@ export default {
     const exportMenuVisible = ref(false)
     const exportMenuPos = ref({ x: 0, bottom: 0 })
 
-    function showExportMenu(event) {
-      const rect = event.currentTarget.getBoundingClientRect()
-      exportMenuPos.value = { x: rect.left, bottom: window.innerHeight - rect.top + 4 }
+    function showExportMenu(eventOrPos) {
+      if (eventOrPos instanceof Event) {
+        const rect = eventOrPos.currentTarget.getBoundingClientRect()
+        exportMenuPos.value = { x: rect.left, bottom: window.innerHeight - rect.top + 4, top: null }
+      } else {
+        exportMenuPos.value = { x: eventOrPos.x, top: eventOrPos.top ?? null, bottom: eventOrPos.bottom ?? null }
+      }
       exportMenuVisible.value = true
     }
 
     function closeExportMenu() {
       exportMenuVisible.value = false
+    }
+
+    function loadFromMenu() {
+      closeExportMenu()
+      triggerUnifiedImport()
     }
 
     async function doExport(type) {
@@ -1644,6 +1658,7 @@ export default {
       // unified export/import
       unifiedImportInput, triggerUnifiedImport, handleUnifiedImport,
       exportMenuVisible, exportMenuPos, showExportMenu, closeExportMenu, doExport, doExportClipboard,
+      loadFromMenu,
       // selection export
       hasNonGhostSelection, exportSelectedToFile, exportSelectedToClipboard,
       // seed UI
