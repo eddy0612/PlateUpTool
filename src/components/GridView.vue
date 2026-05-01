@@ -57,6 +57,15 @@
               opacity="0.85"
             />
           </svg>
+          <!-- Label overlays (above grid items) -->
+          <div v-for="lbl in state.labels" :key="'lbl-' + lbl.id"
+               class="planner-label"
+               :data-label-id="lbl.id"
+               @pointerdown.stop.prevent="handleLabelPointerDown(lbl, $event)"
+               @dblclick.stop.prevent="editLabel(lbl)"
+               :style="getLabelStyle(lbl)">
+            {{ lbl.text }}
+          </div>
         </div>
         </div>
       </div>
@@ -161,6 +170,13 @@
 
           <button class="toolbox-button" data-help-id="flip-v" @click="flipSelectionVertical" title="Flip selection vertically — Ctrl+F">
             <span class="toolbox-char" aria-hidden="true">⇋</span>
+          </button>
+
+          <button class="toolbox-button" data-help-id="label" @click="createLabel" :disabled="state.activeTabId === 'complete' || isStructureMode" title="Add label — Click to add a text label" :aria-disabled="state.activeTabId === 'complete' || isStructureMode">
+            <svg class="toolbox-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+              <rect x="3" y="6" width="18" height="12" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <line x1="6" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+            </svg>
           </button>
 
           <button class="toolbox-button" data-help-id="delete" @click="removeSelected" title="Delete selection — Delete / Backspace">
@@ -1366,6 +1382,193 @@ export default {
       try { localStorage.setItem('teleporterLines', v ? '1' : '0') } catch (e) {}
     })
 
+    // --- Label tool state & handlers ---
+    const draggingLabelId = ref(null)
+    const labelDragInfo = ref(null)
+    const labelLastOver = ref(null)
+    const draggingLabelPos = ref({}) // transient pixel positions while dragging: { [id]: { left, top } }
+
+    function createLabel() {
+      if (state.activeTabId === 'complete' || isStructureMode.value) return
+      let text = window.prompt('Label text:')
+      if (!text) return
+      text = text.trim().slice(0, 15)
+      if (!text) return
+      // place label at centre of selection if any, otherwise center of room
+      let tx = Math.floor(state.roomWidth / 2)
+      let ty = Math.floor(state.roomHeight / 2)
+      if (selectedCells.value && selectedCells.value.size > 0) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+        for (const k of selectedCells.value) {
+          const [sx, sy] = k.split(',').map(Number)
+          minX = Math.min(minX, sx); minY = Math.min(minY, sy); maxX = Math.max(maxX, sx); maxY = Math.max(maxY, sy)
+        }
+        const cx = (minX + maxX) / 2
+        const cy = (minY + maxY) / 2
+        tx = Math.floor(cx)
+        ty = Math.floor(cy)
+      }
+      // x2/y2 are half-grid integer coords
+      let tx2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, tx * 2))
+      let ty2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, ty * 2))
+      const id = Date.now().toString()
+      state.labels = state.labels || []
+      state.labels.push({ id, x2: tx2, y2: ty2, text })
+    }
+
+    function getLabelStyle(lbl) {
+      // If dragging transient position exists, use it (pixel coords relative to grid)
+      const dp = draggingLabelPos.value && draggingLabelPos.value[lbl.id]
+      const W = state.roomWidth, H = state.roomHeight
+      const cs = cellSize.value * state.zoom
+      const tw = (W * cs - (W - 1) * 2) / W
+      const th = (H * cs - (H - 1) * 2) / H
+      const pitchX = tw + 2
+      const pitchY = th + 2
+      let leftPx, topPx
+      if (dp) {
+        leftPx = dp.left
+        topPx = dp.top
+      } else {
+        const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : 0)
+        const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : 0)
+        leftPx = (x2 / 2) * pitchX + tw / 2
+        topPx = (y2 / 2) * pitchY + th / 2
+      }
+      const dark = isDark && isDark.value
+      const bg = dark ? 'rgba(20,24,30,0.75)' : 'rgba(255,255,255,0.95)'
+      const color = dark ? '#e6f6ff' : '#102330'
+      const border = dark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.08)'
+      return {
+        position: 'absolute',
+        left: leftPx + 'px',
+        top: topPx + 'px',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 60,
+        pointerEvents: 'auto',
+        background: bg,
+        color,
+        padding: '4px 6px',
+        borderRadius: '6px',
+        border,
+        fontSize: '12px'
+      }
+    }
+
+    function handleLabelPointerDown(lbl, ev) {
+      if (state.activeTabId === 'complete' || isStructureMode.value) return
+      ev.stopPropagation()
+      draggingLabelId.value = lbl.id
+      labelDragInfo.value = { id: lbl.id }
+      window.addEventListener('pointermove', onWindowPointerMove)
+      window.addEventListener('pointerup', onWindowPointerUp)
+    }
+
+    function onWindowPointerMove(e) {
+      if (!labelDragInfo.value) return
+      if (state.activeTabId === 'complete' || isStructureMode.value) return
+      const grid = gridEl.value
+      if (!grid) return
+      const rect = grid.getBoundingClientRect()
+      const localX = e.clientX - rect.left
+      const localY = e.clientY - rect.top
+      // store transient pixel pos (may be outside 0..grid size)
+      draggingLabelPos.value[labelDragInfo.value.id] = { left: localX, top: localY }
+      // determine if currently over a grid cell
+      const W = state.roomWidth, H = state.roomHeight
+      const cs = cellSize.value * state.zoom
+      const tw = (W * cs - (W - 1) * 2) / W
+      const th = (H * cs - (H - 1) * 2) / H
+      const pitchX = tw + 2
+      const pitchY = th + 2
+      // store transient snapped half-grid coords
+      const logicalX = localX / pitchX
+      const logicalY = localY / pitchY
+      const snappedX2 = Math.round(logicalX * 2)
+      const snappedY2 = Math.round(logicalY * 2)
+      // compute pixel center for rendering
+      const centerX = (snappedX2 / 2) * pitchX + tw / 2
+      const centerY = (snappedY2 / 2) * pitchY + th / 2
+      draggingLabelPos.value[labelDragInfo.value.id] = { left: centerX, top: centerY }
+      // only mark as over-grid if center within grid rect
+      if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) {
+        labelLastOver.value = null
+      } else {
+        const nx = Math.floor(logicalX)
+        const ny = Math.floor(logicalY)
+        labelLastOver.value = { x: nx, y: ny, snappedX2, snappedY2 }
+      }
+    }
+
+    function onWindowPointerUp() {
+      if (!labelDragInfo.value) {
+        window.removeEventListener('pointermove', onWindowPointerMove)
+        window.removeEventListener('pointerup', onWindowPointerUp)
+        return
+      }
+      const id = labelDragInfo.value.id
+      if (state.activeTabId === 'complete' || isStructureMode.value) {
+        // cancel transient drag without committing when in preview/structure
+        delete draggingLabelPos.value[id]
+        draggingLabelId.value = null
+        labelDragInfo.value = null
+        labelLastOver.value = null
+        window.removeEventListener('pointermove', onWindowPointerMove)
+        window.removeEventListener('pointerup', onWindowPointerUp)
+        return
+      }
+      const labelEl = document.querySelector(`[data-label-id="${id}"]`)
+      const grid = gridEl.value
+      let placed = false
+      if (labelEl && grid) {
+        const lblR = labelEl.getBoundingClientRect()
+        const gridR = grid.getBoundingClientRect()
+        // require label bounding box to be fully contained in grid
+        if (lblR.left >= gridR.left && lblR.top >= gridR.top && lblR.right <= gridR.right && lblR.bottom <= gridR.bottom) {
+          // Use last snapped half-grid coords if available
+          const snapped = labelLastOver.value && labelLastOver.value.snappedX2 != null ? { x2: labelLastOver.value.snappedX2, y2: labelLastOver.value.snappedY2 } : null
+          if (snapped) {
+            const idx = (state.labels || []).findIndex(s => s.id === id)
+            if (idx !== -1) {
+              state.labels[idx].x2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, snapped.x2))
+              state.labels[idx].y2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, snapped.y2))
+              placed = true
+            }
+          }
+        }
+      }
+      // if not placed (released outside grid or invalid), remove the label
+      if (!placed) {
+        const idx = (state.labels || []).findIndex(s => s.id === id)
+        if (idx !== -1) state.labels.splice(idx, 1)
+      }
+      // cleanup
+      delete draggingLabelPos.value[id]
+      draggingLabelId.value = null
+      labelDragInfo.value = null
+      labelLastOver.value = null
+      window.removeEventListener('pointermove', onWindowPointerMove)
+      window.removeEventListener('pointerup', onWindowPointerUp)
+    }
+
+    function editLabel(lbl) {
+      if (state.activeTabId === 'complete' || isStructureMode.value) return
+      let t = window.prompt('Edit label text (empty to delete):', lbl.text || '')
+      if (t === null) return
+      t = t.trim().slice(0, 15)
+      const idx = (state.labels || []).findIndex(s => s.id === lbl.id)
+      if (t === '') {
+        if (idx !== -1) state.labels.splice(idx, 1)
+      } else {
+        if (idx !== -1) state.labels[idx].text = t
+      }
+    }
+
+    onUnmounted(() => {
+      window.removeEventListener('pointermove', onWindowPointerMove)
+      window.removeEventListener('pointerup', onWindowPointerUp)
+    })
+
     return {
       state, flatGrid, gridStyleDynamic, viewportBoxHeight, cellSize, rotationStyle, getApplianceIcon, get2DApplianceIcon, isImageIcon,
       rotateCell, selectedCells, isSelected, addTab, selectTab,
@@ -1383,6 +1586,7 @@ export default {
       getApplianceIcon, isImageIcon, onApplianceImgError,
       TELEPORTER_APPLIANCE_ID, teleporterPairLines, showTeleporterLinesAlways,
       flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
+      createLabel, handleLabelPointerDown, getLabelStyle, editLabel,
       boxSelectArmed, armBoxSelect,
       // Help overlay API
       helpActive, toggleHelp, hideHelp, helpItems, helpIcon, isDark,
@@ -1484,6 +1688,7 @@ export default {
   border-radius: 4px;
 }
 .cell-label { font-size: 10px; color: #bbb; position: absolute; top: 2px; left: 2px; }
+.planner-label { cursor: grab; user-select: none; white-space: nowrap; }
 .teleporter-pair-number {
   position: absolute;
   inset: 0;

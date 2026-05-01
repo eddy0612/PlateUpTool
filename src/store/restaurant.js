@@ -17,11 +17,12 @@ const DEFAULT_STATE = {
   roomHeight: 12,
   filterText: '',   // kept in state for UI reactivity, not saved to URL
   walls: {},
-  gridCells: []     // flat array of { x, y, applianceId, rotation, extraData, tabIds }
+  gridCells: [],    // flat array of { x, y, applianceId, rotation, extraData, tabIds }
+  labels: []        // flat array of { id, x, y, text }
 }
 
 // Only these fields are serialized into the URL
-const URL_FIELDS = ['tabs', 'orientation', 'roomWidth', 'roomHeight', 'walls', 'gridCells']
+const URL_FIELDS = ['tabs', 'orientation', 'roomWidth', 'roomHeight', 'walls', 'gridCells', 'labels']
 
 // Wall type string ↔ compact integer code
 const WALL_TYPE_TO_CODE = { wall: 1, hatch: 2, door: 3 }
@@ -185,6 +186,19 @@ function encodeState(stateObj) {
     w.write(WALL_TYPE_TO_CODE[type] ?? 1, 2)
   }
 
+  // Labels (append as simple byte sequence: count, then entries of x,y,len,utf8...)
+  const labels = stateObj.labels || []
+  w.write(labels.length & 0xFF, 8)
+  for (const lbl of labels) {
+    // store half-grid coordinates as integers (x2 = x * 2)
+    const x2 = (lbl.x2 ?? (lbl.x != null ? lbl.x * 2 : 0)) & 0xFF
+    const y2 = (lbl.y2 ?? (lbl.y != null ? lbl.y * 2 : 0)) & 0xFF
+    const bytes = new TextEncoder().encode(lbl.text || '')
+    const len = Math.min(255, bytes.length)
+    w.write(x2, 8); w.write(y2, 8); w.write(len, 8)
+    for (let i = 0; i < len; ++i) w.write(bytes[i], 8)
+  }
+
   return base64urlEncode(w.finish())
 }
 
@@ -244,7 +258,25 @@ function decodeState(encoded) {
       walls[`${orient},${x},${y}`] = WALL_CODE_TO_TYPE[r.read(2)] ?? 'wall'
     }
 
-    return { tabs, orientation, roomWidth, roomHeight, walls, gridCells }
+    // Optional labels appended after walls (backwards-compatible)
+    const labels = []
+    try {
+      if (r._i < r._b.length || r._bits > 0) {
+        const numLabels = r.read(8)
+        for (let li = 0; li < numLabels; li++) {
+          const lx2 = r.read(8)
+          const ly2 = r.read(8)
+          const lLen = r.read(8)
+          let s = ''
+          for (let j = 0; j < lLen; j++) s += String.fromCharCode(r.read(8))
+          labels.push({ id: Date.now().toString() + '-' + li, x2: lx2, y2: ly2, text: s })
+        }
+      }
+    } catch (e) {
+      // ignore malformed trailing label data
+    }
+
+    return { tabs, orientation, roomWidth, roomHeight, walls, gridCells, labels }
   } catch {
     return null
   }
