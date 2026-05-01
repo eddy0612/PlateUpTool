@@ -1002,12 +1002,27 @@ export default {
     function rotateSelectionRight() {
       const firstKey = [...selectedCells.value][0]
       if (!firstKey) return
-      const [x, y] = firstKey.split(',').map(Number)
-      // If group selected and more than one non-ghosted cell, rotate group around pivot
-      if (isSelected(x, y) && selectedCells.value.size > 1) {
-        const success = rotateGroupAroundCell(x, y)
+
+      // Use the rounded center of the non-ghosted selection as the pivot for
+      // toolbar rotate buttons (instead of the first/random selected cell).
+      const activeKeys = [...selectedCells.value].filter(key => {
+        const [kx, ky] = key.split(',').map(Number); return !isCellGhosted(kx, ky)
+      })
+      if (activeKeys.length > 1) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+        for (const key of activeKeys) {
+          const [x, y] = key.split(',').map(Number)
+          if (x < minX) minX = x
+          if (x > maxX) maxX = x
+          if (y < minY) minY = y
+          if (y > maxY) maxY = y
+        }
+        const pivotX = (minX + maxX) / 2
+        const pivotY = (minY + maxY) / 2
+        const success = rotateGroupAroundCell(pivotX, pivotY)
         if (!success) flashGroupRed()
       } else {
+        const [x, y] = firstKey.split(',').map(Number)
         rotateCell(x, y)
       }
     }
@@ -1015,11 +1030,25 @@ export default {
     function rotateSelectionLeft() {
       const firstKey = [...selectedCells.value][0]
       if (!firstKey) return
-      const [x, y] = firstKey.split(',').map(Number)
-      if (isSelected(x, y) && selectedCells.value.size > 1) {
-        const success = rotateGroupAroundCellCCW(x, y)
+
+      const activeKeys = [...selectedCells.value].filter(key => {
+        const [kx, ky] = key.split(',').map(Number); return !isCellGhosted(kx, ky)
+      })
+      if (activeKeys.length > 1) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+        for (const key of activeKeys) {
+          const [x, y] = key.split(',').map(Number)
+          if (x < minX) minX = x
+          if (x > maxX) maxX = x
+          if (y < minY) minY = y
+          if (y > maxY) maxY = y
+        }
+        const pivotX = (minX + maxX) / 2
+        const pivotY = (minY + maxY) / 2
+        const success = rotateGroupAroundCellCCW(pivotX, pivotY)
         if (!success) flashGroupRed()
       } else {
+        const [x, y] = firstKey.split(',').map(Number)
         rotateCellCCW(x, y)
       }
     }

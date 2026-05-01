@@ -206,7 +206,9 @@ function rotateGroupAroundCell(pivotX, pivotY) {
     const [x, y] = key.split(',').map(Number)
     const dx = x - pivotX
     const dy = y - pivotY
-    moves.push({ sx: x, sy: y, tx: pivotX - dy, ty: pivotY + dx })
+    const tx = Math.round(pivotX - dy)
+    const ty = Math.round(pivotY + dx)
+    moves.push({ sx: x, sy: y, tx, ty })
   }
 
   // Validate: every target must be in-bounds and not occupied by a cell not being moved
@@ -256,7 +258,9 @@ function rotateGroupAroundCellCCW(pivotX, pivotY) {
     const [x, y] = key.split(',').map(Number)
     const dx = x - pivotX
     const dy = y - pivotY
-    moves.push({ sx: x, sy: y, tx: pivotX + dy, ty: pivotY - dx })
+    const tx = Math.round(pivotX + dy)
+    const ty = Math.round(pivotY - dx)
+    moves.push({ sx: x, sy: y, tx, ty })
   }
 
   // Validate: every target must be in-bounds and not occupied by a cell not being moved
