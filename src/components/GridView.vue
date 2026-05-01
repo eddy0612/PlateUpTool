@@ -100,24 +100,13 @@
     </div>
 
     <div class="controls-with-status">
-      <div class="hover-icon-box">
-        <img
-          v-if="hoverApplianceId && isImageIcon(getApplianceIcon(hoverApplianceId))"
-          :src="getApplianceIcon(hoverApplianceId)"
-          class="hover-icon-img"
-        />
-      </div>
       <div class="controls-right">
         <div class="controls">
           <div class="control-zoom">
             <label>Zoom {{ (state.zoom * 100).toFixed(0) }}%</label>
             <input type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom" />
           </div>
-          <div class="control-size">
-            <!-- Room size inputs moved to App palette toolbox -->
-          </div>
         </div>
-        <div class="grid-status-bar">{{ hoverLabel }}</div>
       </div>
       <div class="toolbox-box" title="Toolbox (mouse-friendly controls)">
         <div class="toolbox" role="toolbar" aria-label="Touch toolbox">
@@ -261,6 +250,7 @@ export default {
     const { state } = useRestaurantStore()
     const {
       flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon,
+      hoverLabel,
       rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection,
       flipSelectionHorizontal, flipSelectionVertical,
       moveSelectionBy,
@@ -1124,7 +1114,6 @@ export default {
     })
 
     // --- Grid hover status bar ---
-    const hoverLabel = ref('')
     const hoverApplianceId = ref('')
 
     function onViewportMouseMove(e) {
@@ -1145,6 +1134,7 @@ export default {
       hoverLabel.value = ''
       hoverApplianceId.value = ''
     }
+
 
     // --- Right-mouse drag to pan ---
     const rightDragStartMouse = ref(null)
@@ -1784,34 +1774,9 @@ export default {
   color: #222;
 }
 .controls-with-status { display: flex; flex-direction: row; align-items: center; gap: 8px; }
-.hover-icon-box {
-  width: 72px;
-  height: 72px;
-  flex-shrink: 0;
-  background: #eef3fa;
-  border: 1px solid #c8d6e8;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-.hover-icon-img { width: 100%; height: 100%; object-fit: contain; }
 .controls-right { display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
 .controls { display: flex; gap: 18px; align-items: center; }
 .size-status-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.grid-status-bar {
-  min-height: 1.4em;
-  font-size: 0.82rem;
-  color: #3a5070;
-  padding: 2px 6px;
-  background: #eef3fa;
-  border: 1px solid #c8d6e8;
-  border-radius: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .control-compass, .control-mode, .control-zoom, .control-size { display: flex; align-items: center; gap: 6px }
 .control-zoom { min-width: 320px; display: flex; align-items: center; gap: 6px }
 .control-zoom input[type="range"] { flex: 1; width: auto; max-width: none }

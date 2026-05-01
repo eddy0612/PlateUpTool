@@ -169,10 +169,7 @@
 
         <!-- Clipboard controls moved to the left-panel toolbox for touch/mouse use -->
 
-        <div class="io-row">
-          <button @click="showExportMenu($event)" title="Save to PNG">Save</button>
-          <button @click="triggerUnifiedImport" title="Load from a PNG file">Load</button>
-        </div>
+        <div class="palette-status-bar">{{ hoverLabel }}</div>
       </div>
         <!-- Palette toolbox moved to App layout (below the palette) -->
       </div>
@@ -232,7 +229,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const { palette } = useAppliancePalette()
-    const { addToGrid, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState, getTeleporterPairPos } = useGrid()
+    const { addToGrid, hoverLabel, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState, getTeleporterPairPos } = useGrid()
 
     const structureTools = [
       { id: 'wall',    label: 'Wall',    description: 'Full-height wall' },
@@ -1664,7 +1661,7 @@ export default {
       })
     }
 
-    return { state, filteredPalette, addToGrid, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemMouseDown, rightPanelStyle, paletteGridStyle,
+    return { state, filteredPalette, addToGrid, hoverLabel, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemMouseDown, rightPanelStyle, paletteGridStyle,
       // blueprints
       paletteTab, blueprintFilter, filteredBlueprints, createBlueprint, applyBlueprint, deleteBlueprint, onBlueprintMouseDown,
       exportBlueprint, handleBlueprintImport, triggerBlueprintImport, blueprintImportInput,
@@ -1792,19 +1789,19 @@ export default {
   font-size: 0.78rem;
 }
 .fill-all-btn:hover { background: #4a6fb2 }
-.io-row { display: flex; gap: 6px }
-.io-row button {
-  flex: 1;
-  padding: 6px 4px;
-  border: none;
-  cursor: pointer;
+.palette-status-bar {
+  height: 1.4em;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  color: #3a5070;
+  padding: 2px 6px;
+  background: #eef3fa;
+  border: 1px solid #c8d6e8;
   border-radius: 4px;
-  background: #4a6fa5;
-  color: white;
-  font-size: 0.78rem;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.io-row button:hover { background: #3a5f95 }
 .bp-import-btn {
   width: 100%;
   padding: 5px 8px;
