@@ -679,6 +679,13 @@ html.dark .help-button:hover { background: #223060; border-color: #5a7aaa; }
 html.dark .darkmode-button { border-color: #3a5a88; background: #1a2640; color: #7aaade; }
 html.dark .darkmode-button:hover { background: #223060; border-color: #5a7aaa; }
 
+/* Palette status bar (hover text) */
+html.dark .palette-status-bar {
+  background: #1e2629;
+  border-color: #33393d;
+  color: #b0c0da;
+}
+
 /* ── Tagline ── */
 html.dark .title-tagline { color: #4a5a70; }
 
