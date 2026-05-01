@@ -43,6 +43,13 @@
           </span>
           Feedback
         </button>
+        <button class="saveload-button" @click="openSaveLoadMenu" title="Save your design to a file or load one">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M11 2H9v3h2V2z"/>
+            <path d="M1.5 0h11.586a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13A1.5 1.5 0 0 1 1.5 0zM1 1.5v13a.5.5 0 0 0 .5.5H2v-4.5A1.5 1.5 0 0 1 3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V15h.5a.5.5 0 0 0 .5-.5V2.914a.5.5 0 0 0-.146-.353l-1.415-1.415A.5.5 0 0 0 13.086 1H13v3.5A1.5 1.5 0 0 1 11.5 6h-7A1.5 1.5 0 0 1 3 4.5V1H1.5a.5.5 0 0 0-.5.5zm3 4a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V1H4v4.5zM3 15h10v-4.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5V15z"/>
+          </svg>
+          Save / Load
+        </button>
         <button class="share-button" @click="copyUrl" title="Copy link to clipboard">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5z"/>
@@ -315,6 +322,15 @@ export default {
       setTimeout(() => { showCopiedToast.value = false }, 2500)
     }
 
+    function openSaveLoadMenu(event) {
+      const rect = event.currentTarget.getBoundingClientRect()
+      const menuMinWidth = 220
+      const x = Math.min(rect.left, window.innerWidth - menuMinWidth - 8)
+      window.dispatchEvent(new CustomEvent('plateup-open-saveload-menu', {
+        detail: { x: Math.max(0, x), top: rect.bottom + 4, bottom: null }
+      }))
+    }
+
     watch(() => ({ ...state }), () => syncToHash(), { deep: true })
 
     onMounted(() => {
@@ -363,7 +379,7 @@ export default {
       if (!v && isDefaultState()) showSizeModal.value = true
     })
 
-    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, darkMode, toggleDarkMode, toggleTeleporterLines, teleporterLines, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen, setRoomWidth, setRoomHeight }
+    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, toggleTeleporterLines, teleporterLines, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen, setRoomWidth, setRoomHeight }
   }
 }
 </script>
@@ -413,6 +429,13 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
 .feedback-button:hover { background: #237a2b }
 
 .feedback-button-icons { display: inline-flex; align-items: center; gap: 6px; margin-right: 4px }
+
+.saveload-button {
+  border: none; background: #1e7e94; color: white; padding: 0.4rem 0.8rem;
+  border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center;
+  gap: 5px; font-size: 0.875rem; font-weight: 600;
+}
+.saveload-button:hover { background: #186a7d }
 
 /* Feedback modal */
 .feedback-modal-backdrop {
