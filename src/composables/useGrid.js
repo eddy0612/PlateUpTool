@@ -617,6 +617,47 @@ function removeSelected() {
   selectedCells.value = new Set()
 }
 
+// Move the non-ghosted selected cells by (dx, dy). Returns true on success,
+// false if move is blocked (out of bounds or collision).
+function moveSelectionBy(dx, dy) {
+  if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return false
+  const activeKeys = [...selectedCells.value].filter(key => {
+    const [x, y] = key.split(',').map(Number)
+    return !isCellGhosted(x, y)
+  })
+  if (activeKeys.length === 0) return false
+
+  const moves = []
+  for (const key of activeKeys) {
+    const [x, y] = key.split(',').map(Number)
+    moves.push({ sx: x, sy: y, tx: x + dx, ty: y + dy })
+  }
+
+  // Validate
+  const sourcePositions = new Set(moves.map(m => cellKey(m.sx, m.sy)))
+  const targetPositions = new Set()
+  for (const { tx, ty } of moves) {
+    if (tx < 0 || tx >= state.roomWidth || ty < 0 || ty >= state.roomHeight) return false
+    const tKey = cellKey(tx, ty)
+    if (targetPositions.has(tKey)) return false
+    targetPositions.add(tKey)
+    if (grid.value[ty]?.[tx]?.applianceId && !sourcePositions.has(tKey)) return false
+  }
+
+  const moveData = moves.map(({ sx, sy, tx, ty }) => {
+    const src = grid.value[sy][sx]
+    return { tx, ty, content: src ? { ...src } : null }
+  })
+
+  // Clear sources then write targets
+  for (const { sx, sy } of moves) grid.value[sy][sx] = null
+  for (const { tx, ty, content } of moveData) grid.value[ty][tx] = content
+
+  selectedCells.value = new Set([...moves.map(m => cellKey(m.tx, m.ty))])
+  anchorCell.value = null
+  return true
+}
+
 function moveSelectionToTab(targetTabId) {
   for (const key of selectedCells.value) {
     const [x, y] = key.split(',').map(Number)
@@ -1089,5 +1130,5 @@ function getTeleporterPairPos(x, y) {
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal }
+  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveSelectionBy, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal }
 }

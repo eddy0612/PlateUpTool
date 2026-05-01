@@ -247,6 +247,7 @@ export default {
       flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon,
       rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection,
       flipSelectionHorizontal, flipSelectionVertical,
+      moveSelectionBy,
       moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
       copyToClipboard, cutToClipboard,
@@ -871,6 +872,19 @@ export default {
       if (key === 't') {
         e.preventDefault()
         showTeleporterLinesAlways.value = !showTeleporterLinesAlways.value
+      }
+      // Arrow keys: move selection by one cell in that direction
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        const anyActive = [...selectedCells.value].some(k => { const [x, y] = k.split(',').map(Number); return !isCellGhosted(x, y) })
+        if (!anyActive) return
+        e.preventDefault()
+        let dx = 0, dy = 0
+        if (e.key === 'ArrowUp') dy = -1
+        if (e.key === 'ArrowDown') dy = 1
+        if (e.key === 'ArrowLeft') dx = -1
+        if (e.key === 'ArrowRight') dx = 1
+        const success = moveSelectionBy(dx, dy)
+        if (!success) flashGroupRed()
       }
     }
 
