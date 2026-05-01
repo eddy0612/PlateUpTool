@@ -43,18 +43,12 @@
           </span>
           Feedback
         </button>
-        <button class="saveload-button" @click="openSaveLoadMenu" title="Save your design to a file or load one">
+        <button class="saveload-button" @click="openSaveLoadMenu" title="Save, load or share your design">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path d="M11 2H9v3h2V2z"/>
             <path d="M1.5 0h11.586a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13A1.5 1.5 0 0 1 1.5 0zM1 1.5v13a.5.5 0 0 0 .5.5H2v-4.5A1.5 1.5 0 0 1 3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V15h.5a.5.5 0 0 0 .5-.5V2.914a.5.5 0 0 0-.146-.353l-1.415-1.415A.5.5 0 0 0 13.086 1H13v3.5A1.5 1.5 0 0 1 11.5 6h-7A1.5 1.5 0 0 1 3 4.5V1H1.5a.5.5 0 0 0-.5.5zm3 4a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V1H4v4.5zM3 15h10v-4.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5V15z"/>
           </svg>
           Save / Load
-        </button>
-        <button class="share-button" @click="copyUrl" title="Copy link to clipboard">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5z"/>
-          </svg>
-          Share
         </button>
 
         <button class="help-button" @click="showHelp = true" title="Keyboard shortcuts &amp; controls">?</button>
@@ -346,6 +340,7 @@ export default {
         loadFromHash()
         loadGridFromState()
       })
+      window.addEventListener('plateup-copy-link', copyUrl)
     })
 
     function startAgain() {
@@ -541,20 +536,6 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
 .toast-enter-active, .toast-leave-active { transition: opacity 0.3s, transform 0.3s; }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(10px); }
 .toast-enter-to, .toast-leave-from { opacity: 1; transform: translateX(-50%) translateY(0); }
-.share-button {
-  display: flex; align-items: center; gap: 5px;
-  padding: 5px 10px;
-  border-radius: 6px;
-  border: 1px solid #5b8fd9;
-  background: #eef4ff;
-  color: #2a5db0;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-.share-button:hover { background: #d0e3ff; border-color: #2a5db0 }
 .help-button {
   width: 28px; height: 28px;
   border-radius: 50%;
@@ -692,9 +673,7 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
    html.dark .classname specificity (0,2,1) beats Vue scoped (0,2,0)
    ─────────────────────────────────────────────────────────────────────── */
 
-/* ── Share / Help / Dark buttons ── */
-html.dark .share-button { border-color: #3a5a88; background: #1a2640; color: #7aaade; }
-html.dark .share-button:hover { background: #223060; border-color: #5a7aaa; }
+/* ── Help / Dark buttons ── */
 html.dark .help-button { border-color: #3a5a88; background: #1a2640; color: #7aaade; }
 html.dark .help-button:hover { background: #223060; border-color: #5a7aaa; }
 html.dark .darkmode-button { border-color: #3a5a88; background: #1a2640; color: #7aaade; }
