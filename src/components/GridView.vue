@@ -964,7 +964,7 @@ export default {
         case 'invert': return '<svg class="hp-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/><line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><polyline points="9,9 6,12 9,15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><polyline points="15,9 18,12 15,15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
         case 'rotate-left': return '<span class="hp-char">⟲</span>'
         case 'rotate-right': return '<span class="hp-char">⟳</span>'
-        case 'flip-h': return '<span class="hp-char rotate-90">⇋</span>'
+        case 'flip-h': return '<span class="hp-char" style="display:inline-block;transform:rotate(90deg)">⇋</span>'
         case 'flip-v': return '<span class="hp-char">⇋</span>'
         case 'delete': return '<span class="hp-char">🗑</span>'
         case 'help': return '<span class="hp-char">?</span>'
