@@ -210,11 +210,27 @@
               </svg>
             </button>
 
-            <button :class="['toolbox-button', 'toolbox-button--icon', 'toolbox-button--teleporter', { active: teleporterLines }]" @click="toggleTeleporterLines" title="Toggle teleporter connector lines (T)">
+            <button :class="['toolbox-button', 'toolbox-button--icon', 'toolbox-button--teleporter', { active: teleporterLines } ]" @click="toggleTeleporterLines" title="Toggle teleporter connector lines (T)">
               <svg class="toolbox-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
                 <line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2" stroke-linecap="round"/>
                 <circle cx="2" cy="2" r="2" fill="currentColor"/>
                 <circle cx="14" cy="14" r="2" fill="currentColor"/>
+              </svg>
+            </button>
+            <button :class="['toolbox-button', 'toolbox-button--icon', 'toolbox-button--teleporter']" @click="toggleLabelDisplayMode" :title="labelDisplayMode === 0 ? 'Labels: lines + text' : (labelDisplayMode === 1 ? 'Labels: text only' : 'Labels: hidden')">
+              <svg v-if="labelDisplayMode === 0" class="toolbox-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <line x1="2" y1="2" x2="16" y2="16" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2" stroke-linecap="round" />
+                <rect x="3" y="3" width="6" height="4" rx="1" fill="none" stroke="currentColor" stroke-width="1.4" />
+                <circle cx="2.5" cy="2.5" r="1.2" fill="currentColor" />
+                <circle cx="15.5" cy="15.5" r="1.2" fill="currentColor" />
+              </svg>
+              <svg v-else-if="labelDisplayMode === 1" class="toolbox-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4" />
+                <line x1="5" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+              </svg>
+              <svg v-else class="toolbox-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4" />
+                <line x1="3" y1="5" x2="15" y2="11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
               </svg>
             </button>
           </div>
@@ -264,6 +280,7 @@ export default {
     const showFeedbackModal = ref(false)
     const darkMode = ref(localStorage.getItem('darkMode') === 'true')
     const teleporterLines = ref(localStorage.getItem('teleporterLines') === '1')
+    const labelDisplayMode = ref(Number(localStorage.getItem('labelDisplayMode') || '0'))
 
 
     const renderer = new marked.Renderer()
@@ -354,6 +371,14 @@ export default {
       } catch (e) {}
     }
 
+    function toggleLabelDisplayMode() {
+      try {
+        labelDisplayMode.value = (labelDisplayMode.value + 1) % 3
+        localStorage.setItem('labelDisplayMode', String(labelDisplayMode.value))
+        window.dispatchEvent(new CustomEvent('label-display-mode-changed', { detail: labelDisplayMode.value }))
+      } catch (e) {}
+    }
+
     function onSizeChosen({ w, h }) {
       state.roomWidth = Number(w)
       state.roomHeight = Number(h)
@@ -366,7 +391,7 @@ export default {
       if (!v && isDefaultState()) showSizeModal.value = true
     })
 
-    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, toggleTeleporterLines, teleporterLines, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen }
+    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen }
   }
 }
 </script>

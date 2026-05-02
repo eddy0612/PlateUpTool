@@ -40,7 +40,7 @@
             <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'left')"   :class="['edge-marker', 'edge-left',   `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'left')}`]" />
           </div>
           <svg
-            v-if="teleporterPairLines.length > 0"
+            v-if="teleporterPairLines.length > 0 || labelAnchorLines.length > 0"
             class="teleporter-pair-overlay"
             :width="state.roomWidth * cellSize * state.zoom"
             :height="state.roomHeight * cellSize * state.zoom"
@@ -56,9 +56,19 @@
               stroke-linecap="round"
               opacity="0.85"
             />
+            <line
+              v-for="(line, i) in labelAnchorLines"
+              :key="'lbline-' + i"
+              :x1="line.x1" :y1="line.y1" :x2="line.x2" :y2="line.y2"
+              stroke="#2b88ff"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              opacity="0.9"
+            />
           </svg>
           <!-- Label overlays (above grid items) -->
           <div v-for="lbl in state.labels" :key="'lbl-' + lbl.id"
+               v-if="labelDisplayMode !== 2"
                class="planner-label"
                :data-label-id="lbl.id"
                @pointerdown.stop.prevent="handleLabelPointerDown(lbl, $event)"
@@ -161,10 +171,12 @@
             <span class="toolbox-char" aria-hidden="true">⇋</span>
           </button>
 
-          <button class="toolbox-button" data-help-id="label" @click="createLabel" :disabled="state.activeTabId === 'complete' || isStructureMode" title="Add label — Click to add a text label" :aria-disabled="state.activeTabId === 'complete' || isStructureMode">
+          <button class="toolbox-button" data-help-id="label" @click="createLabel" :disabled="state.activeTabId === 'complete' || isStructureMode || (selectedCells && selectedCells.size > 1)" title="Add label — Click to add a text label" :aria-disabled="state.activeTabId === 'complete' || isStructureMode || (selectedCells && selectedCells.size > 1)">
             <svg class="toolbox-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-              <rect x="3" y="6" width="18" height="12" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.5" />
-              <line x1="6" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+              <!-- Textbox outline -->
+              <rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6" />
+              <!-- Caret cursor on the left -->
+              <line x1="7.5" y1="9.5" x2="7.5" y2="14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
             </svg>
           </button>
 
@@ -244,6 +256,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useGrid, TELEPORTER_APPLIANCE_ID } from '../composables/useGrid'
 import { readPngText, readStegoFromBytes, readFileAsBytes } from '../composables/usePngMetadata'
+
 export default {
   name: 'GridView',
   setup() {
@@ -925,6 +938,8 @@ export default {
       { id: 'rotate-right', title: 'Rotate Right', desc: 'Rotate selection clockwise.' },
       { id: 'flip-h', title: 'Flip H', desc: 'Flip selection horizontally.' },
       { id: 'flip-v', title: 'Flip V', desc: 'Flip selection vertically.' },
+      { id: 'label', title: 'Add Label', desc: 'Add a text label to the grid.' },
+      { id: 'label-display', title: 'Label display', desc: 'Cycle label display: lines+text / text only / hidden' },
       { id: 'delete', title: 'Delete', desc: 'Delete the selected cells.' },
       { id: 'help', title: 'Help', desc: 'Show this help overlay.' },
       { divider: true },
@@ -967,6 +982,16 @@ export default {
             return '<svg class="hp-svg" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="currentColor"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zM8 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zM16 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 16 8zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zM12.657 2.343a.5.5 0 0 1 0 .707l-1.414 1.414a.5.5 0 1 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zM4.464 11.536a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zM12.657 13.657a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/></svg>'
           }
           return '<svg class="hp-svg" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="currentColor"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg>'
+        case 'label': return '<svg class="hp-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="7.5" y1="9.5" x2="7.5" y2="14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+        case 'label-display':
+          // show icon matching current label display mode
+          if (labelDisplayMode && labelDisplayMode.value === 0) {
+            return '<svg class="hp-svg" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><line x1="2" y1="2" x2="16" y2="16" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2" stroke-linecap="round"/><rect x="3" y="3" width="6" height="4" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>'
+          }
+          if (labelDisplayMode && labelDisplayMode.value === 1) {
+            return '<svg class="hp-svg" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>'
+          }
+          return '<svg class="hp-svg" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="3" y1="5" x2="15" y2="11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
         case 'teleporter-lines': return '<svg class="hp-svg" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2" stroke-linecap="round"/><circle cx="2" cy="2" r="2" fill="currentColor"/><circle cx="14" cy="14" r="2" fill="currentColor"/></svg>'
         default: return '<span class="hp-char">•</span>'
       }
@@ -1016,9 +1041,15 @@ export default {
     // Returns an array of { x1, y1, x2, y2 } in grid-pixel coordinates for each
     // selected paired teleporter, so GridView can draw a dashed connector line.
     const showTeleporterLinesAlways = ref(false)
+    const labelDisplayMode = ref(Number(localStorage.getItem('labelDisplayMode') || '0'))
 
     function toggleTeleporterLines() {
       showTeleporterLinesAlways.value = !showTeleporterLinesAlways.value
+    }
+
+    // Listen for label-display-mode changes from App
+    function toggleLabelDisplayMode() {
+      try { labelDisplayMode.value = (labelDisplayMode.value + 1) % 3 } catch (e) {}
     }
 
     function rotateSelectionRight() {
@@ -1109,6 +1140,51 @@ export default {
             if (partner) lines.push({ x1: cx(x), y1: cy(y), x2: cx(partner.x), y2: cy(partner.y) })
           }
         }
+      }
+      return lines
+    })
+
+    const labelAnchorLines = computed(() => {
+      const lines = []
+      const cs = cellSize.value * state.zoom
+      const W = state.roomWidth
+      const H = state.roomHeight
+      const tw = (W * cs - (W - 1) * 2) / W
+      const th = (H * cs - (H - 1) * 2) / H
+      const cx = x => x * (tw + 2) + tw / 2
+      const cy = y => y * (th + 2) + th / 2
+      const labels = state.labels || []
+      for (const lbl of labels) {
+        // resolve anchor position: prefer appliance instance id if present
+        let anchorCellPos = null
+        if (lbl.anchorIid) {
+          for (const ci of flatGrid.value) {
+            if (ci.cell && ci.cell.iid === lbl.anchorIid) { anchorCellPos = { x: ci.x, y: ci.y }; break }
+          }
+        }
+        if (!anchorCellPos) {
+          if (lbl.anchorX == null || lbl.anchorY == null) continue
+          anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
+        }
+        // compute label pixel position (use dragging pos if present)
+        let lx, ly
+        const dp = draggingLabelPos.value && draggingLabelPos.value[lbl.id]
+        if (dp) {
+          lx = dp.left; ly = dp.top
+        } else {
+          const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : 0)
+          const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : 0)
+          lx = (x2 / 2) * (tw + 2) + tw / 2
+          ly = (y2 / 2) * (th + 2) + th / 2
+        }
+        const ax = cx(anchorCellPos.x)
+        const ay = cy(anchorCellPos.y)
+        // Only draw lines when labelDisplayMode is 0 (lines + text)
+        if (labelDisplayMode && labelDisplayMode.value !== 0) continue
+        // If label visually overlaps the anchor center (within 6px), skip drawing line
+        const dx = lx - ax, dy = ly - ay
+        if (Math.sqrt(dx * dx + dy * dy) <= 6) continue
+        lines.push({ x1: ax, y1: ay, x2: lx, y2: ly })
       }
       return lines
     })
@@ -1350,6 +1426,11 @@ export default {
       window.addEventListener('teleporter-lines-changed', teleHandler)
       // keep a ref to remove later
       window.__teleHandlerGridView = teleHandler
+      // Initialize label display mode from localStorage and listen for changes
+      try { labelDisplayMode.value = Number(localStorage.getItem('labelDisplayMode') || '0') } catch (e) {}
+      const labelHandler = (ev) => { try { labelDisplayMode.value = Number(ev.detail) } catch (e) {} }
+      window.addEventListener('label-display-mode-changed', labelHandler)
+      window.__labelHandlerGridView = labelHandler
     })
 
     onUnmounted(() => {
@@ -1363,6 +1444,8 @@ export default {
       if (vp) vp.removeEventListener('wheel', onWheel)
       // remove palette teleporter handler
       if (window.__teleHandlerGridView) { window.removeEventListener('teleporter-lines-changed', window.__teleHandlerGridView); delete window.__teleHandlerGridView }
+      // remove palette label-display handler
+      if (window.__labelHandlerGridView) { window.removeEventListener('label-display-mode-changed', window.__labelHandlerGridView); delete window.__labelHandlerGridView }
       // help overlay listeners removed (no-op positioning for modal)
       cancelMoveDrag()
       cancelPaste()
@@ -1389,7 +1472,15 @@ export default {
       // place label at centre of selection if any, otherwise center of room
       let tx = Math.floor(state.roomWidth / 2)
       let ty = Math.floor(state.roomHeight / 2)
-      if (selectedCells.value && selectedCells.value.size > 0) {
+      // If exactly one cell selected, anchor label to that cell
+      let anchoredCell = null
+      if (selectedCells.value && selectedCells.value.size === 1) {
+        const [k] = selectedCells.value
+        const [sx, sy] = k.split(',').map(Number)
+        anchoredCell = { x: sx, y: sy }
+        tx = sx
+        ty = sy
+      } else if (selectedCells.value && selectedCells.value.size > 0) {
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
         for (const k of selectedCells.value) {
           const [sx, sy] = k.split(',').map(Number)
@@ -1405,7 +1496,19 @@ export default {
       let ty2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, ty * 2))
       const id = Date.now().toString()
       state.labels = state.labels || []
-      state.labels.push({ id, x2: tx2, y2: ty2, text })
+      const lbl = { id, x2: tx2, y2: ty2, text }
+      if (anchoredCell) {
+        // If an appliance is present at the anchored cell, attach to its instance id
+        const cell = getDisplayCell(anchoredCell.x, anchoredCell.y)
+        if (cell && cell.iid) {
+          lbl.anchorIid = cell.iid
+        } else {
+          // fallback to anchoring to cell coordinates
+          lbl.anchorX = anchoredCell.x
+          lbl.anchorY = anchoredCell.y
+        }
+      }
+      state.labels.push(lbl)
     }
 
     function getLabelStyle(lbl) {
@@ -1512,27 +1615,50 @@ export default {
       const labelEl = document.querySelector(`[data-label-id="${id}"]`)
       const grid = gridEl.value
       let placed = false
-      if (labelEl && grid) {
-        const lblR = labelEl.getBoundingClientRect()
-        const gridR = grid.getBoundingClientRect()
-        // require label bounding box to be fully contained in grid
-        if (lblR.left >= gridR.left && lblR.top >= gridR.top && lblR.right <= gridR.right && lblR.bottom <= gridR.bottom) {
-          // Use last snapped half-grid coords if available
-          const snapped = labelLastOver.value && labelLastOver.value.snappedX2 != null ? { x2: labelLastOver.value.snappedX2, y2: labelLastOver.value.snappedY2 } : null
-          if (snapped) {
+      if (grid) {
+        // Prefer using last snapped coords computed during pointermove (more reliable)
+        const last = labelLastOver.value
+        if (last && typeof last.snappedX2 === 'number' && typeof last.snappedY2 === 'number') {
+          const clampedX2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, last.snappedX2))
+          const clampedY2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, last.snappedY2))
+          const idx = (state.labels || []).findIndex(s => s.id === id)
+          if (idx !== -1) {
+            state.labels[idx].x2 = clampedX2
+            state.labels[idx].y2 = clampedY2
+            placed = true
+          }
+        } else if (labelEl) {
+          // Fallback: compute using DOM bounding as before
+          const lblR = labelEl.getBoundingClientRect()
+          const gridR = grid.getBoundingClientRect()
+          const centerX = (lblR.left + lblR.right) / 2
+          const centerY = (lblR.top + lblR.bottom) / 2
+          if (centerX >= gridR.left && centerY >= gridR.top && centerX <= gridR.right && centerY <= gridR.bottom) {
+            const W = state.roomWidth, H = state.roomHeight
+            const cs = cellSize.value * state.zoom
+            const tw = (W * cs - (W - 1) * 2) / W
+            const th = (H * cs - (H - 1) * 2) / H
+            const pitchX = tw + 2
+            const pitchY = th + 2
+            const localX = centerX - gridR.left
+            const localY = centerY - gridR.top
+            const logicalX = localX / pitchX
+            const logicalY = localY / pitchY
+            const snappedX2 = Math.round(logicalX * 2)
+            const snappedY2 = Math.round(logicalY * 2)
+            const clampedX2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, snappedX2))
+            const clampedY2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, snappedY2))
             const idx = (state.labels || []).findIndex(s => s.id === id)
             if (idx !== -1) {
-              state.labels[idx].x2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, snapped.x2))
-              state.labels[idx].y2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, snapped.y2))
+              state.labels[idx].x2 = clampedX2
+              state.labels[idx].y2 = clampedY2
               placed = true
             }
+          } else {
+            const idx = (state.labels || []).findIndex(s => s.id === id)
+            if (idx !== -1) state.labels.splice(idx, 1)
           }
         }
-      }
-      // if not placed (released outside grid or invalid), remove the label
-      if (!placed) {
-        const idx = (state.labels || []).findIndex(s => s.id === id)
-        if (idx !== -1) state.labels.splice(idx, 1)
       }
       // cleanup
       delete draggingLabelPos.value[id]
@@ -1576,7 +1702,7 @@ export default {
       getTabColorClass, getApplianceBgStyle,
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
       getApplianceIcon, isImageIcon, onApplianceImgError,
-      TELEPORTER_APPLIANCE_ID, teleporterPairLines, showTeleporterLinesAlways,
+      TELEPORTER_APPLIANCE_ID, teleporterPairLines, labelAnchorLines, showTeleporterLinesAlways, labelDisplayMode,
       flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
       createLabel, handleLabelPointerDown, getLabelStyle, editLabel,
       boxSelectArmed, armBoxSelect,
@@ -1901,6 +2027,14 @@ export default {
   align-items: center;
   justify-content: center;
 }
+/* Disabled toolbox button appearance */
+.toolbox-button:disabled,
+.toolbox-button[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+  filter: grayscale(20%);
+}
 .toolbox-icon { width: 22px; height: 22px; display: block }
 .toolbox-char { font-size: 20px; line-height: 1; display: inline-block; transform: translateY(-1px) }
 .toolbox-button[aria-pressed="true"] { background: #e8f9ee; border-color: #6fd08a; color: #0a4f24 }
@@ -1911,6 +2045,13 @@ export default {
   background: #2b3338;
   border-color: #444d55;
   color: #eef6f1;
+}
+.dark .toolbox-button:disabled,
+.dark .toolbox-button[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+  filter: grayscale(20%);
 }
 .dark .toolbox-button[aria-pressed="true"] { background: #114226; border-color: #1f7a44; color: #e6fff0 }
 /* Help overlay popups and connector lines */
