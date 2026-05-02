@@ -1651,11 +1651,23 @@ export default {
 
     function handleLabelPointerDown(lbl, ev) {
       if (state.activeTabId === 'complete' || isStructureMode.value) return
-      // If the user is trying to start a box-select (Shift/Ctrl held) or
-      // the box-select tool is armed, allow the event to bubble so the
-      // grid's mousedown handler can initiate the box-drag. Only start a
-      // label-drag when it's a plain pointer down on the label.
-      if (ev.shiftKey || ev.ctrlKey || ev.metaKey || boxSelectArmed.value) {
+      // If the box-select tool is armed, allow the event to bubble so the
+      // grid's mousedown handler can initiate the box-drag.
+      if (boxSelectArmed.value) return
+
+      // Support modifier-click selection on labels (Ctrl/Cmd toggles, Shift adds)
+      if (ev.ctrlKey || ev.metaKey || ev.shiftKey) {
+        ev.stopPropagation(); ev.preventDefault()
+        const next = new Set(selectedLabelIds.value)
+        const id = lbl.id
+        if (ev.ctrlKey || ev.metaKey) {
+          if (next.has(id)) next.delete(id)
+          else next.add(id)
+        } else if (ev.shiftKey) {
+          // add to selection
+          next.add(id)
+        }
+        selectedLabelIds.value = next
         return
       }
       ev.stopPropagation()

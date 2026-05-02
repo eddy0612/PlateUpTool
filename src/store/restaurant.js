@@ -19,7 +19,7 @@ const DEFAULT_STATE = {
   walls: {},
   gridCells: [],    // flat array of { x, y, applianceId, rotation, extraData, tabIds }
   labels: [],       // flat array of { id, x, y, text }
-  
+
 }
 
 // Only these fields are serialized into the URL
