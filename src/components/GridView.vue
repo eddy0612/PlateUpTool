@@ -1543,9 +1543,6 @@ export default {
         pointerEvents: 'auto',
         background: bg,
         color,
-        padding: '4px 6px',
-        borderRadius: '6px',
-        border,
         fontSize: '12px'
       }
     }
@@ -1806,7 +1803,8 @@ export default {
   border-radius: 4px;
 }
 .cell-label { font-size: 10px; color: #bbb; position: absolute; top: 2px; left: 2px; }
-.planner-label { cursor: grab; user-select: none; white-space: nowrap; }
+.planner-label { cursor: grab; user-select: none; white-space: nowrap; border-radius: 10px; border: 1px solid rgba(0,0,0,0.2); box-shadow: 0 4px 10px rgba(16,35,48,0.06), inset 0 1px 0 rgba(255,255,255,0.6); padding: 4px 6px; transition: box-shadow .12s, transform .08s; }
+.dark .planner-label { border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 6px 14px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.03); }
 .teleporter-pair-number {
   position: absolute;
   inset: 0;
