@@ -1531,9 +1531,27 @@ export default {
         topPx = (y2 / 2) * pitchY + th / 2
       }
       const dark = isDark && isDark.value
-      const bg = dark ? 'rgba(20,24,30,0.75)' : 'rgba(255,255,255,0.95)'
-      const color = dark ? '#e6f6ff' : '#102330'
+      // Default label colors (used in preview mode or when no anchor found)
+      let bg = dark ? 'rgba(20,24,30,0.75)' : 'rgba(255,255,255,0.95)'
+      let color = dark ? '#e6f6ff' : '#102330'
       const border = dark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.08)'
+
+      // If label is anchored to an appliance instance and we're NOT in preview mode,
+      // use that appliance's tab color as the label background.
+      if (lbl.anchorIid && state.activeTabId !== 'complete') {
+        try {
+          const found = flatGrid.value.find(g => g.cell && g.cell.iid === lbl.anchorIid)
+          const firstTab = found && found.cell ? (Array.isArray(found.cell.tabIds) ? found.cell.tabIds[0] : found.cell.tabId) : null
+          if (firstTab) {
+            const idx = userTabColorMap.value[firstTab]
+            if (idx !== undefined && TAB_COLORS[idx] && TAB_COLORS[idx].bg) {
+              bg = TAB_COLORS[idx].bg
+              // choose readable text color against tab bg: prefer dark text for light tab colors
+              color = dark ? '#e6f6ff' : '#102330'
+            }
+          }
+        } catch (e) {}
+      }
       return {
         position: 'absolute',
         left: leftPx + 'px',
