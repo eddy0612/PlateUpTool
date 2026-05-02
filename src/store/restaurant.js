@@ -197,6 +197,16 @@ function encodeState(stateObj) {
     const len = Math.min(255, bytes.length)
     w.write(x2, 8); w.write(y2, 8); w.write(len, 8)
     for (let i = 0; i < len; ++i) w.write(bytes[i], 8)
+    // optional anchor instance id
+    let flags = 0
+    if (lbl.anchorIid) flags |= 1
+    w.write(flags, 8)
+    if (flags & 1) {
+      const iidBytes = new TextEncoder().encode(lbl.anchorIid)
+      const iidLen = Math.min(255, iidBytes.length)
+      w.write(iidLen, 8)
+      for (let i = 0; i < iidLen; ++i) w.write(iidBytes[i], 8)
+    }
   }
 
   return base64urlEncode(w.finish())
@@ -269,7 +279,22 @@ function decodeState(encoded) {
           const lLen = r.read(8)
           let s = ''
           for (let j = 0; j < lLen; j++) s += String.fromCharCode(r.read(8))
-          labels.push({ id: Date.now().toString() + '-' + li, x2: lx2, y2: ly2, text: s })
+            // read optional flags (if present)
+            let anchorIid = null
+            if (r._i < r._b.length) {
+              try {
+                const flags = r.read(8)
+                if (flags & 1) {
+                  const iidLen = r.read(8)
+                  let iid = ''
+                  for (let k = 0; k < iidLen; k++) iid += String.fromCharCode(r.read(8))
+                  anchorIid = iid
+                }
+              } catch (e) { /* ignore */ }
+            }
+            const labelObj = { id: Date.now().toString() + '-' + li, x2: lx2, y2: ly2, text: s }
+            if (anchorIid) labelObj.anchorIid = anchorIid
+            labels.push(labelObj)
         }
       }
     } catch (e) {

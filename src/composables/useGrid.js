@@ -6,6 +6,12 @@ import { useAppliancePalette } from './useAppliancePalette'
 const { state } = useRestaurantStore()
 const { palette } = useAppliancePalette()
 
+// Instance id generator for appliance instances
+let __instanceCounter = 1
+function genInstanceId() {
+  return 'iid-' + Date.now().toString(36) + '-' + (__instanceCounter++).toString(36)
+}
+
 // Track viewport dimensions so the grid can fill the available space
 const windowWidth = ref(window.innerWidth)
 const windowHeight = ref(window.innerHeight)
@@ -163,7 +169,7 @@ function addToGrid(item) {
     const [key] = selectedCells.value
     const [x, y] = key.split(',').map(Number)
     if (!grid.value[y][x]) {
-      grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabIds: [tabId] }
+      grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabIds: [tabId], iid: genInstanceId() }
       _autoTeleporterPair(x, y)
       return
     }
@@ -171,7 +177,7 @@ function addToGrid(item) {
   for (let y = 0; y < grid.value.length; ++y) {
     for (let x = 0; x < grid.value[y].length; ++x) {
       if (!grid.value[y][x]) {
-        grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabIds: [tabId] }
+        grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabIds: [tabId], iid: genInstanceId() }
         _autoTeleporterPair(x, y)
         return
       }
@@ -241,6 +247,19 @@ function rotateGroupAroundCell(pivotX, pivotY) {
   })
   selectedCells.value = new Set([...moves.map(({ tx, ty }) => cellKey(tx, ty)), ...ghostedKeys])
   anchorCell.value = null
+  // Update labels anchored to source coords to follow moved appliances
+  try {
+    for (const { sx, sy, tx, ty } of moves) {
+      const target = grid.value[ty]?.[tx]
+      if (!target || !target.iid) continue
+      for (const lbl of state.labels || []) {
+        if (lbl.anchorX === sx && lbl.anchorY === sy) {
+          lbl.anchorIid = target.iid
+          delete lbl.anchorX; delete lbl.anchorY
+        }
+      }
+    }
+  } catch (e) {}
   return true
 }
 
@@ -293,6 +312,19 @@ function rotateGroupAroundCellCCW(pivotX, pivotY) {
   })
   selectedCells.value = new Set([...moves.map(({ tx, ty }) => cellKey(tx, ty)), ...ghostedKeys])
   anchorCell.value = null
+  // Update labels anchored to source coords to follow moved appliances
+  try {
+    for (const { sx, sy, tx, ty } of moves) {
+      const target = grid.value[ty]?.[tx]
+      if (!target || !target.iid) continue
+      for (const lbl of state.labels || []) {
+        if (lbl.anchorX === sx && lbl.anchorY === sy) {
+          lbl.anchorIid = target.iid
+          delete lbl.anchorX; delete lbl.anchorY
+        }
+      }
+    }
+  } catch (e) {}
   return true
 }
 
@@ -352,6 +384,19 @@ function flipSelectionVertical() {
   })
   selectedCells.value = new Set([...moves.map(m => cellKey(m.tx, m.ty)), ...ghostedKeys])
   anchorCell.value = null
+  // Migrate labels anchored to source coords to appliance instance ids after flip
+  try {
+    for (const { sx, sy, tx, ty } of moves) {
+      const target = grid.value[ty]?.[tx]
+      if (!target || !target.iid) continue
+      for (const lbl of state.labels || []) {
+        if (lbl.anchorX === sx && lbl.anchorY === sy) {
+          lbl.anchorIid = target.iid
+          delete lbl.anchorX; delete lbl.anchorY
+        }
+      }
+    }
+  } catch (e) {}
   return true
 }
 
@@ -411,6 +456,19 @@ function flipSelectionHorizontal() {
   })
   selectedCells.value = new Set([...moves.map(m => cellKey(m.tx, m.ty)), ...ghostedKeys])
   anchorCell.value = null
+  // Migrate labels anchored to source coords to appliance instance ids after flip
+  try {
+    for (const { sx, sy, tx, ty } of moves) {
+      const target = grid.value[ty]?.[tx]
+      if (!target || !target.iid) continue
+      for (const lbl of state.labels || []) {
+        if (lbl.anchorX === sx && lbl.anchorY === sy) {
+          lbl.anchorIid = target.iid
+          delete lbl.anchorX; delete lbl.anchorY
+        }
+      }
+    }
+  } catch (e) {}
   return true
 }
 
@@ -563,9 +621,11 @@ function updateMoveDragOffset(dx, dy) { moveDragOffset.value = { dx, dy } }
 function commitMoveDrag() {
   if (!isMoveValid.value) { cancelMoveDrag(); return }
   const moves = []
+  const pairs = []
   for (const [tKey, sKey] of moveDragTargetMap.value) {
     const [tx, ty] = tKey.split(',').map(Number)
     const [sx, sy] = sKey.split(',').map(Number)
+    pairs.push({ sx, sy, tx, ty })
     moves.push({ tx, ty, content: { ...grid.value[sy][sx] } })
   }
   for (const sKey of moveDragTargetMap.value.values()) {
@@ -575,6 +635,20 @@ function commitMoveDrag() {
   for (const { tx, ty, content } of moves) {
     grid.value[ty][tx] = content
   }
+  // Update labels that were anchored to source cell coords to follow appliance instances
+  try {
+    for (const p of pairs) {
+      const { sx, sy, tx, ty } = p
+      const target = grid.value[ty]?.[tx]
+      if (!target || !target.iid) continue
+      for (const lbl of state.labels || []) {
+        if (lbl.anchorX === sx && lbl.anchorY === sy) {
+          lbl.anchorIid = target.iid
+          delete lbl.anchorX; delete lbl.anchorY
+        }
+      }
+    }
+  } catch (e) {}
   selectedCells.value = new Set(moveDragTargetMap.value.keys())
   anchorCell.value = null
   moveDragActive.value = false
@@ -607,8 +681,17 @@ function removeSelected() {
     }
   }
 
+  const deletedIids = new Set()
+  const deletedCoords = new Set()
+
   for (const key of activeKeys) {
     const [x, y] = key.split(',').map(Number)
+    const cell = grid.value[y][x]
+    // record deleted appliance instance ids so anchored labels can be removed
+    if (cell && cell.iid) {
+      deletedIids.add(cell.iid)
+    }
+    deletedCoords.add(cellKey(x, y))
     grid.value[y][x] = null
   }
 
@@ -618,6 +701,14 @@ function removeSelected() {
   }
 
   selectedCells.value = new Set()
+  // Remove labels that were anchored to deleted appliance instances or coordinates
+  if (state.labels && state.labels.length) {
+    state.labels = state.labels.filter(lbl => {
+      if (lbl.anchorIid && deletedIids.has(lbl.anchorIid)) return false
+      if (lbl.anchorX != null && lbl.anchorY != null && deletedCoords.has(cellKey(lbl.anchorX, lbl.anchorY))) return false
+      return true
+    })
+  }
 }
 
 // Move the non-ghosted selected cells by (dx, dy). Returns true on success,
@@ -655,9 +746,21 @@ function moveSelectionBy(dx, dy) {
   // Clear sources then write targets
   for (const { sx, sy } of moves) grid.value[sy][sx] = null
   for (const { tx, ty, content } of moveData) grid.value[ty][tx] = content
-
   selectedCells.value = new Set([...moves.map(m => cellKey(m.tx, m.ty))])
   anchorCell.value = null
+  // Migrate labels anchored to source cell coords to the appliance instance ids at their new positions
+  try {
+    for (const { sx, sy, tx, ty } of moves) {
+      const target = grid.value[ty]?.[tx]
+      if (!target || !target.iid) continue
+      for (const lbl of state.labels || []) {
+        if (lbl.anchorX === sx && lbl.anchorY === sy) {
+          lbl.anchorIid = target.iid
+          delete lbl.anchorX; delete lbl.anchorY
+        }
+      }
+    }
+  } catch (e) {}
   return true
 }
 
@@ -1077,7 +1180,7 @@ function commitPaletteDrag() {
   if (paletteDragActive.value && paletteDragItem.value && paletteDragHoverCell.value) {
     const { x, y } = paletteDragHoverCell.value
     if (isPaletteDragDropValid(x, y)) {
-      grid.value[y][x] = { applianceId: paletteDragItem.value.id, rotation: 0, extraData: 0, tabIds: [state.activeTabId] }
+      grid.value[y][x] = { applianceId: paletteDragItem.value.id, rotation: 0, extraData: 0, tabIds: [state.activeTabId], iid: genInstanceId() }
       _autoTeleporterPair(x, y)
     }
   }
@@ -1110,7 +1213,9 @@ function loadGridFromState() {
   initGrid()
   if (!Array.isArray(state.gridCells) || state.gridCells.length === 0) return
   for (const { x, y, ...cell } of state.gridCells) {
-    if (grid.value[y] && x < grid.value[y].length) {
+        if (grid.value[y] && x < grid.value[y].length) {
+      // ensure loaded cells have an instance id so labels can anchor to appliance instances
+      if (!cell.iid) cell.iid = genInstanceId()
       grid.value[y][x] = cell
     }
   }
