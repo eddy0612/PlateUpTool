@@ -68,12 +68,12 @@
           </svg>
           <!-- Label overlays (above grid items) -->
           <div v-for="lbl in state.labels" :key="'lbl-' + lbl.id"
-               v-if="labelDisplayMode !== 2"
-               class="planner-label"
-               :data-label-id="lbl.id"
-               @pointerdown.stop.prevent="handleLabelPointerDown(lbl, $event)"
-               @dblclick.stop.prevent="editLabel(lbl)"
-               :style="getLabelStyle(lbl)">
+            v-if="labelDisplayMode !== 2"
+            :class="['planner-label', { 'label-selected': selectedLabelIds && selectedLabelIds.has(lbl.id) }]"
+            :data-label-id="lbl.id"
+            @pointerdown="handleLabelPointerDown(lbl, $event)"
+            @dblclick.stop.prevent="editLabel(lbl)"
+            :style="getLabelStyle(lbl)">
             {{ lbl.text }}
           </div>
         </div>
@@ -264,6 +264,7 @@ export default {
     const {
       flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon,
       hoverLabel,
+      selectedLabelIds,
       rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection,
       flipSelectionHorizontal, flipSelectionVertical,
       moveSelectionBy,
@@ -276,6 +277,7 @@ export default {
       loadGridFromState,
       paletteDragActive, paletteDragHoverCell, isPaletteDragDropValid,
       getTeleporterPairPos
+      , skipLabelAnchorSync
     } = useGrid()
 
     // --- Tab colours (10 light, differentiable) ---
@@ -713,6 +715,7 @@ export default {
           }
           // Unselected cell → clear selection, select this cell, start potential move drag
           selectedCells.value = new Set()
+          selectedLabelIds.value = new Set()
           selectCell(cx, cy, false, false)
           if (isSelected(cx, cy) && !isCellGhosted(cx, cy)) {
             pendingMoveCell.value = { x: cx, y: cy }
@@ -726,6 +729,7 @@ export default {
         }
         // Clicked on grid background (not a cell): clear selection
         selectedCells.value = new Set()
+        selectedLabelIds.value = new Set()
         return
       }
 
@@ -828,8 +832,56 @@ export default {
           cells.push({ x: parseInt(el.dataset.x), y: parseInt(el.dataset.y) })
       })
 
-      if (addToExisting) addCellsToSelection(cells)
-      else selectCellsInRect(cells)
+      // Also include any labels whose visual bounding box intersects the drag rect
+      const labelEls = gridEl.value.querySelectorAll('.planner-label')
+      const selectedLabelIdsLocal = new Set()
+      labelEls.forEach(el => {
+        const br = el.getBoundingClientRect()
+        if (br.left <= rectRight && br.right >= rectLeft && br.top <= rectBottom && br.bottom >= rectTop) {
+          const id = el.dataset.labelId
+          if (id) selectedLabelIdsLocal.add(id)
+        }
+      })
+
+      // If a selected label is anchored to a cell, ensure that anchor cell is part of the cell selection
+      for (const lblId of selectedLabelIdsLocal) {
+        const lbl = (state.labels || []).find(l => l.id === lblId)
+        if (!lbl) continue
+        let ax = null, ay = null
+        if (lbl.anchorIid) {
+          const found = flatGrid.value.find(g => g.cell && g.cell.iid === lbl.anchorIid)
+          if (found) { ax = found.x; ay = found.y }
+        } else if (lbl.anchorX != null && lbl.anchorY != null) {
+          ax = lbl.anchorX; ay = lbl.anchorY
+        } else if (lbl.x2 != null && lbl.y2 != null) {
+          ax = Math.floor(lbl.x2 / 2); ay = Math.floor(lbl.y2 / 2)
+        }
+        if (ax == null) continue
+        // Only add the anchor cell if the anchor cell's DOM element intersects the drag rect
+        const anchorEl = gridEl.value.querySelector(`.grid-item[data-x="${ax}"][data-y="${ay}"]`)
+        if (!anchorEl) continue
+        const br = anchorEl.getBoundingClientRect()
+        if (br.left <= rectRight && br.right >= rectLeft && br.top <= rectBottom && br.bottom >= rectTop) {
+          cells.push({ x: ax, y: ay })
+        }
+      }
+
+      // Prevent the grid's label-anchor watcher from pruning these
+      // selected labels while we finalize selection — it will run
+      // after this tick and would otherwise remove labels whose
+      // anchors aren't part of `selectedCells`.
+      if (typeof skipLabelAnchorSync !== 'undefined') skipLabelAnchorSync.value = true
+      if (addToExisting) {
+        addCellsToSelection(cells)
+        // merge label selection
+        const next = new Set(selectedLabelIds.value)
+        for (const id of selectedLabelIdsLocal) next.add(id)
+        selectedLabelIds.value = next
+      } else {
+        selectCellsInRect(cells)
+        selectedLabelIds.value = selectedLabelIdsLocal
+      }
+      nextTick(() => { if (typeof skipLabelAnchorSync !== 'undefined') skipLabelAnchorSync.value = false })
     }
 
     function cellClasses(x, y) {
@@ -1536,6 +1588,38 @@ export default {
       let color = dark ? '#e6f6ff' : '#102330'
       const border = dark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.08)'
 
+      // Helper: compute luminance to choose readable text color
+      function parseRgbString(s) {
+        const m = s.match(/rgba?\(([^)]+)\)/)
+        if (!m) return null
+        const parts = m[1].split(',').map(p => parseFloat(p.trim()))
+        return { r: parts[0], g: parts[1], b: parts[2], a: parts[3] }
+      }
+      function hexToRgb(hex) {
+        if (!hex) return null
+        const h = hex.replace('#','')
+        if (h.length === 3) {
+          return { r: parseInt(h[0]+h[0],16), g: parseInt(h[1]+h[1],16), b: parseInt(h[2]+h[2],16) }
+        }
+        if (h.length === 6) {
+          return { r: parseInt(h.slice(0,2),16), g: parseInt(h.slice(2,4),16), b: parseInt(h.slice(4,6),16) }
+        }
+        return null
+      }
+      function luminanceRgb({r,g,b}) {
+        const srgb = [r,g,b].map(v => v/255).map(c => c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4))
+        return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2]
+      }
+      function isLightColor(s) {
+        if (!s) return false
+        let rgb = null
+        if (s.startsWith('rgb')) rgb = parseRgbString(s)
+        else if (s.startsWith('#')) rgb = hexToRgb(s)
+        if (!rgb) return dark === false // fallback: in light mode treat as light
+        const L = luminanceRgb(rgb)
+        return L > 0.5
+      }
+
       // If label is anchored to an appliance instance and we're NOT in preview mode,
       // use that appliance's tab color as the label background.
       if (lbl.anchorIid && state.activeTabId !== 'complete') {
@@ -1546,8 +1630,8 @@ export default {
             const idx = userTabColorMap.value[firstTab]
             if (idx !== undefined && TAB_COLORS[idx] && TAB_COLORS[idx].bg) {
               bg = TAB_COLORS[idx].bg
-              // choose readable text color against tab bg: prefer dark text for light tab colors
-              color = dark ? '#e6f6ff' : '#102330'
+              // choose readable text color against tab bg
+              color = isLightColor(bg) ? '#102330' : '#e6f6ff'
             }
           }
         } catch (e) {}
@@ -1567,7 +1651,15 @@ export default {
 
     function handleLabelPointerDown(lbl, ev) {
       if (state.activeTabId === 'complete' || isStructureMode.value) return
+      // If the user is trying to start a box-select (Shift/Ctrl held) or
+      // the box-select tool is armed, allow the event to bubble so the
+      // grid's mousedown handler can initiate the box-drag. Only start a
+      // label-drag when it's a plain pointer down on the label.
+      if (ev.shiftKey || ev.ctrlKey || ev.metaKey || boxSelectArmed.value) {
+        return
+      }
       ev.stopPropagation()
+      ev.preventDefault()
       draggingLabelId.value = lbl.id
       labelDragInfo.value = { id: lbl.id }
       window.addEventListener('pointermove', onWindowPointerMove)
@@ -1705,6 +1797,7 @@ export default {
     return {
       state, flatGrid, gridStyleDynamic, viewportBoxHeight, cellSize, rotationStyle, getApplianceIcon, get2DApplianceIcon, isImageIcon,
       rotateCell, selectedCells, isSelected, addTab, selectTab,
+      selectedLabelIds,
       gridEl, viewportEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
       handleCellClick, handleCellContextMenu, onGridMouseDown, cellClasses, getDisplayCell,
       editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename,
@@ -1823,6 +1916,8 @@ export default {
 .cell-label { font-size: 10px; color: #bbb; position: absolute; top: 2px; left: 2px; }
 .planner-label { cursor: grab; user-select: none; white-space: nowrap; border-radius: 10px; border: 1px solid rgba(0,0,0,0.2); box-shadow: 0 4px 10px rgba(16,35,48,0.06), inset 0 1px 0 rgba(255,255,255,0.6); padding: 4px 6px; transition: box-shadow .12s, transform .08s; }
 .dark .planner-label { border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 6px 14px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.03); }
+.planner-label.label-selected { border: 2px dashed #000000; box-shadow: none; transform: none; z-index: 80 }
+.dark .planner-label.label-selected { border: 2px dashed #000000; outline: 2px solid rgba(255,255,255,0.12); box-shadow: 0 0 0 2px rgba(255,255,255,0.03); z-index: 80 }
 .teleporter-pair-number {
   position: absolute;
   inset: 0;

@@ -18,7 +18,8 @@ const DEFAULT_STATE = {
   filterText: '',   // kept in state for UI reactivity, not saved to URL
   walls: {},
   gridCells: [],    // flat array of { x, y, applianceId, rotation, extraData, tabIds }
-  labels: []        // flat array of { id, x, y, text }
+  labels: [],       // flat array of { id, x, y, text }
+  
 }
 
 // Only these fields are serialized into the URL
@@ -197,9 +198,19 @@ function encodeState(stateObj) {
     const len = Math.min(255, bytes.length)
     w.write(x2, 8); w.write(y2, 8); w.write(len, 8)
     for (let i = 0; i < len; ++i) w.write(bytes[i], 8)
-    // optional anchor instance id
+    // optional anchor: prefer writing compact cell coords when possible
+    // bit0 = has anchorIid (fallback), bit1 = has anchorX/Y (preferred)
     let flags = 0
-    if (lbl.anchorIid) flags |= 1
+    let aX = null, aY = null
+    // try to resolve anchorIid to coordinates using saved cells (keeps URLs portable)
+    if (lbl.anchorIid && Array.isArray(cells) && cells.length) {
+      const found = cells.find(c => c.iid === lbl.anchorIid)
+      if (found) { aX = found.x; aY = found.y }
+    }
+    // if explicit coords present on label, prefer them
+    if (aX == null && lbl.anchorX != null && lbl.anchorY != null) { aX = lbl.anchorX; aY = lbl.anchorY }
+    if (aX != null && aY != null) flags |= 2
+    else if (lbl.anchorIid) flags |= 1
     w.write(flags, 8)
     if (flags & 1) {
       const iidBytes = new TextEncoder().encode(lbl.anchorIid)
@@ -207,8 +218,11 @@ function encodeState(stateObj) {
       w.write(iidLen, 8)
       for (let i = 0; i < iidLen; ++i) w.write(iidBytes[i], 8)
     }
+    if (flags & 2) {
+      w.write(aX & 0xFF, 8)
+      w.write(aY & 0xFF, 8)
+    }
   }
-
   return base64urlEncode(w.finish())
 }
 
@@ -281,6 +295,8 @@ function decodeState(encoded) {
           for (let j = 0; j < lLen; j++) s += String.fromCharCode(r.read(8))
             // read optional flags (if present)
             let anchorIid = null
+            let anchorX = null
+            let anchorY = null
             if (r._i < r._b.length) {
               try {
                 const flags = r.read(8)
@@ -290,10 +306,15 @@ function decodeState(encoded) {
                   for (let k = 0; k < iidLen; k++) iid += String.fromCharCode(r.read(8))
                   anchorIid = iid
                 }
+                if (flags & 2) {
+                  anchorX = r.read(8)
+                  anchorY = r.read(8)
+                }
               } catch (e) { /* ignore */ }
             }
             const labelObj = { id: Date.now().toString() + '-' + li, x2: lx2, y2: ly2, text: s }
             if (anchorIid) labelObj.anchorIid = anchorIid
+            else if (anchorX != null && anchorY != null) { labelObj.anchorX = anchorX; labelObj.anchorY = anchorY }
             labels.push(labelObj)
         }
       }
