@@ -196,7 +196,6 @@
       <!-- Help modal: single centered list of toolbar items -->
       <div v-if="helpActive" class="help-backdrop" @click="hideHelp">
         <div class="help-modal" @click.stop>
-          <h3 class="help-modal-title">Toolbar help</h3>
           <ul class="help-list">
             <li v-for="(item, idx) in helpItems" :key="item.id || ('div-' + idx)" :class="item.divider ? 'help-list-divider-li' : 'help-list-item'">
               <template v-if="item.divider">
@@ -991,12 +990,13 @@ export default {
       { id: 'flip-h', title: 'Flip H', desc: 'Flip selection horizontally.' },
       { id: 'flip-v', title: 'Flip V', desc: 'Flip selection vertically.' },
       { id: 'label', title: 'Add Label', desc: 'Add a text label to the grid.' },
-      { id: 'label-display', title: 'Label display', desc: 'Cycle label display: lines+text / text only / hidden' },
       { id: 'delete', title: 'Delete', desc: 'Delete the selected cells.' },
       { id: 'help', title: 'Help', desc: 'Show this help overlay.' },
       { divider: true },
+      { id: 'size', title: 'Change room size', desc: 'Open room size dialog to change dimensions' },
       { id: 'dark-mode', title: 'Dark Mode', desc: 'Toggle the UI dark theme.' },
-      { id: 'teleporter-lines', title: 'Teleporter lines', desc: 'Show or hide teleporter connector lines (T).' }
+      { id: 'teleporter-lines', title: 'Teleporter lines', desc: 'Show or hide teleporter connector lines (T).' },
+      { id: 'label-display', title: 'Label display', desc: 'Cycle label display: lines+text / text only / hidden' }
     ]
 
     // Single-modal help UI — no per-popup positions required
@@ -1035,10 +1035,11 @@ export default {
           }
           return '<svg class="hp-svg" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="currentColor"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg>'
         case 'label': return '<svg class="hp-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="7.5" y1="9.5" x2="7.5" y2="14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+        case 'size': return '<svg class="hp-svg" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h13A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 12.5v-9zM1.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z" fill="currentColor"/><path d="M3 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1H4v4.5a.5.5 0 0 1-1 0v-5zm9-3a.5.5 0 0 1-.5.5H7v-5a.5.5 0 0 1 1 0V6h3.5a.5.5 0 0 1 .5.5z"/></svg>'
         case 'label-display':
           // show icon matching current label display mode
           if (labelDisplayMode && labelDisplayMode.value === 0) {
-            return '<svg class="hp-svg" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><line x1="2" y1="2" x2="16" y2="16" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2" stroke-linecap="round"/><rect x="3" y="3" width="6" height="4" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>'
+            return '<svg class="hp-svg" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="9" y1="9" x2="16" y2="16" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2" stroke-linecap="round"/><circle cx="3.5" cy="3.5" r="1" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1" fill="currentColor"/></svg>'
           }
           if (labelDisplayMode && labelDisplayMode.value === 1) {
             return '<svg class="hp-svg" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>'
@@ -2235,7 +2236,7 @@ export default {
   box-shadow: 0 12px 40px rgba(0,0,0,0.25);
 }
 .help-modal-title { margin: 0 0 8px 0; font-size: 16px }
-.help-list { list-style: none; padding: 0; margin: 8px 0 12px 0; max-height: 64vh; overflow: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px }
+.help-list { list-style: none; padding: 0; margin: 8px 0 12px 0; max-height: 64vh; overflow: auto; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 12px }
 .help-list-item { display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; align-items: center }
 .help-list-item + .help-list-item { margin-top: 0 }
 .help-list-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f6fbff; border-radius: 6px; border: 1px solid #cfe6ff; flex: 0 0 40px; box-shadow: 0 2px 6px rgba(17,24,39,0.06), inset 0 1px 0 rgba(255,255,255,0.6) }
