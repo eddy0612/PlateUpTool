@@ -193,10 +193,13 @@
         <AppliancePalette />
         <div class="palette-toolbox-box" title="Palette toolbox (controls)">
           <div class="palette-toolbox" role="toolbar" aria-label="Palette toolbox">
-            <div class="toolbox-size" title="Room size">
-              <label class="size-label">W: <input type="number" :value="state.roomWidth" min="10" max="50" @change="setRoomWidth($event)" /></label>
-              <label class="size-label">H: <input type="number" :value="state.roomHeight" min="6" max="50" @change="setRoomHeight($event)" /></label>
-            </div>
+            <button class="toolbox-button toolbox-button--size" @click="showSizeModal = true" title="Change room size">
+              <svg class="toolbox-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h13A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 12.5v-9zM1.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z"/>
+                <path d="M3 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1H4v4.5a.5.5 0 0 1-1 0v-5zm9-3a.5.5 0 0 1-.5.5H7v-5a.5.5 0 0 1 1 0V6h3.5a.5.5 0 0 1 .5.5z"/>
+              </svg>
+              <span class="toolbox-size-text">{{ state.roomWidth }}&times;{{ state.roomHeight }}</span>
+            </button>
 
             <button class="toolbox-button" @click="toggleDarkMode" :title="darkMode ? 'Switch to light mode' : 'Switch to dark mode'">
               <svg class="toolbox-icon" v-if="!darkMode" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -296,17 +299,6 @@ export default {
       document.documentElement.classList.toggle('dark', darkMode.value)
     }
 
-    function setRoomWidth(e) {
-      const v = Math.min(50, Math.max(10, parseInt(e.target.value) || 10))
-      state.roomWidth = v
-      e.target.value = v
-    }
-
-    function setRoomHeight(e) {
-      const v = Math.min(50, Math.max(6, parseInt(e.target.value) || 6))
-      state.roomHeight = v
-      e.target.value = v
-    }
 
 
 
@@ -374,7 +366,7 @@ export default {
       if (!v && isDefaultState()) showSizeModal.value = true
     })
 
-    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, toggleTeleporterLines, teleporterLines, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen, setRoomWidth, setRoomHeight }
+    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, toggleTeleporterLines, teleporterLines, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen }
   }
 }
 </script>
@@ -653,18 +645,9 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
 /* Active state for toolbox buttons (e.g., teleporter lines) */
 .palette-toolbox .toolbox-button.active { background: #1f79ff; color: #fff; border-color: #1766d6 }
 .dark .palette-toolbox .toolbox-button.active { background: #1a5fe0; color: #fff; border-color: #0f4fb8 }
-/* Room size inputs inside palette toolbox (horizontal: W then H) */
-.palette-toolbox .toolbox-size {
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  align-items: center;
-  margin-right: 6px;
-  white-space: nowrap;
-}
-.palette-toolbox .toolbox-size .size-label { font-weight:700; font-size:0.9rem; display:flex; gap:6px; align-items:center }
-.palette-toolbox .toolbox-size input[type="number"] { width:48px; padding:4px; border-radius:4px; border:1px solid #c8d6e8 }
-.dark .palette-toolbox .toolbox-size input[type="number"] { background: #2b3338; border-color:#444d55; color:#eef6f1 }
+/* Room size button inside palette toolbox */
+.palette-toolbox .toolbox-button--size { gap: 6px; padding: 7px 11px; }
+.toolbox-size-text { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
 
 </style>
 
