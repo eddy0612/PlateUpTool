@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useRestaurantStore } from '../store/restaurant'
 import { useAppliancePalette } from './useAppliancePalette'
 
@@ -25,7 +25,10 @@ const hoverLabel = ref('')
 
 // Track selected cells for highlighting (Set of "x,y" keys)
 const selectedCells = ref(new Set())
+const selectedLabelIds = ref(new Set())
 const anchorCell = ref(null)
+// When true, skip the watcher that prunes label selection based on selected cells.
+const skipLabelAnchorSync = ref(false)
 
 function cellKey(x, y) { return `${x},${y}` }
 
@@ -245,10 +248,22 @@ function rotateGroupAroundCell(pivotX, pivotY) {
     const [x, y] = key.split(',').map(Number)
     return isCellGhosted(x, y)
   })
+  // Preserve label selection across this transform — suppress the watcher
+  skipLabelAnchorSync.value = true
+  // Preserve label selection across this transform — suppress the watcher
+  skipLabelAnchorSync.value = true
+  // Preserve label selection across this transform — suppress the watcher
+  skipLabelAnchorSync.value = true
   selectedCells.value = new Set([...moves.map(({ tx, ty }) => cellKey(tx, ty)), ...ghostedKeys])
   anchorCell.value = null
+  nextTick(() => { skipLabelAnchorSync.value = false })
+  nextTick(() => { skipLabelAnchorSync.value = false })
+  nextTick(() => { skipLabelAnchorSync.value = false })
   // Update labels anchored to source coords to follow moved appliances
   try {
+    // Preserve label selection across this transform — suppress the watcher
+    skipLabelAnchorSync.value = true
+    nextTick(() => { skipLabelAnchorSync.value = false })
     for (const { sx, sy, tx, ty } of moves) {
       const target = grid.value[ty]?.[tx]
       if (!target || !target.iid) continue
@@ -260,6 +275,8 @@ function rotateGroupAroundCell(pivotX, pivotY) {
       }
     }
   } catch (e) {}
+  // Also translate any selected labels by the same pivot-based rotation
+  try { rotateSelectedLabelsCW(pivotX, pivotY, moves) } catch(e) {}
   return true
 }
 
@@ -310,10 +327,16 @@ function rotateGroupAroundCellCCW(pivotX, pivotY) {
     const [x, y] = key.split(',').map(Number)
     return isCellGhosted(x, y)
   })
+  // Preserve label selection across this transform — suppress the watcher
+  skipLabelAnchorSync.value = true
   selectedCells.value = new Set([...moves.map(({ tx, ty }) => cellKey(tx, ty)), ...ghostedKeys])
   anchorCell.value = null
+  nextTick(() => { skipLabelAnchorSync.value = false })
   // Update labels anchored to source coords to follow moved appliances
   try {
+    // Preserve label selection across this transform — suppress the watcher
+    skipLabelAnchorSync.value = true
+    nextTick(() => { skipLabelAnchorSync.value = false })
     for (const { sx, sy, tx, ty } of moves) {
       const target = grid.value[ty]?.[tx]
       if (!target || !target.iid) continue
@@ -325,6 +348,8 @@ function rotateGroupAroundCellCCW(pivotX, pivotY) {
       }
     }
   } catch (e) {}
+  // Also rotate selected labels CCW
+  try { rotateSelectedLabelsCCW(pivotX, pivotY, moves) } catch(e) {}
   return true
 }
 
@@ -382,8 +407,14 @@ function flipSelectionVertical() {
   const ghostedKeys = [...selectedCells.value].filter(key => {
     const [x, y] = key.split(',').map(Number); return isCellGhosted(x, y)
   })
+  // Preserve label selection across this transform — suppress the watcher
+  skipLabelAnchorSync.value = true
+  // Preserve label selection across this transform — suppress the watcher
+  skipLabelAnchorSync.value = true
   selectedCells.value = new Set([...moves.map(m => cellKey(m.tx, m.ty)), ...ghostedKeys])
   anchorCell.value = null
+  nextTick(() => { skipLabelAnchorSync.value = false })
+  nextTick(() => { skipLabelAnchorSync.value = false })
   // Migrate labels anchored to source coords to appliance instance ids after flip
   try {
     for (const { sx, sy, tx, ty } of moves) {
@@ -397,6 +428,8 @@ function flipSelectionVertical() {
       }
     }
   } catch (e) {}
+  // Flip selected labels vertically
+  try { flipSelectedLabelsVertical(minX, maxX) } catch (e) {}
   return true
 }
 
@@ -469,6 +502,8 @@ function flipSelectionHorizontal() {
       }
     }
   } catch (e) {}
+  // Flip selected labels horizontally
+  try { flipSelectedLabelsHorizontal(minY, maxY) } catch (e) {}
   return true
 }
 
@@ -494,6 +529,8 @@ function selectCell(x, y, shiftKey = false, ctrlKey = false) {
       for (let cx = x0; cx <= x1; cx++)
         if (grid.value[cy]?.[cx]?.applianceId) base.add(cellKey(cx, cy))
     selectedCells.value = base
+    // Clear label selection when making a new cell selection via shift-range
+    selectedLabelIds.value = new Set()
   } else if (ctrlKey) {
     if (!grid.value[y]?.[x]?.applianceId) return
     const key = cellKey(x, y)
@@ -502,16 +539,20 @@ function selectCell(x, y, shiftKey = false, ctrlKey = false) {
     else next.add(key)
     selectedCells.value = next
     anchorCell.value = { x, y }
+    selectedLabelIds.value = new Set()
   } else {
     if (!grid.value[y]?.[x]?.applianceId) return
     selectedCells.value = new Set([cellKey(x, y)])
     anchorCell.value = { x, y }
+    selectedLabelIds.value = new Set()
   }
 }
 
 function selectCellsInRect(cells) {
   const filtered = cells.filter(c => grid.value[c.y]?.[c.x]?.applianceId)
   selectedCells.value = new Set(filtered.map(c => cellKey(c.x, c.y)))
+  // Clear any label-only selection when selecting cells
+  selectedLabelIds.value = new Set()
   if (filtered.length > 0) anchorCell.value = filtered[filtered.length - 1]
 }
 
@@ -522,6 +563,8 @@ function selectAll() {
     for (let x = 0; x < grid.value[y].length; x++)
       if (isCellOnActiveTab(x, y)) all.push({ x, y })
   selectedCells.value = new Set(all.map(c => cellKey(c.x, c.y)))
+  // Clear any label-only selection
+  selectedLabelIds.value = new Set()
   if (all.length > 0) anchorCell.value = all[all.length - 1]
 }
 
@@ -532,6 +575,7 @@ function invertSelection() {
     for (let x = 0; x < grid.value[y].length; x++)
       if (isCellOnActiveTab(x, y) && !selectedCells.value.has(cellKey(x, y))) next.push({ x, y })
   selectedCells.value = new Set(next.map(c => cellKey(c.x, c.y)))
+  selectedLabelIds.value = new Set()
   if (next.length > 0) anchorCell.value = next[next.length - 1]
   else anchorCell.value = null
 }
@@ -540,6 +584,8 @@ function addCellsToSelection(cells) {
   const next = new Set(selectedCells.value)
   cells.forEach(c => { if (grid.value[c.y]?.[c.x]?.applianceId) next.add(cellKey(c.x, c.y)) })
   selectedCells.value = next
+  // Clear label selection — adding cells implies label selection should be reset
+  selectedLabelIds.value = new Set()
   const last = [...cells].reverse().find(c => grid.value[c.y]?.[c.x]?.applianceId)
   if (last) anchorCell.value = last
 }
@@ -649,10 +695,22 @@ function commitMoveDrag() {
       }
     }
   } catch (e) {}
+  // Preserve label selection across this move — suppress pruning watcher
+  skipLabelAnchorSync.value = true
   selectedCells.value = new Set(moveDragTargetMap.value.keys())
   anchorCell.value = null
+  nextTick(() => { skipLabelAnchorSync.value = false })
   moveDragActive.value = false
   moveDragOffset.value = { dx: 0, dy: 0 }
+  // Translate any selected labels by the move vector (assume uniform delta from first pair)
+  try {
+    if (pairs.length > 0) {
+      const d0 = pairs[0]
+      const dx = d0.tx - d0.sx
+      const dy = d0.ty - d0.sy
+      translateSelectedLabels(dx, dy)
+    }
+  } catch (e) {}
 }
 
 function cancelMoveDrag() {
@@ -702,12 +760,102 @@ function removeSelected() {
 
   selectedCells.value = new Set()
   // Remove labels that were anchored to deleted appliance instances or coordinates
+  // Also remove labels that are part of the explicit label selection
   if (state.labels && state.labels.length) {
+    const selLblIds = new Set(selectedLabelIds.value)
     state.labels = state.labels.filter(lbl => {
+      if (selLblIds.has(lbl.id)) return false
       if (lbl.anchorIid && deletedIids.has(lbl.anchorIid)) return false
       if (lbl.anchorX != null && lbl.anchorY != null && deletedCoords.has(cellKey(lbl.anchorX, lbl.anchorY))) return false
       return true
     })
+  }
+  selectedLabelIds.value = new Set()
+}
+
+// --- Label transform helpers for selected labels ---
+function translateSelectedLabels(dx, dy) {
+  if (!state.labels) return
+  for (const lbl of state.labels) {
+    if (!selectedLabelIds.value.has(lbl.id)) continue
+    try {
+      if (lbl.x2 != null) lbl.x2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, lbl.x2 + dx * 2))
+      if (lbl.y2 != null) lbl.y2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, lbl.y2 + dy * 2))
+      if (lbl.anchorX != null) lbl.anchorX = lbl.anchorX + dx
+      if (lbl.anchorY != null) lbl.anchorY = lbl.anchorY + dy
+    } catch (e) {}
+  }
+}
+
+function rotateSelectedLabelsCW(pivotX, pivotY, moves) {
+  // moves is array of { sx, sy, tx, ty } used to migrate anchors; rotate any selected labels around pivot
+  if (!state.labels) return
+  for (const lbl of state.labels) {
+    if (!selectedLabelIds.value.has(lbl.id)) continue
+    try {
+      // use x2/y2 if present, otherwise anchorX/anchorY
+      let x = (lbl.x2 != null) ? lbl.x2 / 2 : (lbl.anchorX != null ? lbl.anchorX : null)
+      let y = (lbl.y2 != null) ? lbl.y2 / 2 : (lbl.anchorY != null ? lbl.anchorY : null)
+      if (x == null || y == null) continue
+      const dx = x - pivotX
+      const dy = y - pivotY
+      const nx = Math.round(pivotX - dy)
+      const ny = Math.round(pivotY + dx)
+      if (lbl.x2 != null) lbl.x2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, nx * 2))
+      if (lbl.y2 != null) lbl.y2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, ny * 2))
+      if (lbl.anchorX != null) lbl.anchorX = nx
+      if (lbl.anchorY != null) lbl.anchorY = ny
+    } catch (e) {}
+  }
+}
+
+function rotateSelectedLabelsCCW(pivotX, pivotY, moves) {
+  if (!state.labels) return
+  for (const lbl of state.labels) {
+    if (!selectedLabelIds.value.has(lbl.id)) continue
+    try {
+      let x = (lbl.x2 != null) ? lbl.x2 / 2 : (lbl.anchorX != null ? lbl.anchorX : null)
+      let y = (lbl.y2 != null) ? lbl.y2 / 2 : (lbl.anchorY != null ? lbl.anchorY : null)
+      if (x == null || y == null) continue
+      const dx = x - pivotX
+      const dy = y - pivotY
+      const nx = Math.round(pivotX + dy)
+      const ny = Math.round(pivotY - dx)
+      if (lbl.x2 != null) lbl.x2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, nx * 2))
+      if (lbl.y2 != null) lbl.y2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, ny * 2))
+      if (lbl.anchorX != null) lbl.anchorX = nx
+      if (lbl.anchorY != null) lbl.anchorY = ny
+    } catch (e) {}
+  }
+}
+
+function flipSelectedLabelsVertical(minX, maxX) {
+  if (!state.labels) return
+  for (const lbl of state.labels) {
+    if (!selectedLabelIds.value.has(lbl.id)) continue
+    try {
+      if (lbl.x2 != null) {
+        const x = lbl.x2 / 2
+        const nx = minX + (maxX - x)
+        lbl.x2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, Math.round(nx * 2)))
+      }
+      if (lbl.anchorX != null) lbl.anchorX = minX + (maxX - lbl.anchorX)
+    } catch (e) {}
+  }
+}
+
+function flipSelectedLabelsHorizontal(minY, maxY) {
+  if (!state.labels) return
+  for (const lbl of state.labels) {
+    if (!selectedLabelIds.value.has(lbl.id)) continue
+    try {
+      if (lbl.y2 != null) {
+        const y = lbl.y2 / 2
+        const ny = minY + (maxY - y)
+        lbl.y2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, Math.round(ny * 2)))
+      }
+      if (lbl.anchorY != null) lbl.anchorY = minY + (maxY - lbl.anchorY)
+    } catch (e) {}
   }
 }
 
@@ -746,8 +894,11 @@ function moveSelectionBy(dx, dy) {
   // Clear sources then write targets
   for (const { sx, sy } of moves) grid.value[sy][sx] = null
   for (const { tx, ty, content } of moveData) grid.value[ty][tx] = content
+  // Preserve label selection across this move — suppress pruning watcher
+  skipLabelAnchorSync.value = true
   selectedCells.value = new Set([...moves.map(m => cellKey(m.tx, m.ty))])
   anchorCell.value = null
+  nextTick(() => { skipLabelAnchorSync.value = false })
   // Migrate labels anchored to source cell coords to the appliance instance ids at their new positions
   try {
     for (const { sx, sy, tx, ty } of moves) {
@@ -761,6 +912,8 @@ function moveSelectionBy(dx, dy) {
       }
     }
   } catch (e) {}
+  // Translate any selected labels by (dx, dy)
+  try { translateSelectedLabels(dx, dy) } catch (e) {}
   return true
 }
 
@@ -863,14 +1016,46 @@ function clearWallEdge(x, y, dir) {
 watch(() => state.activeTabId, () => {
   selectedCells.value = new Set()
   anchorCell.value = null
+  selectedLabelIds.value = new Set()
+})
+
+// Keep label selection in sync with cell selection. If selected cells change,
+// remove any selected labels whose anchor is no longer part of the cell selection.
+watch(selectedCells, (newSet) => {
+  if (skipLabelAnchorSync.value) return
+  if (!newSet || newSet.size === 0) {
+    // Do not automatically clear label-only selections when cell selection
+    // becomes empty — allow labels to be selected by box-drag without
+    // forcing their deselection here. Explicit code paths that clear
+    // the selection should also clear `selectedLabelIds` when appropriate.
+    return
+  }
+  const next = new Set()
+  for (const id of selectedLabelIds.value) {
+    const lbl = (state.labels || []).find(l => l.id === id)
+    if (!lbl) continue
+    let anchorKey = null
+    if (lbl.anchorIid) {
+      const found = flatGrid.value.find(g => g.cell && g.cell.iid === lbl.anchorIid)
+      if (found) anchorKey = cellKey(found.x, found.y)
+    } else if (lbl.anchorX != null && lbl.anchorY != null) {
+      anchorKey = cellKey(lbl.anchorX, lbl.anchorY)
+    } else if (lbl.x2 != null && lbl.y2 != null) {
+      anchorKey = cellKey(Math.floor(lbl.x2 / 2), Math.floor(lbl.y2 / 2))
+    }
+    if (anchorKey && newSet.has(anchorKey)) next.add(id)
+  }
+  selectedLabelIds.value = next
 })
 
 // --- Clipboard (module-level, not persisted to URL) ---
 const clipboard = ref([])              // [{ dx, dy, cell }] relative to selection top-left
+const clipboardLabels = ref([])        // [{ dx, dy, label }] relative to selection top-left
 const clipboardPasteOrigin = ref(null) // { x, y } top-left for next paste
 
 // --- Duplicate buffer (Ctrl+D) — separate from clipboard so clipboard is preserved ---
 const duplicateBuffer = ref([])        // same format as clipboard
+const duplicateBufferLabels = ref([])
 const duplicateMode = ref(false)       // true when paste is sourced from duplicateBuffer
 
 function copyToClipboard() {
@@ -893,6 +1078,34 @@ function copyToClipboard() {
     if (cell) entries.push({ dx: x - minX, dy: y - minY, cell: { ...cell } })
   }
 
+  // Include selected labels anchored to these selected cells. Store precise half-grid offsets
+  const labelsToCopy = []
+  for (const lbl of state.labels || []) {
+    let include = false
+    let ax = null, ay = null
+    if (lbl.anchorIid) {
+      // find anchor cell coords for this instance id and include only if
+      // the anchor cell is part of the active selection
+      const found = flatGrid.value.find(g => g.cell && g.cell.iid === lbl.anchorIid)
+      if (found) { ax = found.x; ay = found.y; include = activeKeys.some(k => k === `${ax},${ay}`) }
+    } else if (lbl.anchorX != null && lbl.anchorY != null) {
+      ax = lbl.anchorX; ay = lbl.anchorY
+      include = activeKeys.some(k => k === `${ax},${ay}`)
+    } else if (lbl.x2 != null && lbl.y2 != null) {
+      ax = Math.floor(lbl.x2 / 2); ay = Math.floor(lbl.y2 / 2)
+      include = activeKeys.some(k => k === `${ax},${ay}`)
+    }
+    if (include && ax != null) {
+      // dxCell/dyCell: anchor cell offset relative to minX/minY
+      const dxCell = ax - minX
+      const dyCell = ay - minY
+      // dx2/dy2: label half-grid coords relative to minX*2/minY*2 (preserves sub-cell offsets)
+      const dx2 = (lbl.x2 != null ? lbl.x2 : (ax * 2)) - (minX * 2)
+      const dy2 = (lbl.y2 != null ? lbl.y2 : (ay * 2)) - (minY * 2)
+      labelsToCopy.push({ dxCell, dyCell, dx2, dy2, label: { ...lbl } })
+    }
+  }
+
   // Strip teleporter pair numbers when only ONE of a pair is being copied —
   // that teleporter will be unpaired on paste and may re-pair with an existing
   // unpaired teleporter in the grid.
@@ -912,6 +1125,7 @@ function copyToClipboard() {
   }
 
   clipboard.value = entries
+  clipboardLabels.value = labelsToCopy
   clipboardPasteOrigin.value = { x: minX + 1, y: minY + 1 }
 }
 
@@ -960,6 +1174,7 @@ function startPaste() {
   pastePending.value = true
   pasteAnchor.value = clipboardPasteOrigin.value ? { ...clipboardPasteOrigin.value } : { x: 0, y: 0 }
   selectedCells.value = new Set()
+  selectedLabelIds.value = new Set()
 }
 
 function startDuplicate() {
@@ -996,10 +1211,37 @@ function startDuplicate() {
   }
 
   duplicateBuffer.value = entries
+  // capture any selected labels anchored to the selection (store precise offsets)
+  const labelsToCopy = []
+  for (const lbl of state.labels || []) {
+    let include = false
+    let ax = null, ay = null
+    if (lbl.anchorIid) {
+      // find anchor cell coords for this instance id and include only if
+      // the anchor cell is part of the selectedCells
+      const found = flatGrid.value.find(g => g.cell && g.cell.iid === lbl.anchorIid)
+      if (found) { ax = found.x; ay = found.y; include = selectedCells.value.has(`${ax},${ay}`) }
+    } else if (lbl.anchorX != null && lbl.anchorY != null) {
+      ax = lbl.anchorX; ay = lbl.anchorY
+      include = selectedCells.value.has(`${ax},${ay}`)
+    } else if (lbl.x2 != null && lbl.y2 != null) {
+      ax = Math.floor(lbl.x2 / 2); ay = Math.floor(lbl.y2 / 2)
+      include = selectedCells.value.has(`${ax},${ay}`)
+    }
+    if (include && ax != null) {
+      const dxCell = ax - minX
+      const dyCell = ay - minY
+      const dx2 = (lbl.x2 != null ? lbl.x2 : (ax * 2)) - (minX * 2)
+      const dy2 = (lbl.y2 != null ? lbl.y2 : (ay * 2)) - (minY * 2)
+      labelsToCopy.push({ dxCell, dyCell, dx2, dy2, label: { ...lbl } })
+    }
+  }
+  duplicateBufferLabels.value = labelsToCopy
   duplicateMode.value = true
   pastePending.value = true
   pasteAnchor.value = { x: minX, y: minY }
   selectedCells.value = new Set()
+  selectedLabelIds.value = new Set()
 }
 
 function setPasteAnchor(x, y) {
@@ -1045,9 +1287,20 @@ function confirmPaste() {
   // ─────────────────────────────────────────────────────────────────────────
 
   const newSelected = new Set()
+  // Map original iid -> new iid for pasted cells so labels can re-anchor
+  const iidRemap = new Map()
   for (const [tKey, cell] of pastePendingTargetMap.value) {
     const [tx, ty] = tKey.split(',').map(Number)
+    // Assign a fresh iid to avoid duplicating instance ids
+    const oldIid = cell.iid
     let pastedCell = { ...cell, tabIds: [state.activeTabId] }
+    if (oldIid) {
+      const newIid = genInstanceId()
+      pastedCell.iid = newIid
+      iidRemap.set(oldIid, newIid)
+    } else {
+      pastedCell.iid = genInstanceId()
+    }
     if (isTeleporter(pastedCell)) {
       const oldNum = pastedCell.extraData || 0
       // Keep pairing only when the clipboard contained both halves of this pair.
@@ -1064,6 +1317,53 @@ function confirmPaste() {
   }
 
   selectedCells.value = newSelected
+  // Place any labels that were part of the pasted buffer
+  const activeLabelBuf = duplicateMode.value ? duplicateBufferLabels.value : clipboardLabels.value
+  const pastedLabelIds = []
+  if (activeLabelBuf && activeLabelBuf.length > 0 && pasteAnchor.value) {
+    for (const entry of activeLabelBuf) {
+      const tx = pasteAnchor.value.x + entry.dxCell
+      const ty = pasteAnchor.value.y + entry.dyCell
+      const lbl = { ...entry.label }
+      // Compute offset relative to original anchor in half-grid units
+      const offsetX2 = entry.dx2 - (entry.dxCell * 2)
+      const offsetY2 = entry.dy2 - (entry.dyCell * 2)
+      // If label was anchored to an appliance iid that was remapped, re-anchor and preserve offset
+      if (lbl.anchorIid && iidRemap.has(lbl.anchorIid)) {
+        const newIid = iidRemap.get(lbl.anchorIid)
+        lbl.anchorIid = newIid
+        // find new anchor coords
+        const found = flatGrid.value.find(g => g.cell && g.cell.iid === newIid)
+        if (found) {
+          lbl.anchorX = null
+          lbl.anchorY = null
+          lbl.x2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, found.x * 2 + offsetX2))
+          lbl.y2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, found.y * 2 + offsetY2))
+        } else {
+          // fallback: anchor to pasted cell coords
+          lbl.anchorX = tx
+          lbl.anchorY = ty
+          lbl.anchorIid = null
+          lbl.x2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, tx * 2 + offsetX2))
+          lbl.y2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, ty * 2 + offsetY2))
+        }
+      } else {
+        // Anchor to pasted absolute cell coords and preserve sub-cell offset
+        lbl.anchorIid = null
+        lbl.anchorX = tx
+        lbl.anchorY = ty
+        lbl.x2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, tx * 2 + offsetX2))
+        lbl.y2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, ty * 2 + offsetY2))
+      }
+      // always generate a fresh label id for pasted labels to avoid collisions
+      lbl.id = 'lbl-' + Date.now().toString(36) + '-' + Math.floor(Math.random() * 0xffff).toString(36)
+      state.labels = state.labels || []
+      state.labels.push(lbl)
+      pastedLabelIds.push(lbl.id)
+    }
+  }
+      // Select pasted labels as well
+      selectedLabelIds.value = new Set(pastedLabelIds)
   if (!duplicateMode.value && pasteAnchor.value) {
     clipboardPasteOrigin.value = { x: pasteAnchor.value.x + 1, y: pasteAnchor.value.y + 1 }
   }
@@ -1071,6 +1371,7 @@ function confirmPaste() {
   pasteAnchor.value = null
   duplicateMode.value = false
   duplicateBuffer.value = []
+  duplicateBufferLabels.value = []
 }
 
 function cancelPaste() {
@@ -1090,6 +1391,7 @@ function startPasteFromCells(cells) {
   pastePending.value = true
   pasteAnchor.value = { x: 0, y: 0 }
   selectedCells.value = new Set()
+  selectedLabelIds.value = new Set()
 }
 
 function tabHasVisibleItems(tabId) {
@@ -1219,6 +1521,18 @@ function loadGridFromState() {
       grid.value[y][x] = cell
     }
   }
+  // Migrate labels that reference explicit coords to appliance instance ids when possible
+  if (state.labels && state.labels.length) {
+    for (const lbl of state.labels) {
+      if (lbl.anchorX != null && lbl.anchorY != null) {
+        const target = grid.value[lbl.anchorY]?.[lbl.anchorX]
+        if (target && target.iid) {
+          lbl.anchorIid = target.iid
+          delete lbl.anchorX; delete lbl.anchorY
+        }
+      }
+    }
+  }
 }
 
 // Returns the {x, y} of the partner teleporter for the cell at (x, y),
@@ -1238,5 +1552,5 @@ function getTeleporterPairPos(x, y) {
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, hoverLabel, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveSelectionBy, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal }
+  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, hoverLabel, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, selectedLabelIds, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveSelectionBy, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal, skipLabelAnchorSync }
 }
