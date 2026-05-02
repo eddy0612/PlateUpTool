@@ -210,11 +210,11 @@
               </svg>
             </button>
 
-            <button :class="['toolbox-button', { active: teleporterLines }]" @click="toggleTeleporterLines" title="Toggle teleporter connector lines (T)">
+            <button :class="['toolbox-button', 'toolbox-button--icon', 'toolbox-button--teleporter', { active: teleporterLines }]" @click="toggleTeleporterLines" title="Toggle teleporter connector lines (T)">
               <svg class="toolbox-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                <line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" stroke-linecap="round" />
-                <circle cx="2" cy="2" r="3" fill="currentColor" />
-                <circle cx="14" cy="14" r="3" fill="currentColor" />
+                <line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2" stroke-linecap="round"/>
+                <circle cx="2" cy="2" r="2" fill="currentColor"/>
+                <circle cx="14" cy="14" r="2" fill="currentColor"/>
               </svg>
             </button>
           </div>
@@ -645,6 +645,15 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
 /* Active state for toolbox buttons (e.g., teleporter lines) */
 .palette-toolbox .toolbox-button.active { background: #1f79ff; color: #fff; border-color: #1766d6 }
 .dark .palette-toolbox .toolbox-button.active { background: #1a5fe0; color: #fff; border-color: #0f4fb8 }
+/* Icon-style toolbox buttons (no inset border) */
+.palette-toolbox .toolbox-button--icon { background: transparent; border: none; padding: 8px 10px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center }
+.palette-toolbox .toolbox-button--icon .toolbox-icon { width: 22px; height: 22px; display: block }
+.palette-toolbox .toolbox-button--icon.active { background: #1f79ff; color: #fff }
+.dark .palette-toolbox .toolbox-button--icon.active { background: #1a5fe0 }
+/* Teleporter-specific: remove padding so icon sits flush */
+.palette-toolbox .toolbox-button--teleporter { padding: 0; width: 44px; height: 40px; border: 1px solid #c8d6e8; background: #fff; border-radius: 6px; box-shadow: 0 1px 0 rgba(0,0,0,0.03); display: inline-flex; align-items: center; justify-content: center }
+.palette-toolbox .toolbox-button--teleporter .toolbox-icon { width: 100%; height: 100% }
+.dark .palette-toolbox .toolbox-button--teleporter { background: #2b3338; border-color: #444d55; color: #eef6f1 }
 /* Room size button inside palette toolbox */
 .palette-toolbox .toolbox-button--size { gap: 6px; padding: 7px 11px; }
 .toolbox-size-text { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
