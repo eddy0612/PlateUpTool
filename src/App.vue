@@ -219,10 +219,12 @@
             </button>
             <button :class="['toolbox-button', 'toolbox-button--icon', 'toolbox-button--teleporter']" @click="toggleLabelDisplayMode" :title="labelDisplayMode === 0 ? 'Labels: lines + text' : (labelDisplayMode === 1 ? 'Labels: text only' : 'Labels: hidden')">
               <svg v-if="labelDisplayMode === 0" class="toolbox-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                <line x1="2" y1="2" x2="16" y2="16" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2" stroke-linecap="round" />
-                <rect x="3" y="3" width="6" height="4" rx="1" fill="none" stroke="currentColor" stroke-width="1.4" />
-                <circle cx="2.5" cy="2.5" r="1.2" fill="currentColor" />
-                <circle cx="15.5" cy="15.5" r="1.2" fill="currentColor" />
+                <!-- small rectangle top-left (6x6) -->
+                <rect x="3" y="3" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4" />
+                <!-- dashed diagonal from rect bottom-right (9,9) to icon bottom-right (16,16) -->
+                <line x1="9" y1="9" x2="16" y2="16" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2" stroke-linecap="round" />
+                <circle cx="3.5" cy="3.5" r="1" fill="currentColor" />
+                <circle cx="15.5" cy="15.5" r="1" fill="currentColor" />
               </svg>
               <svg v-else-if="labelDisplayMode === 1" class="toolbox-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
                 <rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4" />
@@ -581,7 +583,7 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
   border-radius: 10px;
   box-shadow: 0 6px 32px rgba(0,0,0,0.28);
   width: min(640px, 96vw);
-  max-height: 88vh;
+  max-height: 97vh; /* 10% taller than previous 88vh */
   display: flex; flex-direction: column;
   overflow: hidden;
 }
