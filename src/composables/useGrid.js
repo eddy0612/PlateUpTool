@@ -563,8 +563,26 @@ function selectAll() {
     for (let x = 0; x < grid.value[y].length; x++)
       if (isCellOnActiveTab(x, y)) all.push({ x, y })
   selectedCells.value = new Set(all.map(c => cellKey(c.x, c.y)))
-  // Clear any label-only selection
-  selectedLabelIds.value = new Set()
+  // Also select labels whose anchors/positions are on the active tab
+  try {
+    const labelSet = new Set()
+    for (const lbl of (state.labels || [])) {
+      let anchorCellPos = null
+      if (lbl.anchorIid) {
+        for (const ci of flatGrid.value) {
+          if (ci.cell && ci.cell.iid === lbl.anchorIid) { anchorCellPos = { x: ci.x, y: ci.y }; break }
+        }
+      } else if (lbl.anchorX != null && lbl.anchorY != null) {
+        anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
+      } else if (lbl.x != null && lbl.y != null) {
+        anchorCellPos = { x: lbl.x, y: lbl.y }
+      }
+      if (anchorCellPos && isCellOnActiveTab(anchorCellPos.x, anchorCellPos.y)) labelSet.add(lbl.id)
+    }
+    selectedLabelIds.value = labelSet
+  } catch (e) {
+    selectedLabelIds.value = new Set()
+  }
   if (all.length > 0) anchorCell.value = all[all.length - 1]
 }
 
@@ -1383,10 +1401,23 @@ function cancelPaste() {
 
 // Start a paste using an explicit set of cells (e.g. from a saved blueprint).
 // Uses the duplicate buffer so the user's clipboard is not overwritten.
-function startPasteFromCells(cells) {
+function startPasteFromCells(payload) {
+  // payload may be either an array of cells (legacy) or an object { cells, labels }
   if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
+  if (!payload) return
+  let cells = null, labels = []
+  if (Array.isArray(payload)) {
+    cells = payload
+  } else if (payload.cells && Array.isArray(payload.cells)) {
+    cells = payload.cells
+    labels = Array.isArray(payload.labels) ? payload.labels : []
+  }
   if (!cells || cells.length === 0) return
+
   duplicateBuffer.value = cells.map(c => ({ ...c, cell: { ...c.cell } }))
+  // accept either blueprint-style labels ({dxCell,dyCell,dx2,dy2,label}) or legacy cells-only
+  duplicateBufferLabels.value = labels.map(l => ({ ...l }))
+
   duplicateMode.value = true
   pastePending.value = true
   pasteAnchor.value = { x: 0, y: 0 }
