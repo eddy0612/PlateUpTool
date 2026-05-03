@@ -200,6 +200,7 @@
           <div class="context-menu-item" @click="doExport('complete')"><span class="icon">💾</span> Complete</div>
           <div class="context-menu-group-label">Load</div>
           <div class="context-menu-item" @click="loadFromMenu"><span class="icon">📂</span> Load from file...</div>
+          <div class="context-menu-item" @click="importFromClipboard"><span class="icon">📋</span> Import from clipboard</div>
         </div>
       </template>
     </teleport>
@@ -318,9 +319,63 @@ export default {
           const tabId = state.activeTabId
           const tab = state.tabs.find(t => t.id === tabId)
           const tabLabel = tab?.label || tabId
-          payload = encodePayload({ type: 'tab', tabId, tabLabel, cells: [] })
+          const tabCells = []
+          let tabMinX = Infinity, tabMinY = Infinity
+          for (let y = 0; y < grid.value.length; y++) {
+            for (let x = 0; x < (grid.value[y]?.length ?? 0); x++) {
+              const cell = grid.value[y][x]
+              if (!cell?.applianceId) continue
+              const inTab = Array.isArray(cell.tabIds) ? cell.tabIds.includes(tabId) : cell.tabId === tabId
+              if (!inTab) continue
+              if (x < tabMinX) tabMinX = x
+              if (y < tabMinY) tabMinY = y
+              tabCells.push({ x, y, cell })
+            }
+          }
+          const exportCells = tabCells.map(({ x, y, cell }) => ({
+            dx: x - tabMinX, dy: y - tabMinY,
+            cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] }
+          }))
+          const tabCellKeySet = new Set(tabCells.map(({ x, y }) => `${x},${y}`))
+          const tabExportLabels = []
+          for (const lbl of state.labels || []) {
+            let ax = null, ay = null
+            if (lbl.anchorIid) { const found = flatGrid.value.find(g => g.cell && g.cell.iid === lbl.anchorIid); if (found) { ax = found.x; ay = found.y } }
+            if (ax == null && lbl.anchorX != null && lbl.anchorY != null) { ax = lbl.anchorX; ay = lbl.anchorY }
+            if (ax == null) continue
+            // Only include labels whose anchor is on this tab; skip floating unanchored labels.
+            if (!tabCellKeySet.has(`${ax},${ay}`)) continue
+            tabExportLabels.push({ dxCell: ax - tabMinX, dyCell: ay - tabMinY, dx2: (lbl.x2 != null ? lbl.x2 : ax * 2) - tabMinX * 2, dy2: (lbl.y2 != null ? lbl.y2 : ay * 2) - tabMinY * 2, label: { ...lbl } })
+          }
+          payload = encodePayload({ type: 'tab', tabId, tabLabel, cells: exportCells, labels: tabExportLabels })
         } else if (type === 'all-tabs') {
-          payload = encodePayload({ type: 'all-tabs', cells: [] })
+          const allCells = []
+          let allMinX = Infinity, allMinY = Infinity
+          for (let y = 0; y < grid.value.length; y++) {
+            for (let x = 0; x < (grid.value[y]?.length ?? 0); x++) {
+              const cell = grid.value[y][x]
+              if (!cell?.applianceId) continue
+              if (x < allMinX) allMinX = x
+              if (y < allMinY) allMinY = y
+              allCells.push({ x, y, cell })
+            }
+          }
+          const exportCells = allCells.map(({ x, y, cell }) => ({
+            dx: x - allMinX, dy: y - allMinY,
+            cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] }
+          }))
+          const allCellKeySet2 = new Set(allCells.map(({ x, y }) => `${x},${y}`))
+          const allExportLabels = []
+          for (const lbl of state.labels || []) {
+            let ax = null, ay = null
+            if (lbl.anchorIid) { const found = flatGrid.value.find(g => g.cell && g.cell.iid === lbl.anchorIid); if (found) { ax = found.x; ay = found.y } }
+            if (ax == null && lbl.anchorX != null && lbl.anchorY != null) { ax = lbl.anchorX; ay = lbl.anchorY }
+            if (ax == null) { if (lbl.x2 != null && lbl.y2 != null) { allExportLabels.push({ dxCell: Math.floor(lbl.x2 / 2) - allMinX, dyCell: Math.floor(lbl.y2 / 2) - allMinY, dx2: lbl.x2 - allMinX * 2, dy2: lbl.y2 - allMinY * 2, label: { ...lbl } }) }; continue }
+            // Only include anchored labels whose anchor cell is in the all-tabs set.
+            if (!allCellKeySet2.has(`${ax},${ay}`)) continue
+            allExportLabels.push({ dxCell: ax - allMinX, dyCell: ay - allMinY, dx2: (lbl.x2 != null ? lbl.x2 : ax * 2) - allMinX * 2, dy2: (lbl.y2 != null ? lbl.y2 : ay * 2) - allMinY * 2, label: { ...lbl } })
+          }
+          payload = encodePayload({ type: 'all-tabs', cells: exportCells, labels: allExportLabels })
         } else if (type === 'complete') {
           payload = encodePayload({
             type: 'complete',
@@ -329,7 +384,8 @@ export default {
             orientation: state.orientation,
             walls: state.walls || {},
             tabs: state.tabs,
-            gridCells: state.gridCells
+            gridCells: state.gridCells,
+            labels: state.labels || []
           })
         }
 
@@ -393,6 +449,10 @@ export default {
     function handleGlobalSaveLoadMenu(e) { showExportMenu(e.detail) }
     onMounted(() => window.addEventListener('plateup-open-saveload-menu', handleGlobalSaveLoadMenu))
     onUnmounted(() => window.removeEventListener('plateup-open-saveload-menu', handleGlobalSaveLoadMenu))
+
+    async function handleGlobalImportBytes(e) { await processImportBytes(e.detail.bytes) }
+    onMounted(() => window.addEventListener('plateup-import-bytes', handleGlobalImportBytes))
+    onUnmounted(() => window.removeEventListener('plateup-import-bytes', handleGlobalImportBytes))
 
     const paletteColumns = computed(() => {
       const available = windowWidth.value * 0.20
@@ -505,8 +565,10 @@ export default {
               if (lbl && (lbl.dx2 != null || lbl.dxCell != null)) {
                 const absX2 = (lbl.dx2 != null) ? lbl.dx2 : (lbl.label && lbl.label.x2 != null ? lbl.label.x2 : 0)
                 const absY2 = (lbl.dy2 != null) ? lbl.dy2 : (lbl.label && lbl.label.y2 != null ? lbl.label.y2 : 0)
-                const absAx = (lbl.dxCell != null) ? lbl.dxCell : (lbl.label && lbl.label.anchorX != null ? lbl.label.anchorX : 0)
-                const absAy = (lbl.dyCell != null) ? lbl.dyCell : (lbl.label && lbl.label.anchorY != null ? lbl.label.anchorY : 0)
+                const origLbl = lbl.label || {}
+                const origHasAnchor = origLbl.anchorIid || origLbl.anchorX != null || origLbl.anchorY != null
+                const absAx = origHasAnchor ? ((lbl.dxCell != null) ? lbl.dxCell : (origLbl.anchorX != null ? origLbl.anchorX : null)) : null
+                const absAy = origHasAnchor ? ((lbl.dyCell != null) ? lbl.dyCell : (origLbl.anchorY != null ? origLbl.anchorY : null)) : null
                 const text = (lbl.label && lbl.label.text) || lbl.text || ''
                 // expand bounds
                 const cellX = Math.floor(absX2 / 2)
@@ -519,8 +581,8 @@ export default {
               // preview-style: { x2, y2, anchorDx, anchorDy, text }
               const absX2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : 0)
               const absY2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : 0)
-              const absAx = (lbl.anchorDx != null) ? lbl.anchorDx : (lbl.anchorX != null ? lbl.anchorX : 0)
-              const absAy = (lbl.anchorDy != null) ? lbl.anchorDy : (lbl.anchorY != null ? lbl.anchorY : 0)
+              const absAx = (lbl.anchorDx != null) ? lbl.anchorDx : (lbl.anchorX != null ? lbl.anchorX : null)
+              const absAy = (lbl.anchorDy != null) ? lbl.anchorDy : (lbl.anchorY != null ? lbl.anchorY : null)
               const text = lbl.text || ''
               const cellX = Math.floor(absX2 / 2)
               const cellY = Math.floor(absY2 / 2)
@@ -768,14 +830,15 @@ export default {
               try {
                 const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : 0)
                 const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : 0)
-                const anchorCellX = (lbl.anchorDx != null ? lbl.anchorDx : (lbl.anchorX != null ? lbl.anchorX : Math.floor(x2 / 2)))
-                const anchorCellY = (lbl.anchorDy != null ? lbl.anchorDy : (lbl.anchorY != null ? lbl.anchorY : Math.floor(y2 / 2)))
+                const hasAnchor = lbl.anchorDx != null
+                const anchorCellX = hasAnchor ? lbl.anchorDx : Math.floor(x2 / 2)
+                const anchorCellY = hasAnchor ? lbl.anchorDy : Math.floor(y2 / 2)
                 const ax = padLeft + ((anchorCellX - minDx) + 0.5) * CELL_PX
                 const ay = padTop + ((anchorCellY - minDy) + 0.5) * CELL_PX
                 const lx = padLeft + (((x2 / 2) - minDx) + 0.5) * CELL_PX
                 const ly = padTop + (((y2 / 2) - minDy) + 0.5) * CELL_PX
-                // Only draw connector line for mode 0 and when label not overlapping anchor
-                if (labelMode === 0) {
+                // Only draw connector line for mode 0 and when label has a real anchor
+                if (labelMode === 0 && hasAnchor) {
                   const dx = lx - ax, dy = ly - ay
                   if (Math.sqrt(dx * dx + dy * dy) > 6) {
                     ctx.save()
@@ -1501,6 +1564,7 @@ export default {
 
       let maxX = -Infinity, maxY = -Infinity
       for (const v of valid) { if (v.x > maxX) maxX = v.x; if (v.y > maxY) maxY = v.y }
+      const validCellSet = new Set(valid.map(v => `${v.x},${v.y}`))
 
       // Expand bounds to include any label positions (anchored or floating) that should be part of the selection
       try {
@@ -1514,8 +1578,8 @@ export default {
           } else if (lbl.anchorX != null && lbl.anchorY != null) {
             anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
           }
-          // include if anchor inside current selection bounds
-          if (anchorCellPos && anchorCellPos.x >= minX && anchorCellPos.y >= minY && anchorCellPos.x <= maxX && anchorCellPos.y <= maxY) {
+          // include only if anchor is on an actually-selected cell
+          if (anchorCellPos && validCellSet.has(`${anchorCellPos.x},${anchorCellPos.y}`)) {
             labelCandidates.push(lbl)
           }
         }
@@ -1544,6 +1608,7 @@ export default {
       const previewCells = valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { ...cell } }))
       // collect labels anchored inside selection and convert to relative coords
       const labelsForPreview = []
+      const exportLabels = []
       try {
         for (const lbl of (state.labels || [])) {
           let anchorCellPos = null
@@ -1556,16 +1621,15 @@ export default {
             if (lbl.anchorX == null || lbl.anchorY == null) continue
             anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
           }
-          if (anchorCellPos.x >= minX && anchorCellPos.y >= minY && anchorCellPos.x <= maxX && anchorCellPos.y <= maxY) {
+          if (validCellSet.has(`${anchorCellPos.x},${anchorCellPos.y}`)) {
             const relAx = anchorCellPos.x - minX
             const relAy = anchorCellPos.y - minY
             const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : (anchorCellPos.x * 2))
             const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : (anchorCellPos.y * 2))
             const relX2 = x2 - minX * 2
             const relY2 = y2 - minY * 2
-            const anchorDxVal = (relAx != null) ? relAx : (relX2 / 2)
-            const anchorDyVal = (relAy != null) ? relAy : (relY2 / 2)
-            labelsForPreview.push({ id: lbl.id, x2: relX2, y2: relY2, x: null, y: null, anchorDx: anchorDxVal, anchorDy: anchorDyVal, text: lbl.text })
+            labelsForPreview.push({ id: lbl.id, x2: relX2, y2: relY2, x: null, y: null, anchorDx: relAx, anchorDy: relAy, text: lbl.text })
+            exportLabels.push({ dxCell: relAx, dyCell: relAy, dx2: relX2, dy2: relY2, label: { ...lbl } })
           }
         }
       } catch (e) {}
@@ -1592,11 +1656,12 @@ export default {
           const anchorDxVal = (relAx != null) ? relAx : (relX2 / 2)
           const anchorDyVal = (relAy != null) ? relAy : (relY2 / 2)
           labelsForPreview.push({ id: lbl.id, x2: relX2, y2: relY2, x: null, y: null, anchorDx: anchorDxVal, anchorDy: anchorDyVal, text: lbl.text })
+          exportLabels.push({ dxCell: anchorDxVal, dyCell: anchorDyVal, dx2: relX2, dy2: relY2, label: { ...lbl } })
         }
       } catch (e) {}
 
       const preview = await generateBlueprintPreview(previewCells, 80, labelsForPreview)
-      const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: exportCells })
+      const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: exportCells, labels: exportLabels })
       const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
       const modified = writePngText(bytes, 'plateup-v2-export', payload)
       downloadDataUrl(bytesToDataUrl(modified), `plateup-selection-${exportTimestamp()}.png`)
@@ -1621,6 +1686,7 @@ export default {
       if (valid.length === 0) { alert('No visible appliances are selected.'); return }
       let maxX = -Infinity, maxY = -Infinity
       for (const v of valid) { if (v.x > maxX) maxX = v.x; if (v.y > maxY) maxY = v.y }
+      const validCellSet = new Set(valid.map(v => `${v.x},${v.y}`))
 
       // Expand bounds to include labels that are anchored inside selection or explicitly selected
       try {
@@ -1632,7 +1698,7 @@ export default {
           } else if (lbl.anchorX != null && lbl.anchorY != null) {
             anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
           }
-          if (anchorCellPos && anchorCellPos.x >= minX && anchorCellPos.y >= minY && anchorCellPos.x <= maxX && anchorCellPos.y <= maxY) labelCandidates.push(lbl)
+          if (anchorCellPos && validCellSet.has(`${anchorCellPos.x},${anchorCellPos.y}`)) labelCandidates.push(lbl)
         }
         try {
           const sel = selectedLabelIds?.value || new Set()
@@ -1653,6 +1719,7 @@ export default {
       } catch (e) {}
       // collect labels anchored inside selection and convert to relative coords
       const labelsForPreview = []
+      const clipboardExportLabels = []
       try {
         for (const lbl of (state.labels || [])) {
           let anchorCellPos = null
@@ -1665,7 +1732,7 @@ export default {
             if (lbl.anchorX == null || lbl.anchorY == null) continue
             anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
           }
-          if (anchorCellPos.x >= minX && anchorCellPos.y >= minY && anchorCellPos.x <= maxX && anchorCellPos.y <= maxY) {
+          if (validCellSet.has(`${anchorCellPos.x},${anchorCellPos.y}`)) {
             const relAx = anchorCellPos.x - minX
             const relAy = anchorCellPos.y - minY
             const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : (anchorCellPos.x * 2))
@@ -1673,6 +1740,7 @@ export default {
             const relX2 = x2 - minX * 2
             const relY2 = y2 - minY * 2
             labelsForPreview.push({ id: lbl.id, x2: relX2, y2: relY2, x: null, y: null, anchorDx: relAx, anchorDy: relAy, text: lbl.text })
+            clipboardExportLabels.push({ dxCell: relAx, dyCell: relAy, dx2: relX2, dy2: relY2, label: { ...lbl } })
           }
         }
       } catch (e) {}
@@ -1695,7 +1763,10 @@ export default {
           const relY2 = y2 - minY * 2
           const relAx = anchorCellPos ? (anchorCellPos.x - minX) : null
           const relAy = anchorCellPos ? (anchorCellPos.y - minY) : null
+          const anchorDxVal = (relAx != null) ? relAx : (relX2 / 2)
+          const anchorDyVal = (relAy != null) ? relAy : (relY2 / 2)
           labelsForPreview.push({ id: lbl.id, x2: relX2, y2: relY2, x: null, y: null, anchorDx: relAx, anchorDy: relAy, text: lbl.text })
+          clipboardExportLabels.push({ dxCell: anchorDxVal, dyCell: anchorDyVal, dx2: relX2, dy2: relY2, label: { ...lbl } })
         }
       } catch (e) {}
 
@@ -1706,7 +1777,7 @@ export default {
       if (!dataUrl) { alert('Nothing to copy.'); return }
       dataUrl = await addWatermark(dataUrl)
       try {
-        const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] } })) })
+        const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] } })), labels: clipboardExportLabels })
         const stegoDataUrl = await writeStegoText(dataUrl, 'plateup-v2-export', payload)
         const bytes = dataUrlToBytes(stegoDataUrl)
         const modified = writePngText(bytes, 'plateup-v2-export', payload)
@@ -1785,8 +1856,19 @@ export default {
           dx: x - minX, dy: y - minY,
           cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] }
         }))
+        const cellKeySet = new Set(cells.map(({ x, y }) => `${x},${y}`))
+        const exportLabels = []
+        for (const lbl of state.labels || []) {
+          let ax = null, ay = null
+          if (lbl.anchorIid) { const found = flatGrid.value.find(g => g.cell && g.cell.iid === lbl.anchorIid); if (found) { ax = found.x; ay = found.y } }
+          if (ax == null && lbl.anchorX != null && lbl.anchorY != null) { ax = lbl.anchorX; ay = lbl.anchorY }
+          if (ax == null) continue
+          // Only include labels whose anchor is on this tab; skip floating unanchored labels.
+          if (!cellKeySet.has(`${ax},${ay}`)) continue
+          exportLabels.push({ dxCell: ax - minX, dyCell: ay - minY, dx2: (lbl.x2 != null ? lbl.x2 : ax * 2) - minX * 2, dy2: (lbl.y2 != null ? lbl.y2 : ay * 2) - minY * 2, label: { ...lbl } })
+        }
         const preview = await generateGridPreview(tabId, false)
-        const payload = encodePayload({ type: 'tab', tabId, tabLabel, cells: exportCells })
+        const payload = encodePayload({ type: 'tab', tabId, tabLabel, cells: exportCells, labels: exportLabels })
         const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
         const modified = writePngText(bytes, 'plateup-v2-export', payload)
         const safeName = tabLabel.replace(/[^a-z0-9_-]/gi, '_').slice(0, 30) || tabId
@@ -1809,8 +1891,19 @@ export default {
           dx: x - minX, dy: y - minY,
           cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] }
         }))
+        const allCellKeySet = new Set(cells.map(({ x, y }) => `${x},${y}`))
+        const exportLabels = []
+        for (const lbl of state.labels || []) {
+          let ax = null, ay = null
+          if (lbl.anchorIid) { const found = flatGrid.value.find(g => g.cell && g.cell.iid === lbl.anchorIid); if (found) { ax = found.x; ay = found.y } }
+          if (ax == null && lbl.anchorX != null && lbl.anchorY != null) { ax = lbl.anchorX; ay = lbl.anchorY }
+          if (ax == null) { if (lbl.x2 != null && lbl.y2 != null) { exportLabels.push({ dxCell: Math.floor(lbl.x2 / 2) - minX, dyCell: Math.floor(lbl.y2 / 2) - minY, dx2: lbl.x2 - minX * 2, dy2: lbl.y2 - minY * 2, label: { ...lbl } }) }; continue }
+          // Only include anchored labels whose anchor cell is in the all-tabs set.
+          if (!allCellKeySet.has(`${ax},${ay}`)) continue
+          exportLabels.push({ dxCell: ax - minX, dyCell: ay - minY, dx2: (lbl.x2 != null ? lbl.x2 : ax * 2) - minX * 2, dy2: (lbl.y2 != null ? lbl.y2 : ay * 2) - minY * 2, label: { ...lbl } })
+        }
         const preview = await generateGridPreview(null, false)
-        const payload = encodePayload({ type: 'all-tabs', cells: exportCells })
+        const payload = encodePayload({ type: 'all-tabs', cells: exportCells, labels: exportLabels })
         const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
         const modified = writePngText(bytes, 'plateup-v2-export', payload)
         downloadDataUrl(bytesToDataUrl(modified), `plateup-all-tabs-${exportTimestamp()}.png`)
@@ -1824,7 +1917,8 @@ export default {
           orientation: state.orientation,
           walls: state.walls || {},
           tabs: state.tabs,
-          gridCells: state.gridCells
+          gridCells: state.gridCells,
+          labels: state.labels || []
         })
         const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
         const modified = writePngText(bytes, 'plateup-v2-export', payload)
@@ -1840,13 +1934,7 @@ export default {
       return state.gridCells.length > 0 || Object.keys(state.walls || {}).length > 0
     }
 
-    async function handleUnifiedImport(event) {
-      const file = event.target.files?.[0]
-      if (!file) return
-      event.target.value = ''
-      try {
-        const bytes = await readFileAsBytes(file)
-
+    async function processImportBytes(bytes) {
         // ── Try new unified format first ──────────────────────────────────
         const v2raw = readPngText(bytes, 'plateup-v2-export') || await readStegoFromBytes(bytes, 'plateup-v2-export')
         if (v2raw) {
@@ -1858,9 +1946,9 @@ export default {
               alert('Switch to a coloured tab before importing appliances.')
               return
             }
-            const { cells } = payload
+            const { cells, labels } = payload
             if (!Array.isArray(cells) || cells.length === 0) { alert('No appliance data found in this file.'); return }
-            startPasteFromCells(cells)
+            startPasteFromCells({ cells, labels: labels || [] })
             return
           }
 
@@ -1878,7 +1966,7 @@ export default {
           }
 
           if (type === 'complete') {
-            const { roomWidth, roomHeight, orientation, walls, tabs, gridCells } = payload
+            const { roomWidth, roomHeight, orientation, walls, tabs, gridCells, labels } = payload
             if (!roomWidth || !roomHeight) { alert('Invalid complete export data.'); return }
             const dimChanged = roomWidth !== state.roomWidth || roomHeight !== state.roomHeight
             const dimNote = dimChanged ? `\n\nNote: the room will also be resized from ${state.roomWidth}×${state.roomHeight} to ${roomWidth}×${roomHeight}.` : ''
@@ -1889,6 +1977,7 @@ export default {
             state.walls = walls || {}
             state.tabs = tabs || JSON.parse(JSON.stringify([{ id: 'complete', label: 'Preview' }, { id: 'structure', label: 'Structure' }, { id: 'main', label: 'Base' }]))
             state.gridCells = gridCells || []
+            state.labels = labels || []
             // Switch to first user tab
             const firstUserTab = state.tabs.find(t => t.id !== 'complete' && t.id !== 'structure')
             state.activeTabId = firstUserTab?.id ?? 'main'
@@ -1942,8 +2031,43 @@ export default {
         }
 
         alert('No PlateUp Tool export data found in this image.')
+    }
+
+    async function handleUnifiedImport(event) {
+      const file = event.target.files?.[0]
+      if (!file) return
+      event.target.value = ''
+      try {
+        const bytes = await readFileAsBytes(file)
+        await processImportBytes(bytes)
       } catch (e) {
         alert('Failed to read import file: ' + e.message)
+      }
+    }
+
+    async function importFromClipboard() {
+      closeExportMenu()
+      try {
+        const clipItems = await navigator.clipboard.read()
+        let pngBlob = null
+        for (const item of clipItems) {
+          if (item.types.includes('image/png')) {
+            pngBlob = await item.getType('image/png')
+            break
+          }
+        }
+        if (!pngBlob) {
+          alert('No PNG image found in clipboard.\nCopy a PlateUp Tool export image first.')
+          return
+        }
+        const bytes = new Uint8Array(await pngBlob.arrayBuffer())
+        await processImportBytes(bytes)
+      } catch (e) {
+        if (e.name === 'NotAllowedError') {
+          alert('Clipboard access was denied. Please allow clipboard access and try again.')
+        } else {
+          alert('Failed to read from clipboard: ' + e.message)
+        }
       }
     }
 
@@ -2224,7 +2348,7 @@ export default {
       // unified export/import
       unifiedImportInput, triggerUnifiedImport, handleUnifiedImport,
       exportMenuVisible, exportMenuPos, showExportMenu, closeExportMenu, doExport, doExportClipboard,
-      loadFromMenu, copyLinkFromMenu,
+      loadFromMenu, copyLinkFromMenu, importFromClipboard,
       // selection export
       hasNonGhostSelection, exportSelectedToFile, exportSelectedToClipboard,
       // seed UI

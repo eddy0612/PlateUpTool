@@ -567,6 +567,12 @@ function selectAll() {
   try {
     const labelSet = new Set()
     for (const lbl of (state.labels || [])) {
+      const hasAnchor = lbl.anchorIid || (lbl.anchorX != null && lbl.anchorY != null)
+      if (!hasAnchor) {
+        // Unanchored labels are always selected by Ctrl+A
+        labelSet.add(lbl.id)
+        continue
+      }
       let anchorCellPos = null
       if (lbl.anchorIid) {
         for (const ci of flatGrid.value) {
@@ -574,8 +580,6 @@ function selectAll() {
         }
       } else if (lbl.anchorX != null && lbl.anchorY != null) {
         anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
-      } else if (lbl.x != null && lbl.y != null) {
-        anchorCellPos = { x: lbl.x, y: lbl.y }
       }
       if (anchorCellPos && isCellOnActiveTab(anchorCellPos.x, anchorCellPos.y)) labelSet.add(lbl.id)
     }
@@ -1052,6 +1056,9 @@ watch(selectedCells, (newSet) => {
   for (const id of selectedLabelIds.value) {
     const lbl = (state.labels || []).find(l => l.id === id)
     if (!lbl) continue
+    // Truly unanchored labels (no anchor line to any cell) are always kept
+    const isUnanchored = !lbl.anchorIid && lbl.anchorX == null && lbl.anchorY == null
+    if (isUnanchored) { next.add(id); continue }
     let anchorKey = null
     if (lbl.anchorIid) {
       const found = flatGrid.value.find(g => g.cell && g.cell.iid === lbl.anchorIid)
@@ -1165,6 +1172,27 @@ const pastePendingTargetMap = computed(() => {
     map.set(cellKey(pasteAnchor.value.x + dx, pasteAnchor.value.y + dy), cell)
   }
   return map
+})
+
+const pastePendingLabels = computed(() => {
+  if (!pastePending.value || !pasteAnchor.value) return []
+  const activeLabelBuf = duplicateMode.value ? duplicateBufferLabels.value : clipboardLabels.value
+  if (!activeLabelBuf || activeLabelBuf.length === 0) return []
+  return activeLabelBuf.map((entry, i) => {
+    const tx = pasteAnchor.value.x + entry.dxCell
+    const ty = pasteAnchor.value.y + entry.dyCell
+    const offsetX2 = entry.dx2 - entry.dxCell * 2
+    const offsetY2 = entry.dy2 - entry.dyCell * 2
+    const wasAnchored = entry.label.anchorIid || entry.label.anchorX != null || entry.label.anchorY != null
+    return {
+      id: '__paste_preview_' + i,
+      text: entry.label.text,
+      x2: tx * 2 + offsetX2,
+      y2: ty * 2 + offsetY2,
+      anchorX: wasAnchored ? tx : null,
+      anchorY: wasAnchored ? ty : null,
+    }
+  })
 })
 
 const isPasteValid = computed(() => {
@@ -1366,10 +1394,16 @@ function confirmPaste() {
           lbl.y2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, ty * 2 + offsetY2))
         }
       } else {
-        // Anchor to pasted absolute cell coords and preserve sub-cell offset
+        // No iid remap: translate position. Preserve unanchored state for labels that had no anchor.
         lbl.anchorIid = null
-        lbl.anchorX = tx
-        lbl.anchorY = ty
+        const wasAnchored = entry.label.anchorIid || entry.label.anchorX != null || entry.label.anchorY != null
+        if (wasAnchored) {
+          lbl.anchorX = tx
+          lbl.anchorY = ty
+        } else {
+          lbl.anchorX = null
+          lbl.anchorY = null
+        }
         lbl.x2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, tx * 2 + offsetX2))
         lbl.y2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, ty * 2 + offsetY2))
       }
@@ -1586,5 +1620,5 @@ function getTeleporterPairPos(x, y) {
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, hoverLabel, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, selectedLabelIds, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveSelectionBy, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal, skipLabelAnchorSync }
+  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, hoverLabel, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, selectedLabelIds, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveSelectionBy, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, pastePendingLabels, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal, skipLabelAnchorSync }
 }

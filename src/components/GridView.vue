@@ -84,6 +84,13 @@
             :style="getLabelStyle(lbl)">
             {{ lbl.text }}
           </div>
+          <!-- Label paste previews -->
+          <div v-for="lbl in pastePendingLabels" :key="lbl.id"
+            v-if="labelDisplayMode !== 2"
+            class="planner-label label-paste-preview"
+            :style="getLabelStyle(lbl)">
+            {{ lbl.text }}
+          </div>
         </div>
         </div>
       </div>
@@ -278,7 +285,7 @@ export default {
       moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab,
       startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected,
       copyToClipboard, cutToClipboard,
-      pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste,
+      pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, pastePendingLabels,
       tabHasVisibleItems, deleteTabItems,
       isStructureMode, selectedStructureTool, getWallEdge, setWallEdge, clearWallEdge,
       loadGridFromState,
@@ -1360,120 +1367,10 @@ export default {
       }
       try {
         const bytes = await readFileAsBytes(file)
-        function decodePayload(raw) {
-          return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0))))
-        }
-
-        // ── Detect file type first so we can confirm before doing anything ─
-        const v2raw = readPngText(bytes, 'plateup-v2-export') || await readStegoFromBytes(bytes, 'plateup-v2-export')
-        let fileDesc = null
-        let v2payload = null
-        if (v2raw) {
-          v2payload = decodePayload(v2raw)
-          const { type } = v2payload
-          if (type === 'tab' || type === 'all-tabs') fileDesc = 'appliance design'
-          else if (type === 'structure') fileDesc = 'structure'
-          else if (type === 'complete') fileDesc = 'complete export (structure + appliances)'
-        } else if (readPngText(bytes, 'plateup-design')) {
-          fileDesc = 'appliance design'
-        } else if (readPngText(bytes, 'plateup-structure')) {
-          fileDesc = 'structure'
-        } else if (readPngText(bytes, 'plateup-blueprint')) {
-          alert('This is a blueprint file — use Import Blueprint in the Blueprints palette tab.')
-          return
-        } else {
-          alert('No PlateUp Tool export data found in this image.')
-          return
-        }
-
-        if (!window.confirm(`This file contains a ${fileDesc}.\n\nWould you like to import it?`)) return
-
-        // ── New unified format ────────────────────────────────────────────
-        if (v2payload) {
-          const { type } = v2payload
-
-          if (type === 'tab' || type === 'all-tabs') {
-            if (state.activeTabId === 'complete' || state.activeTabId === 'structure') {
-              alert('Switch to a coloured tab before importing appliances.')
-              return
-            }
-            const { cells } = v2payload
-            if (!Array.isArray(cells) || cells.length === 0) { alert('No appliance data found in this file.'); return }
-            startPasteFromCells(cells)
-            return
-          }
-
-          if (type === 'structure') {
-            const { roomWidth, roomHeight, walls } = v2payload
-            if (!roomWidth || !roomHeight) { alert('Invalid structure data.'); return }
-            if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) {
-              alert(`Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.\nResize the room to match before importing.`)
-              return
-            }
-            const hasWalls = Object.keys(state.walls || {}).length > 0
-            if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Would you like to continue?')) return
-            state.walls = walls || {}
-            return
-          }
-
-          if (type === 'complete') {
-            const { roomWidth, roomHeight, orientation, walls, tabs, gridCells } = v2payload
-            if (!roomWidth || !roomHeight) { alert('Invalid complete export data.'); return }
-            const dimChanged = roomWidth !== state.roomWidth || roomHeight !== state.roomHeight
-            const dimNote = dimChanged ? `\n\nNote: the room will also be resized from ${state.roomWidth}×${state.roomHeight} to ${roomWidth}×${roomHeight}.` : ''
-            if ((state.gridCells.length > 0 || Object.keys(state.walls || {}).length > 0) &&
-                !window.confirm(`This will replace ALL current structure and appliances. All your current design will be lost.${dimNote}\n\nWould you like to continue?`)) return
-            state.roomWidth = roomWidth
-            state.roomHeight = roomHeight
-            state.orientation = orientation ?? 0
-            state.walls = walls || {}
-            state.tabs = tabs || JSON.parse(JSON.stringify([{ id: 'complete', label: 'Preview' }, { id: 'structure', label: 'Structure' }, { id: 'main', label: 'Base' }]))
-            state.gridCells = gridCells || []
-            const firstUserTab = state.tabs.find(t => t.id !== 'complete' && t.id !== 'structure')
-            state.activeTabId = firstUserTab?.id ?? 'main'
-            loadGridFromState()
-            return
-          }
-
-          alert('Unknown export type in this file.')
-          return
-        }
-
-        // ── Legacy plateup-design ─────────────────────────────────────────
-        const legacyDesign = readPngText(bytes, 'plateup-design')
-        if (legacyDesign) {
-          if (state.activeTabId === 'complete' || state.activeTabId === 'structure') {
-            alert('Switch to a coloured tab before importing appliances.')
-            return
-          }
-          const parsed = decodeState(legacyDesign)
-          if (!parsed?.gridCells?.length) { alert('Invalid or empty design data.'); return }
-          let minX = Infinity, minY = Infinity
-          for (const c of parsed.gridCells) { if (c.x < minX) minX = c.x; if (c.y < minY) minY = c.y }
-          const cells = parsed.gridCells.map(c => ({
-            dx: c.x - minX, dy: c.y - minY,
-            cell: { applianceId: c.applianceId, rotation: c.rotation ?? 0, extraData: c.extraData ?? 0, tabIds: [] }
-          }))
-          startPasteFromCells(cells)
-          return
-        }
-
-        // ── Legacy plateup-structure ──────────────────────────────────────
-        const legacyStructure = readPngText(bytes, 'plateup-structure')
-        if (legacyStructure) {
-          const { roomWidth, roomHeight, walls } = decodePayload(legacyStructure)
-          if (!roomWidth || !roomHeight) { alert('Invalid structure data.'); return }
-          if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) {
-            alert(`Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.\nResize the room to match before importing.`)
-            return
-          }
-          const hasWalls = Object.keys(state.walls || {}).length > 0
-          if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Would you like to continue?')) return
-          state.walls = walls || {}
-          return
-        }
-      } catch (err) {
-        alert('Failed to read import file: ' + err.message)
+        // Route through the single shared import handler in AppliancePalette
+        window.dispatchEvent(new CustomEvent('plateup-import-bytes', { detail: { bytes } }))
+      } catch (e) {
+        alert('Failed to read file: ' + e.message)
       }
     }
     // --- End file drag-and-drop import ---
@@ -1486,7 +1383,6 @@ export default {
       // Listen for teleporter toggle events from App
       const teleHandler = (ev) => { try { showTeleporterLinesAlways.value = !!ev.detail } catch (e) {} }
       window.addEventListener('teleporter-lines-changed', teleHandler)
-      // keep a ref to remove later
       window.__teleHandlerGridView = teleHandler
       // Initialize label display mode from localStorage and listen for changes
       try { labelDisplayMode.value = Number(localStorage.getItem('labelDisplayMode') || '0') } catch (e) {}
@@ -1952,6 +1848,7 @@ export default {
 .dark .planner-label { border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 6px 14px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.03); }
 .planner-label.label-selected { border: 2px dashed #000000; box-shadow: none; transform: none; z-index: 80 }
 .dark .planner-label.label-selected { border: 2px dashed #000000; outline: 2px solid rgba(255,255,255,0.12); box-shadow: 0 0 0 2px rgba(255,255,255,0.03); z-index: 80 }
+.planner-label.label-paste-preview { opacity: 0.6; pointer-events: none; border: 1px dashed rgba(43,136,255,0.7); box-shadow: 0 0 0 1px rgba(43,136,255,0.25); }
 .teleporter-pair-number {
   position: absolute;
   inset: 0;
