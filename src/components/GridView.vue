@@ -134,7 +134,10 @@
         </div>
       </div>
       <div class="toolbox-box" title="Toolbox (mouse-friendly controls)">
-        <div class="toolbox" role="toolbar" aria-label="Touch toolbox">
+          <div class="toolbox" role="toolbar" aria-label="Touch toolbox">
+          <button class="toolbox-button" data-help-id="undo" @click="doUndo" title="Undo — revert previous design">
+            ↶
+          </button>
           <button class="toolbox-button" data-help-id="cut" @click="cutToClipboard" title="Cut selection — Ctrl+X">
             <span class="toolbox-char" aria-hidden="true">✂</span>
           </button>
@@ -577,6 +580,9 @@ export default {
         setPasteAnchor(parseInt(el.dataset.x), parseInt(el.dataset.y))
       }
     }
+    function doUndo() {
+      try { window.dispatchEvent(new Event('plateup-undo')) } catch (e) {}
+    }
     watch(pastePending, (val) => {
       if (val) window.addEventListener('mousemove', onPasteMouseMove)
       else window.removeEventListener('mousemove', onPasteMouseMove)
@@ -993,6 +999,7 @@ export default {
     const helpActive = ref(false)
     // overlaySize unused with single-modal help
     const helpItems = [
+    { id: 'undo', title: 'Undo', desc: 'Revert previous change.' },
       { id: 'cut', title: 'Cut', desc: 'Remove selection and copy to clipboard.' },
       { id: 'copy', title: 'Copy', desc: 'Copy selection to clipboard.' },
       { id: 'paste', title: 'Paste', desc: 'Paste clipboard contents into grid.' },
@@ -1038,6 +1045,7 @@ export default {
         case 'rotate-right': return '<span class="hp-char">⟳</span>'
         case 'flip-h': return '<span class="hp-char" style="display:inline-block;transform:rotate(90deg)">⇋</span>'
         case 'flip-v': return '<span class="hp-char">⇋</span>'
+        case 'undo': return '<span class="hp-char">↶</span>'
         case 'delete': return '<span class="hp-char">🗑</span>'
         case 'help': return '<span class="hp-char">?</span>'
         case 'dark-mode':
@@ -1735,7 +1743,7 @@ export default {
       tabContextMenuVisible, tabContextMenuPos, tabDeleteConfirmVisible,
       onTabContextMenu, closeTabContextMenu, doTabContextRename, doTabContextDelete,
       cancelTabDeleteConfirm, confirmTabDelete,
-      pastePending,
+      pastePending, pastePendingLabels,
       isStructureMode, getWallEdge,
       getTabColorClass, getApplianceBgStyle,
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
@@ -1746,6 +1754,7 @@ export default {
       boxSelectArmed, armBoxSelect,
       // Help overlay API
       helpActive, toggleHelp, hideHelp, helpItems, helpIcon, isDark,
+      doUndo,
       fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
     }
   }
