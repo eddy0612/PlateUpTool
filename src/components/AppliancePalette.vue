@@ -1642,7 +1642,7 @@ export default {
         }
       } catch (e) {}
 
-      const preview = await generateBlueprintPreview(previewCells, 80, labelsForPreview)
+      const preview = await generateBlueprintPreview(previewCells, 80, labelsForPreview, false)
       const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: exportCells, labels: exportLabels })
       const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
       const modified = writePngText(bytes, 'plateup-v2-export', payload)
