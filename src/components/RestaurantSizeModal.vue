@@ -192,4 +192,14 @@ html.dark .custom-inputs input { background: #071029; color: #e6f0ff; border: 1p
 html.dark .custom-confirm { background: #2563eb }
 html.dark .floor-preview .outer { stroke: #7da7ff; stroke-width: 0.7; fill: #071029 }
 html.dark .floor-preview .grid-lines line { stroke: #9aa7b8; stroke-opacity: 0.85; stroke-width: 0.14 }
+html.dark .floor-preview .grid-lines rect { fill: #9aa7b8; fill-opacity: 0.85 }
+/* Also ensure any path elements used for grid lines are light in dark mode
+   (covers SVG variants that draw grid lines with <path> elements or different classes). */
+html.dark .floor-preview .grid-lines path,
+html.dark .floor-preview .grid-lines * {
+  stroke: #9aa7b8 !important;
+  stroke-opacity: 0.85 !important;
+  fill: #9aa7b8 !important;
+  fill-opacity: 0.85 !important;
+}
 </style>

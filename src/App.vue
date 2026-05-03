@@ -535,6 +535,16 @@ export default {
 * { box-sizing: border-box }
 html, body { margin: 0; font-family: sans-serif; overflow: hidden; height: 100%; }
 html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
+/* Ensure inline SVG icons with class hp-svg follow dark-mode text color */
+html.dark svg.hp-svg { color: #d0daea }
+html.dark svg.hp-svg path,
+html.dark svg.hp-svg rect,
+html.dark svg.hp-svg line,
+html.dark svg.hp-svg circle,
+html.dark svg.hp-svg * {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
 </style>
 
 <style scoped>
