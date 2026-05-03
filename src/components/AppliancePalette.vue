@@ -694,12 +694,6 @@ export default {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
               ctx.save()
-              ctx.fillStyle = '#000'
-              ctx.globalAlpha = 0.6
-              const r = Math.floor(CELL_PX * 0.35)
-              ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill()
-              ctx.restore()
-              ctx.save()
               ctx.fillStyle = '#fff'
               ctx.font = `700 ${Math.floor(CELL_PX * 0.45)}px sans-serif`
               ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
@@ -732,12 +726,6 @@ export default {
             if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
-              ctx.save()
-              ctx.fillStyle = '#000'
-              ctx.globalAlpha = 0.6
-              const r = Math.floor(CELL_PX * 0.35)
-              ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill()
-              ctx.restore()
               ctx.save()
               ctx.fillStyle = '#fff'
               ctx.font = `700 ${Math.floor(CELL_PX * 0.45)}px sans-serif`
@@ -1293,12 +1281,6 @@ export default {
             if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
-              ctx.save()
-              ctx.fillStyle = '#000'
-              ctx.globalAlpha = 0.6
-              const r = Math.floor(CELL_PX * 0.35)
-              ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill()
-              ctx.restore()
               ctx.save()
               ctx.fillStyle = '#fff'
               ctx.font = `700 ${Math.floor(CELL_PX * 0.45)}px sans-serif`
