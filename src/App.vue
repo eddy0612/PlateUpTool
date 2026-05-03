@@ -368,12 +368,12 @@ export default {
       }
     }
     const readUndo = () => { try { return JSON.parse(sessionStorage.getItem(UNDO_KEY) || '[]') } catch (e) { return [] } }
-    const writeUndo = (arr) => { try { sessionStorage.setItem(UNDO_KEY, JSON.stringify(arr)); console.log('[UNDO] write: depth=' + (arr && arr.length ? arr.length : 0)) } catch (e) {} }
+    const writeUndo = (arr) => { try { sessionStorage.setItem(UNDO_KEY, JSON.stringify(arr)) } catch (e) {} }
     // initialize undo stack with current snapshot
     try {
       const init = readUndo()
       const curSnap = JSON.stringify(buildFullSnapshot())
-      if (init.length === 0 || init[init.length - 1] !== curSnap) { init.push(curSnap); console.log('[UNDO] init push: depth=' + init.length); writeUndo(init.slice(-MAX_UNDO)) }
+      if (init.length === 0 || init[init.length - 1] !== curSnap) { init.push(curSnap); writeUndo(init.slice(-MAX_UNDO)) }
     } catch (e) {}
 
     // Guard used to skip recording snapshots while we're restoring a previous state
@@ -387,7 +387,6 @@ export default {
         if (!stack.length || stack[stack.length - 1] !== cur) {
           stack.push(cur)
           writeUndo(stack.slice(-MAX_UNDO))
-          console.log('[UNDO] push: depth=' + stack.length)
         }
       } catch (e) {}
       syncToHash()
@@ -413,7 +412,6 @@ export default {
         // Reset undo stack when a new URL/state is loaded
         try {
           const snap = JSON.stringify(buildFullSnapshot())
-          console.log('[UNDO] reset to single snapshot')
           writeUndo([snap])
         } catch (e) {}
         // Ensure the size modal reflects the newly loaded state. If the loaded
@@ -455,7 +453,7 @@ export default {
         localStorage.setItem('labelDisplayMode', '0')
       } catch (e) {}
       // Clear undo stack when starting again
-      try { console.log('[UNDO] cleared'); writeUndo([]) } catch (e) {}
+      try { writeUndo([]) } catch (e) {}
       // Navigate to the base URL (remove hash and query) without adding a history entry
       window.location.replace(window.location.origin + window.location.pathname)
     }
@@ -467,7 +465,6 @@ export default {
         if (!stack || stack.length <= 1) { return }
         // remove current state snapshot
         stack.pop()
-        console.log('[UNDO] pop: new depth=' + stack.length)
         const prev = stack[stack.length - 1]
         if (!prev) { return }
         // write back truncated stack (we keep previous as current)
