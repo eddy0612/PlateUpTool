@@ -281,7 +281,12 @@ export default {
     const showCopiedToast = ref(false)
     const showFeedbackModal = ref(false)
     const darkMode = ref(localStorage.getItem('darkMode') === 'true')
-    const teleporterLines = ref(localStorage.getItem('teleporterLines') === '1')
+    // Ensure teleporterLines defaults to visible (true) when not set
+    let _teleporterLines = localStorage.getItem('teleporterLines')
+    if (_teleporterLines === null) { try { localStorage.setItem('teleporterLines', '1') } catch (e) {} _teleporterLines = '1' }
+    const teleporterLines = ref(_teleporterLines === '1')
+    // Ensure labelDisplayMode key exists; default to 0 (lines + text)
+    if (localStorage.getItem('labelDisplayMode') === null) { try { localStorage.setItem('labelDisplayMode', '0') } catch (e) {} }
     const labelDisplayMode = ref(Number(localStorage.getItem('labelDisplayMode') || '0'))
 
 
@@ -342,6 +347,11 @@ export default {
       document.documentElement.classList.toggle('dark', darkMode.value)
       loadFromHash()
       loadGridFromState()
+      // Broadcast current visibility preferences so components render consistently
+      try {
+        window.dispatchEvent(new CustomEvent('teleporter-lines-changed', { detail: teleporterLines.value }))
+        window.dispatchEvent(new CustomEvent('label-display-mode-changed', { detail: labelDisplayMode.value }))
+      } catch (e) {}
       if (!hasTutorialBeenSeen()) {
         showTutorial.value = true
       } else if (isDefaultState()) {
@@ -367,6 +377,11 @@ export default {
         const confirmed = window.confirm('This will discard any unsaved changes and reset the planner. Continue?')
         if (!confirmed) return
       }
+      // Ensure visibility prefs are set to defaults before reloading
+      try {
+        localStorage.setItem('teleporterLines', '1')
+        localStorage.setItem('labelDisplayMode', '0')
+      } catch (e) {}
       // Navigate to the base URL (remove hash and query) without adding a history entry
       window.location.replace(window.location.origin + window.location.pathname)
     }
