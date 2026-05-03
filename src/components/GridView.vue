@@ -62,8 +62,16 @@
               :x1="line.x1" :y1="line.y1" :x2="line.x2" :y2="line.y2"
               stroke="#2b88ff"
               stroke-width="1.6"
+              stroke-dasharray="6,4"
               stroke-linecap="round"
               opacity="0.9"
+            />
+            <circle
+              v-for="(line, i) in labelAnchorLines"
+              :key="'lbdot-' + i"
+              :cx="line.x1" :cy="line.y1" :r="line.r"
+              :fill="'#2b88ff'"
+              opacity="0.95"
             />
           </svg>
           <!-- Label overlays (above grid items) -->
@@ -1207,6 +1215,7 @@ export default {
       const cx = x => x * (tw + 2) + tw / 2
       const cy = y => y * (th + 2) + th / 2
       const labels = state.labels || []
+      const dotRadius = Math.max(2, Math.round(cs * 0.09))
       for (const lbl of labels) {
         // resolve anchor position: prefer appliance instance id if present
         let anchorCellPos = null
@@ -1237,7 +1246,7 @@ export default {
         // If label visually overlaps the anchor center (within 6px), skip drawing line
         const dx = lx - ax, dy = ly - ay
         if (Math.sqrt(dx * dx + dy * dy) <= 6) continue
-        lines.push({ x1: ax, y1: ay, x2: lx, y2: ly })
+        lines.push({ x1: ax, y1: ay, x2: lx, y2: ly, r: dotRadius })
       }
       return lines
     })
