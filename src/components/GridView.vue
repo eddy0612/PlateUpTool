@@ -127,10 +127,7 @@
     <div class="controls-with-status">
       <div class="controls-right">
         <div class="controls">
-          <div class="control-zoom">
-            <label>Zoom {{ (state.zoom * 100).toFixed(0) }}%</label>
-            <input type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom" />
-          </div>
+          <!-- Zoom slider moved to the palette side-controls (no text) -->
         </div>
       </div>
       <div class="toolbox-box" title="Toolbox (mouse-friendly controls)">
@@ -1961,12 +1958,12 @@ export default {
 /* Ensure Base tab (tab-user-0) matches the grid appliance background in dark mode */
 .dark .tab-user-0 { background: #2e3340; border-color: #5a6070; }
 .dark .tab-user-0.active { background: #363c4a; border-color: #6a7080; }
-.controls-with-status { display: flex; flex-direction: row; align-items: center; gap: 8px; }
+.controls-with-status { display: flex; flex-direction: row; align-items: center; gap: 8px; justify-content: center; }
 .controls-right { display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
 .controls { display: flex; gap: 18px; align-items: center; }
 .size-status-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .control-compass, .control-mode, .control-zoom, .control-size { display: flex; align-items: center; gap: 6px }
-.control-zoom { min-width: 320px; display: flex; align-items: center; gap: 6px }
+.control-zoom { display: none }
 .control-zoom input[type="range"] { flex: 1; width: auto; max-width: none }
 .compass { display: inline-block; transition: transform 0.2s }
 .tab-rename-input {
@@ -2072,8 +2069,7 @@ export default {
 .grid-item.group-flash {
   animation: group-flash-red 0.4s ease-out;
 }
-/* Toolbox (right of status area) */
-.toolbox-box { margin-left: auto; display:flex; align-items:center; padding:6px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9 }
+.toolbox-box { margin: 0 auto; display:flex; align-items:center; padding:6px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9 }
 .dark .toolbox-box { background: #1e2629; border-color: #33393d }
 .toolbox { display:flex; gap:8px; align-items:center; }
 .toolbox-button {

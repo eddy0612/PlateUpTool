@@ -794,11 +794,12 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
   align-items: flex-start;
 }
 
-/* Palette column + toolbox (palette toolbox sits below the palette, right-aligned) */
 .palette-column { display:flex; flex-direction:column; gap:8px; align-items:stretch }
-  .palette-toolbox-box { margin-left: auto; display:flex; align-items:center; padding:5px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9; }
+.palette-toolbox-box { display:flex; align-items:center; padding:5px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9; width: 100%; box-sizing: border-box }
 .dark .palette-toolbox-box { background: #1e2629; border-color: #33393d }
 .palette-toolbox { display:flex; gap:8px; align-items:center }
+.palette-toolbox::before, .palette-toolbox::after { content: ''; flex: 1 1 auto }
+.palette-toolbox > * { flex: 0 0 auto }
 .palette-toolbox .toolbox-button { background: #fff; border: 1px solid #c8d6e8; border-radius: 6px; padding: 8px 10px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 0 rgba(0,0,0,0.03); color: #21313a; display: inline-flex; align-items: center; justify-content: center }
 .toolbox-icon { width: 22px; height: 22px; display: block }
 .dark .palette-toolbox .toolbox-button { background: #2b3338; border-color: #444d55; color: #eef6f1 }
@@ -815,8 +816,8 @@ html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
 .palette-toolbox .toolbox-button--teleporter .toolbox-icon { width: 100%; height: 100% }
 .dark .palette-toolbox .toolbox-button--teleporter { background: #2b3338; border-color: #444d55; color: #eef6f1 }
 /* Room size button inside palette toolbox */
-.palette-toolbox .toolbox-button--size { gap: 6px; padding: 7px 11px; }
-.toolbox-size-text { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
+.palette-toolbox .toolbox-button--size { gap: 6px; padding: 8px 12px; }
+.toolbox-size-text { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; min-width: 56px; text-align: center }
 
 </style>
 

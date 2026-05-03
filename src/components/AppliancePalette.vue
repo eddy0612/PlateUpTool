@@ -170,6 +170,17 @@
         <!-- Clipboard controls moved to the left-panel toolbox for touch/mouse use -->
 
         <div class="palette-status-bar">{{ hoverLabel }}</div>
+        <div class="palette-zoom-row">
+          <span class="palette-zoom-icon" role="button" tabindex="0" title="Reset zoom to 100%" @click="resetZoom" @keydown.enter="resetZoom" @keydown.space.prevent="resetZoom">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" stroke="#3a5070" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 21l-4.3-4.3" stroke="#3a5070" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <input class="palette-zoom" type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom"
+            :title="`Zoom ${Math.round(state.zoom * 100)}%`"
+            :aria-valuetext="`${Math.round(state.zoom * 100)}%`" />
+        </div>
       </div>
         <!-- Palette toolbox moved to App layout (below the palette) -->
       </div>
@@ -240,6 +251,10 @@ export default {
     ]
 
     const isPreviewTab = computed(() => state.activeTabId === 'complete')
+
+    function resetZoom() {
+      try { state.zoom = 1.0 } catch (e) { /* ignore */ }
+    }
 
     const filteredPalette = computed(() => {
       const q = state.filterText.trim().toLowerCase()
@@ -2337,6 +2352,8 @@ export default {
       seedValue, seedStatus, seedLoading, loadSeed, onSeedInput,
       seeds, filteredSeedOptions, seedSuggestionsOpen, applySuggestion,
       selectedSuggestionIndex, onSeedKeydown, onSeedBlur, openSeedSuggestions, seedSuggestionStyle,
+      // zoom helper
+      resetZoom,
       // palette toolbox state removed (handled in App)
     }
   }
@@ -2463,6 +2480,12 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Zoom slider placed below the palette status bar (no text label) */
+.palette-zoom-row { margin-top: 6px; display:flex; align-items:center; gap:8px }
+.palette-zoom-icon { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; flex:0 0 20px; cursor: pointer }
+.palette-zoom-icon svg path { stroke: #3a5070 }
+.palette-zoom-icon:hover svg path { stroke: #1f79ff }
+.palette-zoom { width: 100%; height: 26px }
 .bp-import-btn {
   width: 100%;
   padding: 5px 8px;
