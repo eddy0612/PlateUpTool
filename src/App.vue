@@ -350,6 +350,13 @@ export default {
       window.addEventListener('hashchange', () => {
         loadFromHash()
         loadGridFromState()
+        // Ensure the size modal reflects the newly loaded state. If the loaded
+        // state is the default (new restaurant) show the modal, otherwise hide it.
+        try {
+          showSizeModal.value = isDefaultState()
+        } catch (e) {
+          showSizeModal.value = false
+        }
       })
       window.addEventListener('plateup-copy-link', copyUrl)
     })
