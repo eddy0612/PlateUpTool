@@ -228,8 +228,8 @@ export default {
   name: 'AppliancePalette',
   setup() {
     const { state } = useRestaurantStore()
-    const { palette } = useAppliancePalette()
-    const { addToGrid, hoverLabel, viewportBoxHeight, removeSelected, selectedCells, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState, getTeleporterPairPos } = useGrid()
+    const { palette, loading } = useAppliancePalette()
+    const { addToGrid, hoverLabel, viewportBoxHeight, removeSelected, selectedCells, selectedLabelIds, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState, getTeleporterPairPos } = useGrid()
 
     const structureTools = [
       { id: 'wall',    label: 'Wall',    description: 'Full-height wall' },
@@ -430,8 +430,9 @@ export default {
         if (!dragStarted) {
           const dx = e.clientX - startX
           const dy = e.clientY - startY
-          if (Math.sqrt(dx * dx + dy * dy) > 5) {
+          if (Math.sqrt(dx * dx + dy * dy) > 6) {
             dragStarted = true
+            suppressNextClick.value = true
             startPaletteDrag(item)
           }
         }
@@ -461,6 +462,26 @@ export default {
       try { localStorage.setItem(LS_BLUEPRINTS_KEY, JSON.stringify(blueprints.value)) } catch {}
     }
 
+    // Ensure loaded blueprints have up-to-date previews (including labels)
+    onMounted(async () => {
+      // Wait for palette to finish loading so icons are available
+      try {
+        if (loading && loading.value) {
+          await new Promise(resolve => {
+            const stop = watch(loading, v => {
+              if (!v) { stop(); resolve() }
+            })
+          })
+        }
+      } catch (e) {}
+
+      for (const bp of blueprints.value || []) {
+        try {
+          bp.preview = await generateBlueprintPreview(bp.cells || [], 40, bp.labels || [])
+        } catch (e) {}
+      }
+    })
+
     const filteredBlueprints = computed(() => {
       const q = blueprintFilter.value.trim().toLowerCase()
       if (!q) return blueprints.value
@@ -468,28 +489,135 @@ export default {
     })
 
     // Generate a small thumbnail image for a set of blueprint cells.
-    async function generateBlueprintPreview(cells, cellPx = 40) {
+    async function generateBlueprintPreview(cells, cellPx = 40, labels = [], useBlueprintBg = true) {
       if (!cells.length) return null
-      const maxDx = Math.max(...cells.map(c => c.dx))
-      const maxDy = Math.max(...cells.map(c => c.dy))
+      let maxDx = Math.max(...cells.map(c => c.dx))
+      let maxDy = Math.max(...cells.map(c => c.dy))
+      let minDx = Math.min(...cells.map(c => c.dx))
+      let minDy = Math.min(...cells.map(c => c.dy))
+
+      // Normalize incoming labels and expand min/max to include label positions
+      const labelsForDraw = []
+      try {
+        if (Array.isArray(labels) && labels.length) {
+          for (const lbl of labels) {
+            try {
+              // blueprint-style: { dxCell, dyCell, dx2, dy2, label }
+              if (lbl && (lbl.dx2 != null || lbl.dxCell != null)) {
+                const absX2 = (lbl.dx2 != null) ? lbl.dx2 : (lbl.label && lbl.label.x2 != null ? lbl.label.x2 : 0)
+                const absY2 = (lbl.dy2 != null) ? lbl.dy2 : (lbl.label && lbl.label.y2 != null ? lbl.label.y2 : 0)
+                const absAx = (lbl.dxCell != null) ? lbl.dxCell : (lbl.label && lbl.label.anchorX != null ? lbl.label.anchorX : 0)
+                const absAy = (lbl.dyCell != null) ? lbl.dyCell : (lbl.label && lbl.label.anchorY != null ? lbl.label.anchorY : 0)
+                const text = (lbl.label && lbl.label.text) || lbl.text || ''
+                // expand bounds
+                const cellX = Math.floor(absX2 / 2)
+                const cellY = Math.floor(absY2 / 2)
+                if (!isNaN(cellX)) { maxDx = Math.max(maxDx, cellX); minDx = Math.min(minDx, cellX) }
+                if (!isNaN(cellY)) { maxDy = Math.max(maxDy, cellY); minDy = Math.min(minDy, cellY) }
+                labelsForDraw.push({ x2: absX2, y2: absY2, anchorDx: absAx, anchorDy: absAy, text })
+                continue
+              }
+              // preview-style: { x2, y2, anchorDx, anchorDy, text }
+              const absX2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : 0)
+              const absY2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : 0)
+              const absAx = (lbl.anchorDx != null) ? lbl.anchorDx : (lbl.anchorX != null ? lbl.anchorX : 0)
+              const absAy = (lbl.anchorDy != null) ? lbl.anchorDy : (lbl.anchorY != null ? lbl.anchorY : 0)
+              const text = lbl.text || ''
+              const cellX = Math.floor(absX2 / 2)
+              const cellY = Math.floor(absY2 / 2)
+              if (!isNaN(cellX)) { maxDx = Math.max(maxDx, cellX); minDx = Math.min(minDx, cellX) }
+              if (!isNaN(cellY)) { maxDy = Math.max(maxDy, cellY); minDy = Math.min(minDy, cellY) }
+              labelsForDraw.push({ x2: absX2, y2: absY2, anchorDx: absAx, anchorDy: absAy, text })
+            } catch (e) {}
+          }
+        }
+      } catch (e) {}
       const CELL_PX = cellPx
-      const PAD = 3
-      const canvasW = (maxDx + 1) * CELL_PX + PAD * 2
-      const canvasH = (maxDy + 1) * CELL_PX + PAD * 2
+      const BASE_PAD = 3
+
+      // Measure labels to compute extra padding so text isn't clipped
+      let padLeft = BASE_PAD, padRight = BASE_PAD, padTop = BASE_PAD, padBottom = BASE_PAD
+      try {
+        if (Array.isArray(labels) && labels.length) {
+          const measureCanvas = document.createElement('canvas')
+          const mctx = measureCanvas.getContext('2d')
+          const fontSize = Math.max(10, Math.floor(cellPx * 0.28))
+          mctx.font = `${fontSize}px sans-serif`
+          const padX = 6, padY = 4
+          const contentW = cols * CELL_PX
+          const contentH = rows * CELL_PX
+          let minXpx = Infinity, maxXpx = -Infinity, minYpx = Infinity, maxYpx = -Infinity
+          for (const lbl of labelsForDraw) {
+            try {
+              const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : 0)
+              const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : 0)
+              const lx = ((x2 / 2 - minDx) + 0.5) * CELL_PX
+              const ly = ((y2 / 2 - minDy) + 0.5) * CELL_PX
+              const tw = Math.ceil(mctx.measureText(String(lbl.text || '')).width)
+              const bw = tw + padX * 2
+              const bh = fontSize + padY * 2
+              minXpx = Math.min(minXpx, lx - bw / 2)
+              maxXpx = Math.max(maxXpx, lx + bw / 2)
+              minYpx = Math.min(minYpx, ly - bh / 2)
+              maxYpx = Math.max(maxYpx, ly + bh / 2)
+            } catch (e) {}
+          }
+          if (minXpx !== Infinity) {
+            if (minXpx < 0) padLeft += Math.ceil(-minXpx)
+            if (maxXpx > contentW) padRight += Math.ceil(maxXpx - contentW)
+            if (minYpx < 0) padTop += Math.ceil(-minYpx)
+            if (maxYpx > contentH) padBottom += Math.ceil(maxYpx - contentH)
+          }
+        }
+      } catch (e) {}
+
+      const cols = maxDx - minDx + 1
+      const rows = maxDy - minDy + 1
+      const canvasW = cols * CELL_PX + padLeft + padRight
+      const canvasH = rows * CELL_PX + padTop + padBottom
 
       const offscreen = document.createElement('canvas')
       offscreen.width  = canvasW
       offscreen.height = canvasH
       const ctx = offscreen.getContext('2d')
-      // Always use the light-mode blue 'blueprint' background for previews/exports
-      ctx.fillStyle = '#cce7ff'
+      // Background: blueprint-only or theme-aware when not exporting blueprints
+      const isDark = document.documentElement.classList.contains('dark')
+      if (useBlueprintBg) {
+        ctx.fillStyle = '#cce7ff'
+      } else {
+        ctx.fillStyle = isDark ? '#1e2738' : '#e8eef8'
+      }
       ctx.fillRect(0, 0, canvasW, canvasH)
 
-      await Promise.all(cells.map(({ dx, dy, cell }) => new Promise(resolve => {
-        const entry = palette.value.find(a => a.id === cell.applianceId)
+      // Draw cell dividers (vertical and horizontal) so exported PNGs show the grid
+      try {
+        ctx.save()
+        ctx.strokeStyle = '#4a90d9'
+        ctx.lineWidth = 1
+        for (let x = 0; x <= cols; x++) {
+          ctx.beginPath()
+          ctx.moveTo(padLeft + x * CELL_PX, padTop)
+          ctx.lineTo(padLeft + x * CELL_PX, padTop + rows * CELL_PX)
+          ctx.stroke()
+        }
+        for (let y = 0; y <= rows; y++) {
+          ctx.beginPath()
+          ctx.moveTo(padLeft, padTop + y * CELL_PX)
+          ctx.lineTo(padLeft + cols * CELL_PX, padTop + y * CELL_PX)
+          ctx.stroke()
+        }
+        ctx.restore()
+      } catch (e) {}
+
+      // shift cells so minDx/minDy become 0
+      const localCells = cells.map(c => ({ dx: c.dx - minDx, dy: c.dy - minDy, cell: { ...c.cell } }))
+
+      await Promise.all(localCells.map(({ dx, dy, cell }) => new Promise(resolve => {
+        // match palette id loosely to tolerate string/number mismatches from older blueprints
+        const entry = palette.value.find(a => a.id == cell.applianceId)
         const iconSrc = entry?.icon2D || entry?.icon
-        const cx = PAD + dx * CELL_PX
-        const cy = PAD + dy * CELL_PX
+        const cx = padLeft + dx * CELL_PX
+        const cy = padTop + dy * CELL_PX
 
         if (!iconSrc || !isImageIcon(iconSrc)) {
           ctx.fillStyle = '#dde3ea'
@@ -574,28 +702,97 @@ export default {
           ctx.lineWidth = 2
           ctx.setLineDash([7,4])
           const seen = new Set()
-          const cx = x => PAD + x * CELL_PX + CELL_PX / 2
-          const cy = y => PAD + y * CELL_PX + CELL_PX / 2
-          // cells here are relative (dx, dy)
-          for (const a of cells) {
+          const cxp = x => padLeft + x * CELL_PX + CELL_PX / 2
+          const cyp = y => padTop + y * CELL_PX + CELL_PX / 2
+          // use localCells (shifted) for connector drawing
+          for (const a of localCells) {
             const x = a.dx, y = a.dy
             const cell = a.cell
             if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
               // find partner within blueprint
-              const partner = cells.find(c => (c.cell?.applianceId === 315) && (c.cell.extraData || 0) === cell.extraData && (c.dx !== x || c.dy !== y))
+              const partner = localCells.find(c => (c.cell?.applianceId === 315) && (c.cell.extraData || 0) === cell.extraData && (c.dx !== x || c.dy !== y))
               if (!partner) continue
               const key = `${Math.min(x, partner.dx)},${Math.min(y, partner.dy)},${Math.max(x, partner.dx)},${Math.max(y, partner.dy)}`
               if (seen.has(key)) continue
               seen.add(key)
               ctx.beginPath()
-              ctx.moveTo(cx(x), cy(y))
-              ctx.lineTo(cx(partner.dx), cy(partner.dy))
+              ctx.moveTo(cxp(x), cyp(y))
+              ctx.lineTo(cxp(partner.dx), cyp(partner.dy))
               ctx.stroke()
             }
           }
           ctx.restore()
         }
-      } catch (e) {}
+        } catch (e) {}
+
+        // Draw labels according to label display mode (0 = lines+text, 1 = text only, 2 = hidden)
+        try {
+          const labelMode = Number(localStorage.getItem('labelDisplayMode') || '0')
+          if (labelMode !== 2 && Array.isArray(labelsForDraw) && labelsForDraw.length) {
+            const drawLabel = (lx, ly, text) => {
+              const padX = 6, padY = 4
+              ctx.save()
+              ctx.font = `${Math.max(10, Math.floor(cellPx * 0.28))}px sans-serif`
+              ctx.textAlign = 'center'
+              ctx.textBaseline = 'middle'
+              const tw = Math.ceil(ctx.measureText(text).width)
+              const bw = tw + padX * 2
+              const bh = Math.ceil(parseInt(ctx.font)) + padY * 2
+              // background with rounded corners and outline
+              ctx.fillStyle = '#ffffff'
+              ctx.globalAlpha = 0.95
+              const rx = lx - bw / 2, ry = ly - bh / 2
+              const r = Math.min(8, Math.floor(bh / 2), Math.floor(bw / 4))
+              ctx.beginPath()
+              ctx.moveTo(rx + r, ry)
+              ctx.lineTo(rx + bw - r, ry)
+              ctx.quadraticCurveTo(rx + bw, ry, rx + bw, ry + r)
+              ctx.lineTo(rx + bw, ry + bh - r)
+              ctx.quadraticCurveTo(rx + bw, ry + bh, rx + bw - r, ry + bh)
+              ctx.lineTo(rx + r, ry + bh)
+              ctx.quadraticCurveTo(rx, ry + bh, rx, ry + bh - r)
+              ctx.lineTo(rx, ry + r)
+              ctx.quadraticCurveTo(rx, ry, rx + r, ry)
+              ctx.closePath()
+              ctx.fill()
+              // outline
+              ctx.lineWidth = 1
+              ctx.strokeStyle = 'rgba(16,35,48,0.12)'
+              ctx.stroke()
+              ctx.globalAlpha = 1
+              ctx.fillStyle = '#102330'
+              ctx.fillText(text, lx, ly)
+              ctx.restore()
+            }
+
+            for (const lbl of labelsForDraw) {
+              try {
+                const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : 0)
+                const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : 0)
+                const anchorCellX = (lbl.anchorDx != null ? lbl.anchorDx : (lbl.anchorX != null ? lbl.anchorX : Math.floor(x2 / 2)))
+                const anchorCellY = (lbl.anchorDy != null ? lbl.anchorDy : (lbl.anchorY != null ? lbl.anchorY : Math.floor(y2 / 2)))
+                const ax = padLeft + ((anchorCellX - minDx) + 0.5) * CELL_PX
+                const ay = padTop + ((anchorCellY - minDy) + 0.5) * CELL_PX
+                const lx = padLeft + (((x2 / 2) - minDx) + 0.5) * CELL_PX
+                const ly = padTop + (((y2 / 2) - minDy) + 0.5) * CELL_PX
+                // Only draw connector line for mode 0 and when label not overlapping anchor
+                if (labelMode === 0) {
+                  const dx = lx - ax, dy = ly - ay
+                  if (Math.sqrt(dx * dx + dy * dy) > 6) {
+                    ctx.save()
+                    ctx.strokeStyle = '#4a90d9'
+                    ctx.lineWidth = 2
+                    ctx.setLineDash([6, 4])
+                    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(lx, ly); ctx.stroke()
+                    ctx.restore()
+                  }
+                }
+                // Draw the label text
+                if (labelMode === 0 || labelMode === 1) drawLabel(lx, ly, String(lbl.text || ''))
+              } catch (e) {}
+            }
+          }
+        } catch (e) {}
 
       return offscreen.toDataURL('image/png')
     }
@@ -630,26 +827,99 @@ export default {
       if (name === null) return
       const trimmedName = name.trim() || 'Blueprint'
 
+      // compute max bounds for the selected region
+      let maxX = -Infinity, maxY = -Infinity
+      for (const v of valid) { if (v.x > maxX) maxX = v.x; if (v.y > maxY) maxY = v.y }
+
       const cells = valid.map(({ x, y, cell }) => ({
         dx: x - minX,
         dy: y - minY,
         cell: { ...cell }
       }))
 
-      const preview = await generateBlueprintPreview(cells)
+      // Collect labels whose ANCHOR is inside the selected region. Store absolute positions
+      const includedLabels = []
+      try {
+        for (const lbl of (state.labels || [])) {
+          let anchorCellPos = null
+          if (lbl.anchorIid) {
+            for (const ci of flatGrid.value) {
+              if (ci.cell && ci.cell.iid === lbl.anchorIid) { anchorCellPos = { x: ci.x, y: ci.y }; break }
+            }
+          }
+          if (!anchorCellPos) {
+            if (lbl.anchorX == null || lbl.anchorY == null) continue
+            anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
+          }
+          // include label when its anchor cell lies within the originally selected bounding box
+          if (anchorCellPos.x >= minX && anchorCellPos.y >= minY && anchorCellPos.x <= maxX && anchorCellPos.y <= maxY) {
+            const absX2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : (anchorCellPos.x * 2))
+            const absY2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : (anchorCellPos.y * 2))
+            includedLabels.push({ id: lbl.id, anchorX: anchorCellPos.x, anchorY: anchorCellPos.y, absX2, absY2, text: lbl.text, raw: { ...lbl } })
+          }
+        }
+      } catch (e) {}
+
+      // expand bounds to include any label positions that fall outside the selected cell box
+      try {
+        if (labelsForPreview.length) {
+          for (const l of labelsForPreview) {
+            try {
+              const absX2 = (l.x2 != null) ? (l.x2 + minX * 2) : (Math.floor((l.anchorDx || 0)) * 2)
+              const absY2 = (l.y2 != null) ? (l.y2 + minY * 2) : (Math.floor((l.anchorDy || 0)) * 2)
+              const lx = Math.floor(absX2 / 2)
+              const ly = Math.floor(absY2 / 2)
+              if (lx < minX) minX = lx
+              if (ly < minY) minY = ly
+              if (lx > maxX) maxX = lx
+              if (ly > maxY) maxY = ly
+            } catch (e) {}
+          }
+        }
+      } catch (e) {}
+
+      // add a small margin so labels and their connector lines aren't clipped
+      try {
+        minX = Math.max(0, Math.floor(minX) - 1)
+        minY = Math.max(0, Math.floor(minY) - 1)
+        if (typeof state.roomWidth === 'number') maxX = Math.min(state.roomWidth - 1, Math.ceil(maxX) + 1)
+        else maxX = Math.ceil(maxX) + 1
+        if (typeof state.roomHeight === 'number') maxY = Math.min(state.roomHeight - 1, Math.ceil(maxY) + 1)
+        else maxY = Math.ceil(maxY) + 1
+      } catch (e) {}
+
+      // rebuild cells after margin expansion
+      const cellsFinal = valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { ...cell } }))
+
+      // Build labels payload (relative to new minX/minY) and labelsForPreview
+      const labelsToSave = []
+      const labelsForPreview = []
+      try {
+        for (const l of includedLabels) {
+          const relAx = l.anchorX - minX
+          const relAy = l.anchorY - minY
+          const relX2 = l.absX2 - minX * 2
+          const relY2 = l.absY2 - minY * 2
+          labelsToSave.push({ dxCell: relAx, dyCell: relAy, dx2: relX2, dy2: relY2, label: { ...l.raw } })
+          labelsForPreview.push({ id: l.id, x2: relX2, y2: relY2, x: null, y: null, anchorDx: relAx, anchorDy: relAy, text: l.text })
+        }
+      } catch (e) {}
+
+      const preview = await generateBlueprintPreview(cellsFinal, 40, labelsForPreview)
 
       blueprints.value.push({
         id: Date.now().toString(),
         name: trimmedName,
         preview,
-        cells
+        cells: cellsFinal,
+        labels: labelsToSave
       })
       saveBlueprintsToStorage()
     }
 
     function applyBlueprint(bp) {
       if (suppressNextBlueprintClick.value) { suppressNextBlueprintClick.value = false; return }
-      startPasteFromCells(bp.cells)
+      startPasteFromCells(bp)
     }
 
     const suppressNextBlueprintClick = ref(false)
@@ -675,13 +945,13 @@ export default {
           if (Math.sqrt(dx * dx + dy * dy) > 5) {
             dragStarted = true
             suppressNextBlueprintClick.value = true
-            startPasteFromCells(bp.cells)
+            startPasteFromCells(bp)
           }
         }
         if (dragStarted) {
-          const cell = getCellFromPoint(e.clientX, e.clientY)
-          if (cell) setPasteAnchor(cell.x, cell.y)
-        }
+        const cell = getCellFromPoint(e.clientX, e.clientY)
+        if (cell) setPasteAnchor(cell.x, cell.y)
+      }
       }
 
       function onUp(e) {
@@ -710,9 +980,9 @@ export default {
 
     async function exportBlueprint(bp) {
       // Always generate a fresh high-res image for the exported PNG (not from localStorage)
-      const exportPreview = await generateBlueprintPreview(bp.cells, 100)
+      const exportPreview = await generateBlueprintPreview(bp.cells, 100, bp.labels || [])
       if (!exportPreview) { alert('Could not generate preview image.'); return }
-      const json = JSON.stringify({ name: bp.name, cells: bp.cells })
+      const json = JSON.stringify({ name: bp.name, cells: bp.cells, labels: bp.labels || [] })
       const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
       const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(exportPreview), 'plateup-blueprint', payload))
       const modified = writePngText(bytes, 'plateup-blueprint', payload)
@@ -738,10 +1008,10 @@ export default {
           return
         }
         const json = new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0)))
-        const { name, cells } = JSON.parse(json)
+        const { name, cells, labels } = JSON.parse(json)
         if (!name || !Array.isArray(cells) || cells.length === 0) { alert('Invalid blueprint data.'); return }
-        const preview = await generateBlueprintPreview(cells)
-        blueprints.value.push({ id: Date.now().toString(), name, preview, cells })
+        const preview = await generateBlueprintPreview(cells, 40, labels || [])
+        blueprints.value.push({ id: Date.now().toString(), name, preview, cells, labels: labels || [] })
         saveBlueprintsToStorage()
         paletteTab.value = 'blueprints'
       } catch (e) {
@@ -1016,6 +1286,9 @@ export default {
         img.onerror = () => resolve()
         img.src = iconSrc
       })))
+      // Build a lookup of exported cells for label-anchor inclusion checks
+      const exportedCellSet = new Set(cells.map(c => `${c.x},${c.y}`))
+
       // Draw teleporter connector lines when toggle enabled
       try {
         if (localStorage.getItem('teleporterLines') === '1') {
@@ -1045,6 +1318,102 @@ export default {
             }
           }
           ctx.restore()
+        }
+      } catch (e) {}
+
+      // add a small margin so labels and their connector lines aren't clipped
+      try {
+        minX = Math.max(0, Math.floor(minX) - 1)
+        minY = Math.max(0, Math.floor(minY) - 1)
+        if (typeof state.roomWidth === 'number') maxX = Math.min(state.roomWidth - 1, Math.ceil(maxX) + 1)
+        else maxX = Math.ceil(maxX) + 1
+        if (typeof state.roomHeight === 'number') maxY = Math.min(state.roomHeight - 1, Math.ceil(maxY) + 1)
+        else maxY = Math.ceil(maxY) + 1
+      } catch (e) {}
+
+      // Draw labels according to label display mode (0 = lines+text, 1 = text only, 2 = hidden)
+      try {
+        const labelMode = Number(localStorage.getItem('labelDisplayMode') || '0')
+        if (labelMode !== 2 && Array.isArray(state.labels) && state.labels.length) {
+          const drawLabel = (lx, ly, text) => {
+            const padX = 6, padY = 4
+            ctx.save()
+            ctx.font = `${Math.max(10, Math.floor(CELL_PX * 0.28))}px sans-serif`
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+            const tw = Math.ceil(ctx.measureText(text).width)
+            const bw = tw + padX * 2
+            const bh = Math.ceil(parseInt(ctx.font)) + padY * 2
+            // background with rounded corners and outline
+            ctx.fillStyle = '#ffffff'
+            ctx.globalAlpha = 0.95
+            const rx = lx - bw / 2, ry = ly - bh / 2
+            const r = Math.min(8, Math.floor(bh / 2), Math.floor(bw / 4))
+            ctx.beginPath()
+            ctx.moveTo(rx + r, ry)
+            ctx.lineTo(rx + bw - r, ry)
+            ctx.quadraticCurveTo(rx + bw, ry, rx + bw, ry + r)
+            ctx.lineTo(rx + bw, ry + bh - r)
+            ctx.quadraticCurveTo(rx + bw, ry + bh, rx + bw - r, ry + bh)
+            ctx.lineTo(rx + r, ry + bh)
+            ctx.quadraticCurveTo(rx, ry + bh, rx, ry + bh - r)
+            ctx.lineTo(rx, ry + r)
+            ctx.quadraticCurveTo(rx, ry, rx + r, ry)
+            ctx.closePath()
+            ctx.fill()
+            // outline
+            ctx.lineWidth = 1
+            ctx.strokeStyle = 'rgba(16,35,48,0.12)'
+            ctx.stroke()
+            ctx.globalAlpha = 1
+            ctx.fillStyle = '#102330'
+            ctx.fillText(text, lx, ly)
+            ctx.restore()
+          }
+
+          for (const lbl of state.labels) {
+            try {
+              // Resolve anchor if present
+              let anchorCellPos = null
+              if (lbl.anchorIid) {
+                for (const ci of flatGrid.value) {
+                  if (ci.cell && ci.cell.iid === lbl.anchorIid) { anchorCellPos = { x: ci.x, y: ci.y }; break }
+                }
+              } else if (lbl.anchorX != null && lbl.anchorY != null) {
+                anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
+              }
+
+              // Determine whether to include this label in the preview
+              let includeLabel = false
+              if (anchorCellPos) {
+                // include only if anchor is part of exported cells
+                includeLabel = exportedCellSet.has(`${anchorCellPos.x},${anchorCellPos.y}`)
+              } else {
+                // floating label: include only for all-tabs/complete exports (tabId === null)
+                includeLabel = (tabId === null)
+              }
+              if (!includeLabel) continue
+
+              const ax = anchorCellPos ? (PAD + anchorCellPos.x * CELL_PX + CELL_PX / 2) : null
+              const ay = anchorCellPos ? (PAD + anchorCellPos.y * CELL_PX + CELL_PX / 2) : null
+              const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : 0)
+              const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : 0)
+              const lx = PAD + (x2 / 2) * CELL_PX + CELL_PX / 2
+              const ly = PAD + (y2 / 2) * CELL_PX + CELL_PX / 2
+              if (labelMode === 0 && anchorCellPos) {
+                const dx = lx - ax, dy = ly - ay
+                if (Math.sqrt(dx * dx + dy * dy) > 6) {
+                  ctx.save()
+                  ctx.strokeStyle = '#4a90d9'
+                  ctx.lineWidth = 2
+                  ctx.setLineDash([6, 4])
+                  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(lx, ly); ctx.stroke()
+                  ctx.restore()
+                }
+              }
+              if (labelMode === 0 || labelMode === 1) drawLabel(lx, ly, String(lbl.text || ''))
+            } catch (e) {}
+          }
         }
       } catch (e) {}
 
@@ -1120,9 +1489,103 @@ export default {
       }
       if (valid.length === 0) { alert('No visible appliances are selected.'); return }
 
+      let maxX = -Infinity, maxY = -Infinity
+      for (const v of valid) { if (v.x > maxX) maxX = v.x; if (v.y > maxY) maxY = v.y }
+
+      // Expand bounds to include any label positions (anchored or floating) that should be part of the selection
+      try {
+        // include labels anchored inside selection or explicitly selected
+        const labelCandidates = []
+        for (const lbl of (state.labels || [])) {
+          // resolve anchor position
+          let anchorCellPos = null
+          if (lbl.anchorIid) {
+            for (const ci of flatGrid.value) { if (ci.cell && ci.cell.iid === lbl.anchorIid) { anchorCellPos = { x: ci.x, y: ci.y }; break } }
+          } else if (lbl.anchorX != null && lbl.anchorY != null) {
+            anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
+          }
+          // include if anchor inside current selection bounds
+          if (anchorCellPos && anchorCellPos.x >= minX && anchorCellPos.y >= minY && anchorCellPos.x <= maxX && anchorCellPos.y <= maxY) {
+            labelCandidates.push(lbl)
+          }
+        }
+        // also include explicitly-selected labels
+        try {
+          const sel = selectedLabelIds?.value || new Set()
+          for (const id of sel) {
+            const lbl = (state.labels || []).find(l => l.id === id)
+            if (lbl) labelCandidates.push(lbl)
+          }
+        } catch (e) {}
+
+        for (const lbl of labelCandidates) {
+          const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : (lbl.anchorX != null ? lbl.anchorX * 2 : 0))
+          const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : (lbl.anchorY != null ? lbl.anchorY * 2 : 0))
+          const lx = Math.floor(x2 / 2)
+          const ly = Math.floor(y2 / 2)
+          if (lx < minX) minX = lx
+          if (ly < minY) minY = ly
+          if (lx > maxX) maxX = lx
+          if (ly > maxY) maxY = ly
+        }
+      } catch (e) {}
+
       const exportCells = valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] } }))
       const previewCells = valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { ...cell } }))
-      const preview = await generateBlueprintPreview(previewCells, 80)
+      // collect labels anchored inside selection and convert to relative coords
+      const labelsForPreview = []
+      try {
+        for (const lbl of (state.labels || [])) {
+          let anchorCellPos = null
+          if (lbl.anchorIid) {
+            for (const ci of flatGrid.value) {
+              if (ci.cell && ci.cell.iid === lbl.anchorIid) { anchorCellPos = { x: ci.x, y: ci.y }; break }
+            }
+          }
+          if (!anchorCellPos) {
+            if (lbl.anchorX == null || lbl.anchorY == null) continue
+            anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
+          }
+          if (anchorCellPos.x >= minX && anchorCellPos.y >= minY && anchorCellPos.x <= maxX && anchorCellPos.y <= maxY) {
+            const relAx = anchorCellPos.x - minX
+            const relAy = anchorCellPos.y - minY
+            const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : (anchorCellPos.x * 2))
+            const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : (anchorCellPos.y * 2))
+            const relX2 = x2 - minX * 2
+            const relY2 = y2 - minY * 2
+            const anchorDxVal = (relAx != null) ? relAx : (relX2 / 2)
+            const anchorDyVal = (relAy != null) ? relAy : (relY2 / 2)
+            labelsForPreview.push({ id: lbl.id, x2: relX2, y2: relY2, x: null, y: null, anchorDx: anchorDxVal, anchorDy: anchorDyVal, text: lbl.text })
+          }
+        }
+      } catch (e) {}
+
+      // Also include explicitly-selected labels (selectedLabelIds)
+      try {
+        const sel = selectedLabelIds?.value || new Set()
+        for (const id of sel) {
+          if (labelsForPreview.find(l => l.id === id)) continue
+          const lbl = (state.labels || []).find(l => l.id === id)
+          if (!lbl) continue
+          // resolve anchor if present
+          let anchorCellPos = null
+          if (lbl.anchorIid) {
+            for (const ci of flatGrid.value) { if (ci.cell && ci.cell.iid === lbl.anchorIid) { anchorCellPos = { x: ci.x, y: ci.y }; break } }
+          }
+          if (!anchorCellPos && lbl.anchorX != null && lbl.anchorY != null) anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
+          const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : ((anchorCellPos ? anchorCellPos.x * 2 : 0)))
+          const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : ((anchorCellPos ? anchorCellPos.y * 2 : 0)))
+          const relX2 = x2 - minX * 2
+          const relY2 = y2 - minY * 2
+          const relAx = anchorCellPos ? (anchorCellPos.x - minX) : null
+          const relAy = anchorCellPos ? (anchorCellPos.y - minY) : null
+          const anchorDxVal = (relAx != null) ? relAx : (relX2 / 2)
+          const anchorDyVal = (relAy != null) ? relAy : (relY2 / 2)
+          labelsForPreview.push({ id: lbl.id, x2: relX2, y2: relY2, x: null, y: null, anchorDx: anchorDxVal, anchorDy: anchorDyVal, text: lbl.text })
+        }
+      } catch (e) {}
+
+      const preview = await generateBlueprintPreview(previewCells, 80, labelsForPreview)
       const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: exportCells })
       const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
       const modified = writePngText(bytes, 'plateup-v2-export', payload)
@@ -1146,8 +1609,90 @@ export default {
         }
       }
       if (valid.length === 0) { alert('No visible appliances are selected.'); return }
-      const previewCells = valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { ...cell } }))
-      let dataUrl = await generateBlueprintPreview(previewCells, 80)
+      let maxX = -Infinity, maxY = -Infinity
+      for (const v of valid) { if (v.x > maxX) maxX = v.x; if (v.y > maxY) maxY = v.y }
+
+      // Expand bounds to include labels that are anchored inside selection or explicitly selected
+      try {
+        const labelCandidates = []
+        for (const lbl of (state.labels || [])) {
+          let anchorCellPos = null
+          if (lbl.anchorIid) {
+            for (const ci of flatGrid.value) { if (ci.cell && ci.cell.iid === lbl.anchorIid) { anchorCellPos = { x: ci.x, y: ci.y }; break } }
+          } else if (lbl.anchorX != null && lbl.anchorY != null) {
+            anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
+          }
+          if (anchorCellPos && anchorCellPos.x >= minX && anchorCellPos.y >= minY && anchorCellPos.x <= maxX && anchorCellPos.y <= maxY) labelCandidates.push(lbl)
+        }
+        try {
+          const sel = selectedLabelIds?.value || new Set()
+          for (const id of sel) {
+            const lbl = (state.labels || []).find(l => l.id === id)
+            if (lbl) labelCandidates.push(lbl)
+          }
+        } catch (e) {}
+        for (const lbl of labelCandidates) {
+          const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : (lbl.anchorX != null ? lbl.anchorX * 2 : 0))
+          const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : (lbl.anchorY != null ? lbl.anchorY * 2 : 0))
+          const lx = Math.floor(x2 / 2), ly = Math.floor(y2 / 2)
+          if (lx < minX) minX = lx
+          if (ly < minY) minY = ly
+          if (lx > maxX) maxX = lx
+          if (ly > maxY) maxY = ly
+        }
+      } catch (e) {}
+      // collect labels anchored inside selection and convert to relative coords
+      const labelsForPreview = []
+      try {
+        for (const lbl of (state.labels || [])) {
+          let anchorCellPos = null
+          if (lbl.anchorIid) {
+            for (const ci of flatGrid.value) {
+              if (ci.cell && ci.cell.iid === lbl.anchorIid) { anchorCellPos = { x: ci.x, y: ci.y }; break }
+            }
+          }
+          if (!anchorCellPos) {
+            if (lbl.anchorX == null || lbl.anchorY == null) continue
+            anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
+          }
+          if (anchorCellPos.x >= minX && anchorCellPos.y >= minY && anchorCellPos.x <= maxX && anchorCellPos.y <= maxY) {
+            const relAx = anchorCellPos.x - minX
+            const relAy = anchorCellPos.y - minY
+            const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : (anchorCellPos.x * 2))
+            const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : (anchorCellPos.y * 2))
+            const relX2 = x2 - minX * 2
+            const relY2 = y2 - minY * 2
+            labelsForPreview.push({ id: lbl.id, x2: relX2, y2: relY2, x: null, y: null, anchorDx: relAx, anchorDy: relAy, text: lbl.text })
+          }
+        }
+      } catch (e) {}
+
+      // include explicitly selected labels as well
+      try {
+        const sel = selectedLabelIds?.value || new Set()
+        for (const id of sel) {
+          if (labelsForPreview.find(l => l.id === id)) continue
+          const lbl = (state.labels || []).find(l => l.id === id)
+          if (!lbl) continue
+          let anchorCellPos = null
+          if (lbl.anchorIid) {
+            for (const ci of flatGrid.value) { if (ci.cell && ci.cell.iid === lbl.anchorIid) { anchorCellPos = { x: ci.x, y: ci.y }; break } }
+          }
+          if (!anchorCellPos && lbl.anchorX != null && lbl.anchorY != null) anchorCellPos = { x: lbl.anchorX, y: lbl.anchorY }
+          const x2 = (lbl.x2 != null) ? lbl.x2 : (lbl.x != null ? lbl.x * 2 : ((anchorCellPos ? anchorCellPos.x * 2 : 0)))
+          const y2 = (lbl.y2 != null) ? lbl.y2 : (lbl.y != null ? lbl.y * 2 : ((anchorCellPos ? anchorCellPos.y * 2 : 0)))
+          const relX2 = x2 - minX * 2
+          const relY2 = y2 - minY * 2
+          const relAx = anchorCellPos ? (anchorCellPos.x - minX) : null
+          const relAy = anchorCellPos ? (anchorCellPos.y - minY) : null
+          labelsForPreview.push({ id: lbl.id, x2: relX2, y2: relY2, x: null, y: null, anchorDx: relAx, anchorDy: relAy, text: lbl.text })
+        }
+      } catch (e) {}
+
+      // rebuild previewCells using possibly-updated minX/minY
+      const previewCellsFinal = valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { ...cell } }))
+
+      let dataUrl = await generateBlueprintPreview(previewCellsFinal, 80, labelsForPreview, false)
       if (!dataUrl) { alert('Nothing to copy.'); return }
       dataUrl = await addWatermark(dataUrl)
       try {
