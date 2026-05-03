@@ -299,7 +299,7 @@ export default {
 
     // --- Tab colours (10 light, differentiable) ---
     const TAB_COLORS = [
-      { bg: '#ffffff', border: '#cccccc' }, // 0 white
+      { bg: '#f3f4f6', border: '#d0d0d0' }, // 0 soft off-white
       { bg: '#aad6ff', border: '#5090d0' }, // 1 sky blue
       { bg: '#a0f0b8', border: '#48c870' }, // 2 green
       { bg: '#ffb0d0', border: '#d87098' }, // 3 pink
@@ -309,6 +309,20 @@ export default {
       { bg: '#ffb0a8', border: '#d06858' }, // 7 salmon
       { bg: '#b0e8ff', border: '#58a8d8' }, // 8 cyan
       { bg: '#ccffb0', border: '#80c048' }, // 9 lime
+    ]
+
+    // Dark-mode variants (used for the inline background behind appliances)
+    const TAB_COLORS_DARK = [
+      { bg: '#2e3340', border: '#5a6070' }, // 0 base (toned down in dark)
+      { bg: '#183560', border: '#3a68a8' }, // 1
+      { bg: '#163a22', border: '#348a50' }, // 2
+      { bg: '#3a1630', border: '#884060' }, // 3
+      { bg: '#2a1448', border: '#6840a0' }, // 4
+      { bg: '#3a2408', border: '#906020' }, // 5
+      { bg: '#103834', border: '#308878' }, // 6
+      { bg: '#3c1818', border: '#904040' }, // 7
+      { bg: '#103248', border: '#3078a0' }, // 8
+      { bg: '#1e3810', border: '#508828' }, // 9
     ]
 
     const userTabColorMap = computed(() => {
@@ -334,7 +348,8 @@ export default {
       if (!firstTabId) return {}
       const idx = userTabColorMap.value[firstTabId]
       if (idx === undefined) return {}
-      return { background: TAB_COLORS[idx].bg }
+      const dark = isDark && isDark.value
+      return { background: (dark ? TAB_COLORS_DARK[idx].bg : TAB_COLORS[idx].bg) }
     }
     // --- End tab colours ---
 
@@ -1913,8 +1928,8 @@ export default {
 .tab-postit.tab-color-complete.active { background: #dfdfdf; border-color: #acacac; }
 .tab-postit.add { font-weight: 700; background: #d6edff; border-color: #9cccf6; }
 /* User tab colours (10 light, differentiable) */
-.tab-user-0 { background: #ffffff; border-color: #cccccc; }
-.tab-user-0.active { background: #ffffff; border-color: #aaaaaa; }
+.tab-user-0 { background: #f3f4f6; border-color: #d0d0d0; }
+.tab-user-0.active { background: #f3f4f6; border-color: #b0b0b0; }
 .tab-user-1 { background: #bfe0ff; border-color: #7ab0da; }
 .tab-user-1.active { background: #9bcaf4; border-color: #5898c8; }
 .tab-user-2 { background: #b8f4ca; border-color: #72d890; }
@@ -1943,13 +1958,9 @@ export default {
 .dark .tab-postit.add { background: #1a2a38; border-color: #3a6a8a; color: #cce6ff; }
 .dark .tab-postit { color: #eee; }
 
-/* Ensure Base tab (tab-user-0) stays white-tinged in dark mode for consistency */
-.dark .tab-user-0,
-.dark .tab-user-0.active {
-  background: #ffffff;
-  border-color: #888;
-  color: #222;
-}
+/* Ensure Base tab (tab-user-0) matches the grid appliance background in dark mode */
+.dark .tab-user-0 { background: #2e3340; border-color: #5a6070; }
+.dark .tab-user-0.active { background: #363c4a; border-color: #6a7080; }
 .controls-with-status { display: flex; flex-direction: row; align-items: center; gap: 8px; }
 .controls-right { display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
 .controls { display: flex; gap: 18px; align-items: center; }
