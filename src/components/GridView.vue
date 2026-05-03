@@ -1757,34 +1757,46 @@ export default {
             placed = true
           }
         } else if (labelEl) {
-          // Fallback: compute using DOM bounding as before
+          // Fallback: prefer using the label's stored coords (avoid re-snapping
+          // from the element center which can round to the next half-grid).
           const lblR = labelEl.getBoundingClientRect()
           const gridR = grid.getBoundingClientRect()
           const centerX = (lblR.left + lblR.right) / 2
           const centerY = (lblR.top + lblR.bottom) / 2
+          const idx = (state.labels || []).findIndex(s => s.id === id)
           if (centerX >= gridR.left && centerY >= gridR.top && centerX <= gridR.right && centerY <= gridR.bottom) {
-            const W = state.roomWidth, H = state.roomHeight
-            const cs = cellSize.value * state.zoom
-            const tw = (W * cs - (W - 1) * 2) / W
-            const th = (H * cs - (H - 1) * 2) / H
-            const pitchX = tw + 2
-            const pitchY = th + 2
-            const localX = centerX - gridR.left
-            const localY = centerY - gridR.top
-            const logicalX = localX / pitchX
-            const logicalY = localY / pitchY
-            const snappedX2 = Math.round(logicalX * 2)
-            const snappedY2 = Math.round(logicalY * 2)
-            const clampedX2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, snappedX2))
-            const clampedY2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, snappedY2))
-            const idx = (state.labels || []).findIndex(s => s.id === id)
             if (idx !== -1) {
-              state.labels[idx].x2 = clampedX2
-              state.labels[idx].y2 = clampedY2
-              placed = true
+              // If the label already has half-grid coords, keep them instead
+              // of recomputing from the DOM center (which biases rounding).
+              const existing = state.labels[idx]
+              if (typeof existing.x2 === 'number' && typeof existing.y2 === 'number') {
+                const clampedX2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, existing.x2))
+                const clampedY2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, existing.y2))
+                state.labels[idx].x2 = clampedX2
+                state.labels[idx].y2 = clampedY2
+                placed = true
+              } else {
+                // Fallback to computing from the element center if no stored coords
+                const W = state.roomWidth, H = state.roomHeight
+                const cs = cellSize.value * state.zoom
+                const tw = (W * cs - (W - 1) * 2) / W
+                const th = (H * cs - (H - 1) * 2) / H
+                const pitchX = tw + 2
+                const pitchY = th + 2
+                const localX = centerX - gridR.left
+                const localY = centerY - gridR.top
+                const logicalX = localX / pitchX
+                const logicalY = localY / pitchY
+                const snappedX2 = Math.round(logicalX * 2)
+                const snappedY2 = Math.round(logicalY * 2)
+                const clampedX2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, snappedX2))
+                const clampedY2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, snappedY2))
+                state.labels[idx].x2 = clampedX2
+                state.labels[idx].y2 = clampedY2
+                placed = true
+              }
             }
           } else {
-            const idx = (state.labels || []).findIndex(s => s.id === id)
             if (idx !== -1) state.labels.splice(idx, 1)
           }
         }
