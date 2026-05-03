@@ -13,6 +13,7 @@
           </svg>
           Start Again
         </button>
+
         <button class="tutorial-button" @click="showTutorial = true" title="Launch the tutorial">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
@@ -139,6 +140,8 @@
               <h3>Other</h3>
               <dl>
                 <div><dt>T</dt><dd>Toggle teleporter connector lines (always show)</dd></div>
+                <div><dt>Ctrl+Z</dt><dd>Undo last change</dd></div>
+
               </dl>
             </section>
           </div>
@@ -191,7 +194,7 @@
       <GridView />
       <div class="palette-column">
         <AppliancePalette />
-        <div class="palette-toolbox-box" title="Palette toolbox (controls)">
+        <div class="palette-toolbox-box" title="Palette toolbox (controls) — Undo: Ctrl+Z">
           <div class="palette-toolbox" role="toolbar" aria-label="Palette toolbox">
             <button class="toolbox-button toolbox-button--size" @click="showSizeModal = true" title="Change room size">
               <svg class="toolbox-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -217,6 +220,7 @@
                 <circle cx="14" cy="14" r="2" fill="currentColor"/>
               </svg>
             </button>
+
             <button :class="['toolbox-button', 'toolbox-button--icon', 'toolbox-button--teleporter']" @click="toggleLabelDisplayMode" :title="labelDisplayMode === 0 ? 'Labels: lines + text' : (labelDisplayMode === 1 ? 'Labels: text only' : 'Labels: hidden')">
               <svg v-if="labelDisplayMode === 0" class="toolbox-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
                 <!-- small rectangle top-left (6x6) -->
@@ -256,7 +260,7 @@
 
 <script>
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRestaurantStore } from './store/restaurant'
+import { useRestaurantStore, encodeState as encodeStateFn } from './store/restaurant'
 import { useGrid } from './composables/useGrid'
 import GridView from './components/GridView.vue'
 import AppliancePalette from './components/AppliancePalette.vue'
@@ -272,7 +276,8 @@ export default {
   components: { GridView, AppliancePalette, TutorialModal, RestaurantSizeModal },
   setup() {
     const { state, loadFromHash, syncToHash } = useRestaurantStore()
-    const { loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize } = useGrid()
+    const _encodeState = encodeStateFn
+    const { loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, selectedCells, selectedLabelIds } = useGrid()
 
     const showHelp = ref(false)
     const showCredits = ref(false)
@@ -341,7 +346,52 @@ export default {
       }))
     }
 
-    watch(() => ({ ...state }), () => syncToHash(), { deep: true })
+    // Maintain an undo stack (last 30 full snapshots) in sessionStorage
+    const UNDO_KEY = 'undoStack'
+    const MAX_UNDO = 30
+    const URL_KEYS = ['tabs', 'orientation', 'roomWidth', 'roomHeight', 'walls', 'gridCells', 'labels']
+    const buildUrlState = (s) => {
+      const toSave = {}
+      URL_KEYS.forEach(k => { toSave[k] = JSON.parse(JSON.stringify(s[k])) })
+      toSave.activeTabId = s.activeTabId
+      return toSave
+    }
+    const buildFullSnapshot = () => {
+      return {
+        urlState: buildUrlState(state),
+        ui: {
+          selectedCells: Array.from(selectedCells.value || []),
+          selectedLabelIds: Array.from(selectedLabelIds.value || []),
+          teleporterLines: teleporterLines.value,
+          labelDisplayMode: labelDisplayMode.value
+        }
+      }
+    }
+    const readUndo = () => { try { return JSON.parse(sessionStorage.getItem(UNDO_KEY) || '[]') } catch (e) { return [] } }
+    const writeUndo = (arr) => { try { sessionStorage.setItem(UNDO_KEY, JSON.stringify(arr)); console.log('[UNDO] write: depth=' + (arr && arr.length ? arr.length : 0)) } catch (e) {} }
+    // initialize undo stack with current snapshot
+    try {
+      const init = readUndo()
+      const curSnap = JSON.stringify(buildFullSnapshot())
+      if (init.length === 0 || init[init.length - 1] !== curSnap) { init.push(curSnap); console.log('[UNDO] init push: depth=' + init.length); writeUndo(init.slice(-MAX_UNDO)) }
+    } catch (e) {}
+
+    // Guard used to skip recording snapshots while we're restoring a previous state
+    let isRestoring = false
+
+    watch(() => buildFullSnapshot(), (nv, ov) => {
+      if (isRestoring) return
+      try {
+        const stack = readUndo()
+        const cur = JSON.stringify(nv)
+        if (!stack.length || stack[stack.length - 1] !== cur) {
+          stack.push(cur)
+          writeUndo(stack.slice(-MAX_UNDO))
+          console.log('[UNDO] push: depth=' + stack.length)
+        }
+      } catch (e) {}
+      syncToHash()
+    }, { deep: true })
 
     onMounted(() => {
       document.documentElement.classList.toggle('dark', darkMode.value)
@@ -360,6 +410,12 @@ export default {
       window.addEventListener('hashchange', () => {
         loadFromHash()
         loadGridFromState()
+        // Reset undo stack when a new URL/state is loaded
+        try {
+          const snap = JSON.stringify(buildFullSnapshot())
+          console.log('[UNDO] reset to single snapshot')
+          writeUndo([snap])
+        } catch (e) {}
         // Ensure the size modal reflects the newly loaded state. If the loaded
         // state is the default (new restaurant) show the modal, otherwise hide it.
         try {
@@ -369,6 +425,22 @@ export default {
         }
       })
       window.addEventListener('plateup-copy-link', copyUrl)
+      // Listen for external undo requests (from child components)
+      window.addEventListener('plateup-undo', undo)
+      // Ctrl+Z undo handler
+      const onKey = (e) => {
+        const key = (e.key || '').toLowerCase()
+        if ((e.ctrlKey || e.metaKey) && key === 'z') {
+          e.preventDefault()
+          undo()
+        }
+      }
+      window.addEventListener('keydown', onKey)
+      // remove on unload
+      window.addEventListener('beforeunload', () => {
+        window.removeEventListener('keydown', onKey)
+        window.removeEventListener('plateup-undo', undo)
+      })
     })
 
     function startAgain() {
@@ -382,8 +454,50 @@ export default {
         localStorage.setItem('teleporterLines', '1')
         localStorage.setItem('labelDisplayMode', '0')
       } catch (e) {}
+      // Clear undo stack when starting again
+      try { console.log('[UNDO] cleared'); writeUndo([]) } catch (e) {}
       // Navigate to the base URL (remove hash and query) without adding a history entry
       window.location.replace(window.location.origin + window.location.pathname)
+    }
+
+    // Undo: revert to previous encoded state from sessionStorage stack
+    function undo() {
+      try {
+        const stack = readUndo()
+        if (!stack || stack.length <= 1) { return }
+        // remove current state snapshot
+        stack.pop()
+        console.log('[UNDO] pop: new depth=' + stack.length)
+        const prev = stack[stack.length - 1]
+        if (!prev) { return }
+        // write back truncated stack (we keep previous as current)
+        writeUndo(stack.slice(-MAX_UNDO))
+        // Restore parsed snapshot
+        const parsed = JSON.parse(prev)
+        // Prevent the watcher from recording this restoration as a new snapshot
+        isRestoring = true
+        if (parsed && parsed.urlState) {
+          try {
+            URL_KEYS.forEach(k => { state[k] = parsed.urlState[k] ? JSON.parse(JSON.stringify(parsed.urlState[k])) : JSON.parse(JSON.stringify(state[k])) })
+            state.activeTabId = parsed.urlState.activeTabId || 'complete'
+          } catch (e) {}
+        }
+        // Rebuild grid view first (this clears selections internally)
+        loadGridFromState()
+        // Restore UI selections/preferences after grid is rebuilt
+        try {
+          selectedCells.value = new Set(parsed.ui.selectedCells || [])
+          selectedLabelIds.value = new Set(parsed.ui.selectedLabelIds || [])
+          teleporterLines.value = !!parsed.ui.teleporterLines
+          labelDisplayMode.value = Number(parsed.ui.labelDisplayMode || 0)
+          window.dispatchEvent(new CustomEvent('teleporter-lines-changed', { detail: teleporterLines.value }))
+          window.dispatchEvent(new CustomEvent('label-display-mode-changed', { detail: labelDisplayMode.value }))
+        } catch (e) {}
+        // Sync URL/state
+        syncToHash()
+        // allow the watcher to resume on next tick
+        setTimeout(() => { isRestoring = false }, 0)
+      } catch (e) { /* swallow errors, avoid alert dialogs */ }
     }
 
     function toggleTeleporterLines() {
@@ -415,7 +529,7 @@ export default {
       if (!v && isDefaultState()) showSizeModal.value = true
     })
 
-    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen }
+    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen, undo }
   }
 }
 </script>
