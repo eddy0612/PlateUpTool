@@ -784,6 +784,12 @@ export default {
                     ctx.lineWidth = 2
                     ctx.setLineDash([6, 4])
                     ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(lx, ly); ctx.stroke()
+                    // small filled circle at anchor (same color as line)
+                    try {
+                      ctx.fillStyle = ctx.strokeStyle
+                      const r = Math.max(3, Math.round(CELL_PX * 0.12))
+                      ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.fill()
+                    } catch (e) {}
                     ctx.restore()
                   }
                 }
@@ -1408,6 +1414,12 @@ export default {
                   ctx.lineWidth = 2
                   ctx.setLineDash([6, 4])
                   ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(lx, ly); ctx.stroke()
+                  // small filled circle at anchor (same color as line)
+                  try {
+                    ctx.fillStyle = ctx.strokeStyle
+                    const r = Math.max(3, Math.round(CELL_PX * 0.12))
+                    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.fill()
+                  } catch (e) {}
                   ctx.restore()
                 }
               }
