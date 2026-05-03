@@ -1510,14 +1510,17 @@ function isPaletteDragDropValid(x, y) {
 }
 
 function commitPaletteDrag() {
+  let placed = false
   if (paletteDragActive.value && paletteDragItem.value && paletteDragHoverCell.value) {
     const { x, y } = paletteDragHoverCell.value
     if (isPaletteDragDropValid(x, y)) {
       grid.value[y][x] = { applianceId: paletteDragItem.value.id, rotation: 0, extraData: 0, tabIds: [state.activeTabId], iid: genInstanceId() }
       _autoTeleporterPair(x, y)
+      placed = true
     }
   }
   cancelPaletteDrag()
+  return placed
 }
 
 function cancelPaletteDrag() {

@@ -409,12 +409,12 @@ export default {
       gridTemplateColumns: `repeat(${paletteColumns.value}, ${ICON_SIZE}px)`
     }))
 
-    const suppressNextClick = ref(false)
+    const suppressNextClickForId = ref(null)
 
     // Dark mode & teleporter controls moved to App-level toolbox
 
     function onPaletteItemClick(item) {
-      if (suppressNextClick.value) { suppressNextClick.value = false; return }
+      if (suppressNextClickForId.value !== null && suppressNextClickForId.value === item.id) { suppressNextClickForId.value = null; return }
       addToGrid(item)
     }
 
@@ -430,11 +430,10 @@ export default {
         if (!dragStarted) {
           const dx = e.clientX - startX
           const dy = e.clientY - startY
-          if (Math.sqrt(dx * dx + dy * dy) > 6) {
-            dragStarted = true
-            suppressNextClick.value = true
-            startPaletteDrag(item)
-          }
+              if (Math.sqrt(dx * dx + dy * dy) > 6) {
+                dragStarted = true
+                startPaletteDrag(item)
+              }
         }
         if (dragStarted) updatePaletteDrag(e.clientX, e.clientY)
       }
@@ -443,8 +442,8 @@ export default {
         window.removeEventListener('mousemove', onMove)
         window.removeEventListener('mouseup', onUp)
         if (dragStarted) {
-          suppressNextClick.value = true
-          commitPaletteDrag()
+          const placed = commitPaletteDrag()
+          if (placed) suppressNextClickForId.value = item.id
         }
       }
 
@@ -924,11 +923,11 @@ export default {
     }
 
     function applyBlueprint(bp) {
-      if (suppressNextBlueprintClick.value) { suppressNextBlueprintClick.value = false; return }
+      if (suppressNextBlueprintClickForId.value !== null && suppressNextBlueprintClickForId.value === bp.id) { suppressNextBlueprintClickForId.value = null; return }
       startPasteFromCells(bp)
     }
 
-    const suppressNextBlueprintClick = ref(false)
+    const suppressNextBlueprintClickForId = ref(null)
 
     function onBlueprintMouseDown(bp, e) {
       if (e.button !== 0) return
@@ -950,7 +949,6 @@ export default {
           const dy = e.clientY - startY
           if (Math.sqrt(dx * dx + dy * dy) > 5) {
             dragStarted = true
-            suppressNextBlueprintClick.value = true
             startPasteFromCells(bp)
           }
         }
@@ -965,7 +963,7 @@ export default {
         window.removeEventListener('mouseup', onUp)
         if (dragStarted) {
           const cell = getCellFromPoint(e.clientX, e.clientY)
-          if (cell) { setPasteAnchor(cell.x, cell.y); confirmPaste() }
+          if (cell) { setPasteAnchor(cell.x, cell.y); confirmPaste(); suppressNextBlueprintClickForId.value = bp.id }
           else cancelPaste()
         }
       }
