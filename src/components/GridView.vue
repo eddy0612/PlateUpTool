@@ -277,6 +277,7 @@ import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useGrid, TELEPORTER_APPLIANCE_ID } from '../composables/useGrid'
 import { readPngText, readStegoFromBytes, readFileAsBytes } from '../composables/usePngMetadata'
 import AddLabelDialog from './AddLabelDialog.vue'
+import { alert, confirm, toast } from '../utils/ui'
 
 export default {
   name: 'GridView',
@@ -1390,7 +1391,7 @@ export default {
       fileDragOver.value = false
       const file = e.dataTransfer?.files?.[0]
       if (!file || file.type !== 'image/png') {
-        if (file) alert('Only PNG export files can be imported by dropping onto the grid.')
+        if (file) await alert('Only PNG export files can be imported by dropping onto the grid.')
         return
       }
       try {
@@ -1398,7 +1399,7 @@ export default {
         // Route through the single shared import handler in AppliancePalette
         window.dispatchEvent(new CustomEvent('plateup-import-bytes', { detail: { bytes } }))
       } catch (e) {
-        alert('Failed to read file: ' + e.message)
+        await alert('Failed to read file: ' + e.message)
       }
     }
     // --- End file drag-and-drop import ---

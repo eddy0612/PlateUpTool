@@ -235,6 +235,7 @@ import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
 import { useGrid } from '../composables/useGrid'
 import { readPngText, writePngText, writeStegoText, readStegoFromBytes, dataUrlToBytes, bytesToDataUrl, downloadDataUrl, readFileAsBytes } from '../composables/usePngMetadata'
+import { alert, confirm, toast } from '../utils/ui'
 
 const LS_BLUEPRINTS_KEY = 'plateup-blueprints'
 
@@ -332,7 +333,7 @@ export default {
         dataUrl = await generateGridPreview(null, true)
       }
       if (!dataUrl) {
-        alert('Nothing to copy.')
+        await alert('Nothing to copy.')
         return
       }
       dataUrl = await addWatermark(dataUrl)
@@ -433,9 +434,9 @@ export default {
         await navigator.clipboard.write([
           new window.ClipboardItem({ [finalBlob.type]: finalBlob })
         ])
-        alert('Image copied to clipboard!')
+        toast('Image copied to clipboard!')
       } catch (e) {
-        alert('Failed to copy image to clipboard: ' + e.message)
+        await alert('Failed to copy image to clipboard: ' + e.message)
       }
     }
 
@@ -896,7 +897,7 @@ export default {
 
     async function createBlueprint() {
       if (selectedCells.value.size === 0) {
-        alert('Select some appliances on the grid first, then click New.')
+        await alert('Select some appliances on the grid first, then click New.')
         return
       }
 
@@ -916,7 +917,7 @@ export default {
       }
 
       if (valid.length === 0) {
-        alert('No visible appliances are selected. Select appliances on the current tab first.')
+        await alert('No visible appliances are selected. Select appliances on the current tab first.')
         return
       }
 
@@ -1052,8 +1053,8 @@ export default {
       window.addEventListener('mouseup', onUp)
     }
 
-    function deleteBlueprint(bp) {
-      if (!window.confirm(`Delete blueprint "${bp.name}"?`)) return
+    async function deleteBlueprint(bp) {
+      if (!(await confirm(`Delete blueprint "${bp.name}"?`))) return
       blueprints.value = blueprints.value.filter(b => b.id !== bp.id)
       saveBlueprintsToStorage()
     }
@@ -1065,7 +1066,7 @@ export default {
     async function exportBlueprint(bp) {
       // Always generate a fresh high-res image for the exported PNG (not from localStorage)
       const exportPreview = await generateBlueprintPreview(bp.cells, 100, bp.labels || [])
-      if (!exportPreview) { alert('Could not generate preview image.'); return }
+      if (!exportPreview) { await alert('Could not generate preview image.'); return }
       const json = JSON.stringify({ name: bp.name, cells: bp.cells, labels: bp.labels || [] })
       const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
       const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(exportPreview), 'plateup-blueprint', payload))
@@ -1086,20 +1087,20 @@ export default {
         const bytes = await readFileAsBytes(file)
         const raw = readPngText(bytes, 'plateup-blueprint') || await readStegoFromBytes(bytes, 'plateup-blueprint')
         if (!raw) {
-          if (readPngText(bytes, 'plateup-design')) alert('This is a design file — use \u2b06 Import Design to load it.')
-          else if (readPngText(bytes, 'plateup-structure')) alert('This is a structure file — use \u2b06 Import Structure to load it.')
-          else alert('No blueprint data found in this image.')
+          if (readPngText(bytes, 'plateup-design')) await alert('This is a design file — use \u2b06 Import Design to load it.')
+          else if (readPngText(bytes, 'plateup-structure')) await alert('This is a structure file — use \u2b06 Import Structure to load it.')
+          else await alert('No blueprint data found in this image.')
           return
         }
         const json = new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0)))
         const { name, cells, labels } = JSON.parse(json)
-        if (!name || !Array.isArray(cells) || cells.length === 0) { alert('Invalid blueprint data.'); return }
+        if (!name || !Array.isArray(cells) || cells.length === 0) { await alert('Invalid blueprint data.'); return }
         const preview = await generateBlueprintPreview(cells, 40, labels || [])
         blueprints.value.push({ id: Date.now().toString(), name, preview, cells, labels: labels || [] })
         saveBlueprintsToStorage()
         paletteTab.value = 'blueprints'
       } catch (e) {
-        alert('Failed to read blueprint: ' + e.message)
+        await alert('Failed to read blueprint: ' + e.message)
       }
     }
 
@@ -1118,7 +1119,7 @@ export default {
       bpDragOver.value = false
       const file = e.dataTransfer?.files?.[0]
       if (!file || file.type !== 'image/png') {
-        if (file) alert('Only PNG blueprint files can be imported by dropping here.')
+        if (file) await alert('Only PNG blueprint files can be imported by dropping here.')
         return
       }
       await importBlueprintFromBytes(file)
@@ -1571,7 +1572,7 @@ export default {
           }
         }
       }
-      if (valid.length === 0) { alert('No visible appliances are selected.'); return }
+      if (valid.length === 0) { await alert('No visible appliances are selected.'); return }
 
       let maxX = -Infinity, maxY = -Infinity
       for (const v of valid) { if (v.x > maxX) maxX = v.x; if (v.y > maxY) maxY = v.y }
@@ -1694,7 +1695,7 @@ export default {
           }
         }
       }
-      if (valid.length === 0) { alert('No visible appliances are selected.'); return }
+      if (valid.length === 0) { await alert('No visible appliances are selected.'); return }
       let maxX = -Infinity, maxY = -Infinity
       for (const v of valid) { if (v.x > maxX) maxX = v.x; if (v.y > maxY) maxY = v.y }
       const validCellSet = new Set(valid.map(v => `${v.x},${v.y}`))
@@ -1785,7 +1786,7 @@ export default {
       const previewCellsFinal = valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { ...cell } }))
 
       let dataUrl = await generateBlueprintPreview(previewCellsFinal, 80, labelsForPreview, false)
-      if (!dataUrl) { alert('Nothing to copy.'); return }
+      if (!dataUrl) { await alert('Nothing to copy.'); return }
       dataUrl = await addWatermark(dataUrl)
       try {
         const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] } })), labels: clipboardExportLabels })
@@ -1796,9 +1797,9 @@ export default {
         await navigator.clipboard.write([
           new window.ClipboardItem({ [finalBlob.type]: finalBlob })
         ])
-        alert('Image copied to clipboard!')
+        toast('Image copied to clipboard!')
       } catch (e) {
-        alert('Failed to copy image to clipboard: ' + e.message)
+        await alert('Failed to copy image to clipboard: ' + e.message)
       }
     }
 
@@ -1862,7 +1863,7 @@ export default {
             cells.push({ x, y, cell })
           }
         }
-        if (cells.length === 0) { alert('No appliances on the current tab to export.'); return }
+        if (cells.length === 0) { await alert('No appliances on the current tab to export.'); return }
         const exportCells = cells.map(({ x, y, cell }) => ({
           dx: x - minX, dy: y - minY,
           cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] }
@@ -1897,7 +1898,7 @@ export default {
             cells.push({ x, y, cell })
           }
         }
-        if (cells.length === 0) { alert('No appliances to export.'); return }
+        if (cells.length === 0) { await alert('No appliances to export.'); return }
         const exportCells = cells.map(({ x, y, cell }) => ({
           dx: x - minX, dy: y - minY,
           cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] }
@@ -1954,34 +1955,34 @@ export default {
 
           if (type === 'tab' || type === 'all-tabs') {
             if (state.activeTabId === 'complete' || state.activeTabId === 'structure') {
-              alert('Switch to a coloured tab before importing appliances.')
+              await alert('Switch to a coloured tab before importing appliances.')
               return
             }
             const { cells, labels } = payload
-            if (!Array.isArray(cells) || cells.length === 0) { alert('No appliance data found in this file.'); return }
+            if (!Array.isArray(cells) || cells.length === 0) { await alert('No appliance data found in this file.'); return }
             startPasteFromCells({ cells, labels: labels || [] })
             return
           }
 
           if (type === 'structure') {
             const { roomWidth, roomHeight, walls } = payload
-            if (!roomWidth || !roomHeight) { alert('Invalid structure data.'); return }
+            if (!roomWidth || !roomHeight) { await alert('Invalid structure data.'); return }
             if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) {
-              alert(`Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.\nResize the room to match before importing.`)
+              await alert(`Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.\nResize the room to match before importing.`)
               return
             }
             const hasWalls = Object.keys(state.walls || {}).length > 0
-            if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Would you like to continue?')) return
+            if (hasWalls && !(await confirm('This will replace all current structure (walls/doors). Would you like to continue?'))) return
             state.walls = walls || {}
             return
           }
 
           if (type === 'complete') {
             const { roomWidth, roomHeight, orientation, walls, tabs, gridCells, labels } = payload
-            if (!roomWidth || !roomHeight) { alert('Invalid complete export data.'); return }
+            if (!roomWidth || !roomHeight) { await alert('Invalid complete export data.'); return }
             const dimChanged = roomWidth !== state.roomWidth || roomHeight !== state.roomHeight
             const dimNote = dimChanged ? `\n\nNote: the room will also be resized from ${state.roomWidth}×${state.roomHeight} to ${roomWidth}×${roomHeight}.` : ''
-            if (hasAnyContent() && !window.confirm(`This will replace ALL current structure and appliances. All your current design will be lost.${dimNote}\n\nWould you like to continue?`)) return
+            if (hasAnyContent() && !(await confirm(`This will replace ALL current structure and appliances. All your current design will be lost.${dimNote}\n\nWould you like to continue?`))) return
             state.roomWidth = roomWidth
             state.roomHeight = roomHeight
             state.orientation = orientation ?? 0
@@ -1997,7 +1998,7 @@ export default {
             return
           }
 
-          alert('Unknown export type in this file.')
+          await alert('Unknown export type in this file.')
           return
         }
 
@@ -2005,11 +2006,11 @@ export default {
         const legacyDesign = readPngText(bytes, 'plateup-design')
         if (legacyDesign) {
           if (state.activeTabId === 'complete' || state.activeTabId === 'structure') {
-            alert('Switch to a coloured tab before importing appliances.')
+            await alert('Switch to a coloured tab before importing appliances.')
             return
           }
           const parsed = decodeState(legacyDesign)
-          if (!parsed?.gridCells?.length) { alert('Invalid or empty design data.'); return }
+          if (!parsed?.gridCells?.length) { await alert('Invalid or empty design data.'); return }
           let minX = Infinity, minY = Infinity
           for (const c of parsed.gridCells) { if (c.x < minX) minX = c.x; if (c.y < minY) minY = c.y }
           const cells = parsed.gridCells.map(c => ({
@@ -2024,24 +2025,24 @@ export default {
         const legacyStructure = readPngText(bytes, 'plateup-structure')
         if (legacyStructure) {
           const { roomWidth, roomHeight, walls } = decodePayload(legacyStructure)
-          if (!roomWidth || !roomHeight) { alert('Invalid structure data.'); return }
+          if (!roomWidth || !roomHeight) { await alert('Invalid structure data.'); return }
           if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) {
-            alert(`Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.\nResize the room to match before importing.`)
+            await alert(`Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.\nResize the room to match before importing.`)
             return
           }
           const hasWalls = Object.keys(state.walls || {}).length > 0
-          if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Would you like to continue?')) return
+          if (hasWalls && !(await confirm('This will replace all current structure (walls/doors). Would you like to continue?'))) return
           state.walls = walls || {}
           return
         }
 
         // ── Blueprint file ────────────────────────────────────────────────
         if (readPngText(bytes, 'plateup-blueprint')) {
-          alert('This is a blueprint file — use Import Blueprint in the Blueprints palette tab.')
+          await alert('This is a blueprint file — use Import Blueprint in the Blueprints palette tab.')
           return
         }
 
-        alert('No PlateUp Tool export data found in this image.')
+        await alert('No PlateUp Tool export data found in this image.')
     }
 
     async function handleUnifiedImport(event) {
@@ -2052,7 +2053,7 @@ export default {
         const bytes = await readFileAsBytes(file)
         await processImportBytes(bytes)
       } catch (e) {
-        alert('Failed to read import file: ' + e.message)
+        await alert('Failed to read import file: ' + e.message)
       }
     }
 
@@ -2068,16 +2069,16 @@ export default {
           }
         }
         if (!pngBlob) {
-          alert('No PNG image found in clipboard.\nCopy a PlateUp Tool export image first.')
+          await alert('No PNG image found in clipboard.\nCopy a PlateUp Tool export image first.')
           return
         }
         const bytes = new Uint8Array(await pngBlob.arrayBuffer())
         await processImportBytes(bytes)
       } catch (e) {
         if (e.name === 'NotAllowedError') {
-          alert('Clipboard access was denied. Please allow clipboard access and try again.')
+          await alert('Clipboard access was denied. Please allow clipboard access and try again.')
         } else {
-          alert('Failed to read from clipboard: ' + e.message)
+          await alert('Failed to read from clipboard: ' + e.message)
         }
       }
     }
@@ -2151,7 +2152,7 @@ export default {
             if (!roomWidth || !roomHeight) return { success: false, message: 'Invalid structure data.' }
             if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) return { success: false, message: `Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.` }
             const hasWalls = Object.keys(state.walls || {}).length > 0
-            if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Would you like to continue?')) return { success: false, message: 'Import cancelled.' }
+            if (hasWalls && !(await confirm('This will replace all current structure (walls/doors). Would you like to continue?'))) return { success: false, message: 'Import cancelled.' }
             state.walls = walls || {}
             return { success: true, message: 'Structure imported.' }
           }
@@ -2160,7 +2161,7 @@ export default {
             if (!roomWidth || !roomHeight) return { success: false, message: 'Invalid complete export data.' }
             const dimChanged = roomWidth !== state.roomWidth || roomHeight !== state.roomHeight
             const dimNote = dimChanged ? `\n\nNote: the room will also be resized from ${state.roomWidth}×${state.roomHeight} to ${roomWidth}×${roomHeight}.` : ''
-            if (hasAnyContent() && !window.confirm(`This will replace ALL current structure and appliances. All your current design will be lost.${dimNote}\n\nWould you like to continue?`)) return { success: false, message: 'Import cancelled.' }
+            if (hasAnyContent() && !(await confirm(`This will replace ALL current structure and appliances. All your current design will be lost.${dimNote}\n\nWould you like to continue?`))) return { success: false, message: 'Import cancelled.' }
             state.roomWidth = roomWidth
             state.roomHeight = roomHeight
             state.orientation = orientation ?? 0
@@ -2181,7 +2182,7 @@ export default {
           if (!roomWidth || !roomHeight) return { success: false, message: 'Invalid structure data.' }
           if (roomWidth !== state.roomWidth || roomHeight !== state.roomHeight) return { success: false, message: `Cannot import: structure is ${roomWidth}×${roomHeight} but current room is ${state.roomWidth}×${state.roomHeight}.` }
           const hasWalls = Object.keys(state.walls || {}).length > 0
-          if (hasWalls && !window.confirm('This will replace all current structure (walls/doors). Would you like to continue?')) return { success: false, message: 'Import cancelled.' }
+          if (hasWalls && !(await confirm('This will replace all current structure (walls/doors). Would you like to continue?'))) return { success: false, message: 'Import cancelled.' }
           state.walls = walls || {}
           return { success: true, message: 'Structure imported.' }
         }

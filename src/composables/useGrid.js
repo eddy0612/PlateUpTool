@@ -1,6 +1,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { useRestaurantStore } from '../store/restaurant'
 import { useAppliancePalette } from './useAppliancePalette'
+import { alert, confirm, toast } from '../utils/ui'
 
 // Module-level singletons — grid state is shared across GridView and AppliancePalette
 const { state } = useRestaurantStore()
@@ -165,7 +166,7 @@ function _unpairTeleporterPartner(pairNum) {
   }
 }
 
-function addToGrid(item) {
+async function addToGrid(item) {
   if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
   const tabId = state.activeTabId
   if (selectedCells.value.size === 1) {
@@ -186,7 +187,7 @@ function addToGrid(item) {
       }
     }
   }
-  alert('Grid is full! Increase room size to add more items.')
+  await alert('Grid is full! Increase room size to add more items.')
 }
 
 function rotateCell(x, y) {
