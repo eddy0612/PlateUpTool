@@ -216,11 +216,21 @@
       </template>
     </teleport>
 
+    <teleport to="body">
+      <AddLabelDialog v-if="blueprintDialogVisible"
+        :initialText="blueprintDialogInitial"
+        title="Blueprint name:"
+        :maxLength="40"
+        @confirm="onBlueprintDialogConfirm"
+        @cancel="closeBlueprintDialog" />
+    </teleport>
+
   </aside>
 </template>
 
 <script>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import AddLabelDialog from './AddLabelDialog.vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
 import { useGrid } from '../composables/useGrid'
@@ -238,6 +248,7 @@ function loadBlueprintsFromStorage() {
 
 export default {
   name: 'AppliancePalette',
+  components: { AddLabelDialog },
   setup() {
     const { state } = useRestaurantStore()
     const { palette, loading } = useAppliancePalette()
@@ -561,6 +572,21 @@ export default {
       if (!q) return blueprints.value
       return blueprints.value.filter(bp => bp.name.toLowerCase().includes(q))
     })
+
+    // Dialog state for blueprint naming
+    const blueprintDialogVisible = ref(false)
+    const blueprintDialogInitial = ref('My Blueprint')
+    const blueprintCandidate = ref(null)
+
+    function closeBlueprintDialog() { blueprintDialogVisible.value = false; blueprintCandidate.value = null }
+
+    function onBlueprintDialogConfirm(name) {
+      const trimmedName = (name || '').trim() || 'Blueprint'
+      if (!blueprintCandidate.value) { closeBlueprintDialog(); return }
+      blueprints.value.push({ id: Date.now().toString(), name: trimmedName, preview: blueprintCandidate.value.preview, cells: blueprintCandidate.value.cells, labels: blueprintCandidate.value.labels })
+      saveBlueprintsToStorage()
+      closeBlueprintDialog()
+    }
 
     // Generate a small thumbnail image for a set of blueprint cells.
     async function generateBlueprintPreview(cells, cellPx = 40, labels = [], useBlueprintBg = true) {
@@ -894,19 +920,11 @@ export default {
         return
       }
 
-      const name = window.prompt('Blueprint name:', 'My Blueprint')
-      if (name === null) return
-      const trimmedName = name.trim() || 'Blueprint'
-
       // compute max bounds for the selected region
       let maxX = -Infinity, maxY = -Infinity
       for (const v of valid) { if (v.x > maxX) maxX = v.x; if (v.y > maxY) maxY = v.y }
 
-      const cells = valid.map(({ x, y, cell }) => ({
-        dx: x - minX,
-        dy: y - minY,
-        cell: { ...cell }
-      }))
+      const cells = valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { ...cell } }))
 
       // Collect labels whose ANCHOR is inside the selected region. Store absolute positions
       const includedLabels = []
@@ -978,14 +996,10 @@ export default {
 
       const preview = await generateBlueprintPreview(cellsFinal, 40, labelsForPreview)
 
-      blueprints.value.push({
-        id: Date.now().toString(),
-        name: trimmedName,
-        preview,
-        cells: cellsFinal,
-        labels: labelsToSave
-      })
-      saveBlueprintsToStorage()
+      // Save candidate and open dialog for name
+      blueprintCandidate.value = { cells: cellsFinal, labels: labelsToSave, preview }
+      blueprintDialogInitial.value = 'My Blueprint'
+      blueprintDialogVisible.value = true
     }
 
     function applyBlueprint(bp) {
@@ -2340,6 +2354,7 @@ export default {
     return { state, filteredPalette, addToGrid, hoverLabel, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemMouseDown, rightPanelStyle, paletteGridStyle,
       // blueprints
       paletteTab, blueprintFilter, filteredBlueprints, createBlueprint, applyBlueprint, deleteBlueprint, onBlueprintMouseDown,
+      blueprintDialogVisible, blueprintDialogInitial, onBlueprintDialogConfirm, closeBlueprintDialog,
       exportBlueprint, handleBlueprintImport, triggerBlueprintImport, blueprintImportInput,
       bpDragOver, onBpDragOver, onBpDragLeave, onBpFileDrop,
       // unified export/import

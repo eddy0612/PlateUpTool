@@ -194,7 +194,7 @@
       <GridView />
       <div class="palette-column">
         <AppliancePalette />
-        <div class="palette-toolbox-box" title="Palette toolbox (controls) — Undo: Ctrl+Z">
+        <div class="palette-toolbox-box" title="Palette toolbox (controls) - Undo - Ctrl + Z">
           <div class="palette-toolbox" role="toolbar" aria-label="Palette toolbox">
             <button class="toolbox-button toolbox-button--size" @click="showSizeModal = true" title="Change room size">
               <svg class="toolbox-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -537,14 +537,15 @@ html, body { margin: 0; font-family: sans-serif; overflow: hidden; height: 100%;
 html.dark { background: #12141c; color: #d0daea; color-scheme: dark; }
 /* Ensure inline SVG icons with class hp-svg follow dark-mode text color */
 html.dark svg.hp-svg { color: #d0daea }
-html.dark svg.hp-svg path,
-html.dark svg.hp-svg rect,
-html.dark svg.hp-svg line,
-html.dark svg.hp-svg circle,
-html.dark svg.hp-svg * {
-  fill: currentColor !important;
-  stroke: currentColor !important;
-}
+/* In dark mode, inherit currentColor for strokes and for fills unless
+   the SVG element explicitly sets `fill="none"` (keep outlines unfilled). */
+html.dark svg.hp-svg *:not([fill="none"]) { fill: currentColor !important; }
+html.dark svg.hp-svg * { stroke: currentColor !important; }
+
+/* Ensure help dialog character icons render large and consistently */
+.help-list-icon .hp-char { font-size: 36px !important; line-height: 40px !important; width: 40px !important; height: 40px !important; display: inline-flex; align-items: center; justify-content: center }
+/* also match popup help variant */
+.help-popup-icon .hp-char { font-size: 36px !important; line-height: 40px !important; width: 40px !important; height: 40px !important; display: inline-flex; align-items: center; justify-content: center }
 </style>
 
 <style scoped>
@@ -982,4 +983,13 @@ html.dark .swatch-door  { background: #f0a830; }
 
 /* ── Number inputs (room size controls in GridView) ── */
 html.dark input[type="number"] { background: #141926; border-color: #2a3a54; color: #d0daea; }
+</style>
+
+<style>
+/* Responsive: when palette collapses to one column hide room size text */
+@media (max-width: 1280px) {
+  html .palette-toolbox .toolbox-button--size { padding: 8px !important; width: 44px !important; }
+  html .palette-toolbox .toolbox-button--size .toolbox-size-text { display: none !important }
+  html .palette-toolbox .toolbox-button--size .toolbox-icon { width: 20px !important; height: 20px !important }
+}
 </style>

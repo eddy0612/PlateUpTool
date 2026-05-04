@@ -132,8 +132,8 @@
       </div>
       <div class="toolbox-box" title="Toolbox (mouse-friendly controls)">
           <div class="toolbox" role="toolbar" aria-label="Touch toolbox">
-          <button class="toolbox-button" data-help-id="undo" @click="doUndo" title="Undo — revert previous design">
-            ↶
+          <button class="toolbox-button" data-help-id="undo" @click="doUndo" title="Undo — Ctrl+Z">
+            <span class="toolbox-char" aria-hidden="true">↶</span>
           </button>
           <button class="toolbox-button" data-help-id="cut" @click="cutToClipboard" title="Cut selection — Ctrl+X">
             <span class="toolbox-char" aria-hidden="true">✂</span>
@@ -262,6 +262,12 @@
         <div class="context-menu-item context-menu-cancel" @click="cancelTabDeleteConfirm">No, cancel</div>
       </div>
     </template>
+    <AddLabelDialog v-if="labelDialogVisible"
+      :initialText="labelDialogInitial"
+      :title="labelDialogTitle"
+      :maxLength="15"
+      @confirm="onLabelDialogConfirm"
+      @cancel="closeLabelDialog" />
   </section>
 </template>
 
@@ -270,9 +276,11 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useGrid, TELEPORTER_APPLIANCE_ID } from '../composables/useGrid'
 import { readPngText, readStegoFromBytes, readFileAsBytes } from '../composables/usePngMetadata'
+import AddLabelDialog from './AddLabelDialog.vue'
 
 export default {
   name: 'GridView',
+  components: { AddLabelDialog },
   setup() {
     const { state } = useRestaurantStore()
     const {
@@ -1441,52 +1449,72 @@ export default {
     const labelLastOver = ref(null)
     const draggingLabelPos = ref({}) // transient pixel positions while dragging: { [id]: { left, top } }
 
+    // Dialog state for adding/editing labels
+    const labelDialogVisible = ref(false)
+    const labelDialogMode = ref('create') // 'create' | 'edit'
+    const labelDialogInitial = ref('')
+    const labelDialogEditId = ref(null)
+    const labelDialogTitle = computed(() => (labelDialogMode.value === 'create' ? 'Label text:' : 'Edit label text (empty to delete):'))
+
+    function openCreateLabelDialog() {
+      labelDialogMode.value = 'create'
+      labelDialogInitial.value = ''
+      labelDialogEditId.value = null
+      labelDialogVisible.value = true
+    }
+
+    function openEditLabelDialogFor(lbl) {
+      labelDialogMode.value = 'edit'
+      labelDialogInitial.value = lbl.text || ''
+      labelDialogEditId.value = lbl.id
+      labelDialogVisible.value = true
+    }
+
+    function closeLabelDialog() { labelDialogVisible.value = false; labelDialogEditId.value = null }
+
+    function onLabelDialogConfirm(text) {
+      try {
+        if (labelDialogMode.value === 'create') {
+          // place label at centre of selection if any, otherwise center of room
+          let tx = Math.floor(state.roomWidth / 2)
+          let ty = Math.floor(state.roomHeight / 2)
+          let anchoredCell = null
+          if (selectedCells.value && selectedCells.value.size === 1) {
+            const [k] = selectedCells.value
+            const [sx, sy] = k.split(',').map(Number)
+            anchoredCell = { x: sx, y: sy }
+            tx = sx; ty = sy
+          } else if (selectedCells.value && selectedCells.value.size > 0) {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+            for (const k of selectedCells.value) { const [sx, sy] = k.split(',').map(Number); minX = Math.min(minX, sx); minY = Math.min(minY, sy); maxX = Math.max(maxX, sx); maxY = Math.max(maxY, sy) }
+            const cx = (minX + maxX) / 2; const cy = (minY + maxY) / 2; tx = Math.floor(cx); ty = Math.floor(cy)
+          }
+          let tx2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, tx * 2))
+          let ty2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, ty * 2))
+          const id = Date.now().toString()
+          state.labels = state.labels || []
+          const lbl = { id, x2: tx2, y2: ty2, text }
+          if (anchoredCell) {
+            const cell = getDisplayCell(anchoredCell.x, anchoredCell.y)
+            if (cell && cell.iid) lbl.anchorIid = cell.iid
+            else { lbl.anchorX = anchoredCell.x; lbl.anchorY = anchoredCell.y }
+          }
+          state.labels.push(lbl)
+        } else if (labelDialogMode.value === 'edit') {
+          const idx = (state.labels || []).findIndex(s => s.id === labelDialogEditId.value)
+          const t = (text || '').trim().slice(0, 15)
+          if (idx === -1) return
+          if (t === '') state.labels.splice(idx, 1)
+          else state.labels[idx].text = t
+        }
+      } finally {
+        closeLabelDialog()
+      }
+    }
+
     function createLabel() {
       if (state.activeTabId === 'complete' || isStructureMode.value) return
-      let text = window.prompt('Label text:')
-      if (!text) return
-      text = text.trim().slice(0, 15)
-      if (!text) return
-      // place label at centre of selection if any, otherwise center of room
-      let tx = Math.floor(state.roomWidth / 2)
-      let ty = Math.floor(state.roomHeight / 2)
-      // If exactly one cell selected, anchor label to that cell
-      let anchoredCell = null
-      if (selectedCells.value && selectedCells.value.size === 1) {
-        const [k] = selectedCells.value
-        const [sx, sy] = k.split(',').map(Number)
-        anchoredCell = { x: sx, y: sy }
-        tx = sx
-        ty = sy
-      } else if (selectedCells.value && selectedCells.value.size > 0) {
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-        for (const k of selectedCells.value) {
-          const [sx, sy] = k.split(',').map(Number)
-          minX = Math.min(minX, sx); minY = Math.min(minY, sy); maxX = Math.max(maxX, sx); maxY = Math.max(maxY, sy)
-        }
-        const cx = (minX + maxX) / 2
-        const cy = (minY + maxY) / 2
-        tx = Math.floor(cx)
-        ty = Math.floor(cy)
-      }
-      // x2/y2 are half-grid integer coords
-      let tx2 = Math.max(0, Math.min(state.roomWidth * 2 - 1, tx * 2))
-      let ty2 = Math.max(0, Math.min(state.roomHeight * 2 - 1, ty * 2))
-      const id = Date.now().toString()
-      state.labels = state.labels || []
-      const lbl = { id, x2: tx2, y2: ty2, text }
-      if (anchoredCell) {
-        // If an appliance is present at the anchored cell, attach to its instance id
-        const cell = getDisplayCell(anchoredCell.x, anchoredCell.y)
-        if (cell && cell.iid) {
-          lbl.anchorIid = cell.iid
-        } else {
-          // fallback to anchoring to cell coordinates
-          lbl.anchorX = anchoredCell.x
-          lbl.anchorY = anchoredCell.y
-        }
-      }
-      state.labels.push(lbl)
+      openCreateLabelDialog()
     }
 
     function getLabelStyle(lbl) {
@@ -1554,10 +1582,14 @@ export default {
           const firstTab = found && found.cell ? (Array.isArray(found.cell.tabIds) ? found.cell.tabIds[0] : found.cell.tabId) : null
           if (firstTab) {
             const idx = userTabColorMap.value[firstTab]
-            if (idx !== undefined && TAB_COLORS[idx] && TAB_COLORS[idx].bg) {
-              bg = TAB_COLORS[idx].bg
-              // choose readable text color against tab bg
-              color = isLightColor(bg) ? '#102330' : '#e6f6ff'
+            if (idx !== undefined) {
+              const tabObj = (dark ? TAB_COLORS_DARK[idx] : TAB_COLORS[idx])
+              if (tabObj && tabObj.bg) {
+                const tabBg = tabObj.bg
+                bg = tabBg
+                // choose readable text color against tab bg
+                color = isLightColor(tabBg) ? '#102330' : '#e6f6ff'
+              }
             }
           }
         } catch (e) {}
@@ -1728,15 +1760,7 @@ export default {
 
     function editLabel(lbl) {
       if (state.activeTabId === 'complete' || isStructureMode.value) return
-      let t = window.prompt('Edit label text (empty to delete):', lbl.text || '')
-      if (t === null) return
-      t = t.trim().slice(0, 15)
-      const idx = (state.labels || []).findIndex(s => s.id === lbl.id)
-      if (t === '') {
-        if (idx !== -1) state.labels.splice(idx, 1)
-      } else {
-        if (idx !== -1) state.labels[idx].text = t
-      }
+      openEditLabelDialogFor(lbl)
     }
 
     onUnmounted(() => {
@@ -1762,7 +1786,7 @@ export default {
       getApplianceIcon, isImageIcon, onApplianceImgError,
       TELEPORTER_APPLIANCE_ID, teleporterPairLines, labelAnchorLines, showTeleporterLinesAlways, labelDisplayMode,
       flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
-      createLabel, handleLabelPointerDown, getLabelStyle, editLabel,
+      createLabel, handleLabelPointerDown, getLabelStyle, editLabel, labelDialogVisible, labelDialogInitial, labelDialogTitle, onLabelDialogConfirm, closeLabelDialog,
       boxSelectArmed, armBoxSelect,
       // Help overlay API
       helpActive, toggleHelp, hideHelp, helpItems, helpIcon, isDark,
@@ -2094,7 +2118,7 @@ export default {
   filter: grayscale(20%);
 }
 .toolbox-icon { width: 22px; height: 22px; display: block }
-.toolbox-char { font-size: 20px; line-height: 1; display: inline-block; transform: translateY(-1px) }
+.toolbox-char { font-size: 28px; line-height: 1; display: inline-block; transform: translateY(-1px) }
 .toolbox-button[aria-pressed="true"] { background: #e8f9ee; border-color: #6fd08a; color: #0a4f24 }
 .toolbox-button:hover { transform: translateY(-1px) }
 
@@ -2175,6 +2199,8 @@ export default {
 .help-list-item + .help-list-item { margin-top: 0 }
 .help-list-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f6fbff; border-radius: 6px; border: 1px solid #cfe6ff; flex: 0 0 40px; box-shadow: 0 2px 6px rgba(17,24,39,0.06), inset 0 1px 0 rgba(255,255,255,0.6) }
 .dark .help-list-icon { background: #172127; border: 1px solid #2b3b45; box-shadow: 0 2px 8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02); color: #d9f6ff }
+.help-list-icon .hp-char { font-size: 32px !important; line-height: 40px !important; display: inline-flex; align-items: center; justify-content: center; width: 40px !important; height: 40px !important; font-family: inherit; font-weight: 600 }
+.help-list-icon svg.hp-svg { width: 36px; height: 36px }
 .help-list-text { min-width: 0; display: flex; flex-direction: column; justify-content: center }
 
 .help-list-divider-li { grid-column: 1 / -1; padding: 6px 0 }
