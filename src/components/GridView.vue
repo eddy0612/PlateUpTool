@@ -2119,7 +2119,7 @@ export default {
   filter: grayscale(20%);
 }
 .toolbox-icon { width: 22px; height: 22px; display: block }
-.toolbox-char { font-size: 28px; line-height: 1; display: inline-block; transform: translateY(-1px) }
+.toolbox-char { font-size: 22px; line-height: 1; display: inline-block; transform: translateY(-1px) }
 .toolbox-button[aria-pressed="true"] { background: #e8f9ee; border-color: #6fd08a; color: #0a4f24 }
 .toolbox-button:hover { transform: translateY(-1px) }
 
@@ -2171,7 +2171,7 @@ export default {
 .help-popup-icon .hp-char { font-size: 20px }
 .help-popup-icon .rotate-90 { display: inline-block; transform: rotate(90deg); }
 .rotate-90 { display: inline-block; transform: rotate(90deg); }
-.toolbox-button .hp-svg { width: 18px; height: 18px }
+.toolbox-button .hp-svg { width: 22px; height: 22px }
 .help-popup-icon .hp-svg { width: 28px; height: 28px }
 .help-popup-body { min-width: 140px }
 .help-popup-title { font-weight: 700; margin-bottom: 4px }
