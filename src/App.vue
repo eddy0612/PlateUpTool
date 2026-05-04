@@ -992,5 +992,7 @@ html.dark input[type="number"] { background: #141926; border-color: #2a3a54; col
   html .palette-toolbox .toolbox-button--size { padding: 8px !important; width: 44px !important; }
   html .palette-toolbox .toolbox-button--size .toolbox-size-text { display: none !important }
   html .palette-toolbox .toolbox-button--size .toolbox-icon { width: 20px !important; height: 20px !important }
+  /* Hide tagline when the UI compacts */
+  html .title-tagline { display: none !important }
 }
 </style>

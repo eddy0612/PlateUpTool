@@ -2,7 +2,7 @@
 
 I started this task as an exercise to experiment with using AI for a new application, and its been a interesting journey. Vibe coding sounds good, but its not quite as simple as people think. When building an application in something you dont know well (In this case vue) alongside a language you do know (nodejs), you learn to communicate with the AI in ways to simplify each step.
 
-All feedback, and requirements welcome - please just [raise things as issues](https://github.com/eddy0612/PlateUpTool/issues) but please be gentle
+All feedback, and requirements welcome - please just [raise things as issues](https://github.com/eddy0612/PlateUpTool/issues) or come to my [discord server](https://discord.com/invite/KyQ26Z3Qxa) and discuss with me, but please be gentle
 
 ## Credits
 
