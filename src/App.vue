@@ -270,6 +270,7 @@ import DOMPurify from 'dompurify'
 import TutorialModal, { hasTutorialBeenSeen } from './components/TutorialModal.vue'
 import RestaurantSizeModal from './components/RestaurantSizeModal.vue'
 import { isDefaultState } from './store/restaurant'
+import { alert, confirm, toast } from './utils/ui'
 
 export default {
   name: 'App',
@@ -441,10 +442,10 @@ export default {
       })
     })
 
-    function startAgain() {
+    async function startAgain() {
       // If there are any modifications (appliances/walls), confirm before discarding them
       if (!isDefaultState()) {
-        const confirmed = window.confirm('This will discard any unsaved changes and reset the planner. Continue?')
+        const confirmed = await confirm('This will discard any unsaved changes and reset the planner. Continue?')
         if (!confirmed) return
       }
       // Ensure visibility prefs are set to defaults before reloading
