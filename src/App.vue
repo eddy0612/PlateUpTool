@@ -44,12 +44,13 @@
           </span>
           Feedback
         </button>
-        <button class="saveload-button" @click="openSaveLoadMenu" title="Save, load or share your design">
+        <button class="saveload-button" @click="openSaveLoadMenu" title="Share, import, save or load your design">
+          <!-- Share / Import icon (box with arrow up) -->
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M11 2H9v3h2V2z"/>
-            <path d="M1.5 0h11.586a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13A1.5 1.5 0 0 1 1.5 0zM1 1.5v13a.5.5 0 0 0 .5.5H2v-4.5A1.5 1.5 0 0 1 3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V15h.5a.5.5 0 0 0 .5-.5V2.914a.5.5 0 0 0-.146-.353l-1.415-1.415A.5.5 0 0 0 13.086 1H13v3.5A1.5 1.5 0 0 1 11.5 6h-7A1.5 1.5 0 0 1 3 4.5V1H1.5a.5.5 0 0 0-.5.5zm3 4a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V1H4v4.5zM3 15h10v-4.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5V15z"/>
+            <path fill-rule="evenodd" d="M7.646 2.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 1 1-.708.708L8.5 3.707V9.5a.5.5 0 0 1-1 0V3.707L5.354 4.854a.5.5 0 1 1-.708-.708l2-2z"/>
+            <path fill-rule="evenodd" d="M14 13.5V12a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v1.5A1.5 1.5 0 0 0 3.5 15h9A1.5 1.5 0 0 0 14 13.5z"/>
           </svg>
-          Save / Load
+          Share / Import
         </button>
 
         <button class="help-button" @click="showHelp = true" title="Keyboard shortcuts &amp; controls">?</button>
