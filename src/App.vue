@@ -444,10 +444,20 @@ export default {
         }
       }
       window.addEventListener('keydown', onKey)
+      // Prevent the browser context menu on the app background, but allow it
+      // for editable controls (inputs, textareas, selects or contentEditable).
+      const onContextMenu = (e) => {
+        const tag = (e && e.target && e.target.tagName) || ''
+        const editable = e && e.target && (e.target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag))
+        if (editable) return
+        e.preventDefault()
+      }
+      window.addEventListener('contextmenu', onContextMenu)
       // remove on unload
       window.addEventListener('beforeunload', () => {
         window.removeEventListener('keydown', onKey)
         window.removeEventListener('plateup-undo', undo)
+        window.removeEventListener('contextmenu', onContextMenu)
       })
     })
 
