@@ -1134,6 +1134,90 @@ export default {
       setTimeout(() => { groupFlashing.value = false }, 400)
     }
 
+    // Persist toolbar pivot across consecutive toolbar-initiated rotates when
+    // the selection hasn't changed. This ensures rotating CW then CW (or CW
+    // then CCW) with the toolbar uses the same anchor point.
+    let lastToolbarPivot = null
+    let lastPivotSelectionSig = ''
+
+    function computeToolbarPivot(activeKeys) {
+      // Build a stable signature based on appliance instance ids (iids)
+      // so the signature doesn't change when selected items move positions.
+      const iidList = []
+      for (const key of activeKeys) {
+        const [x, y] = key.split(',').map(Number)
+        const cell = getDisplayCell(x, y)
+        if (cell && cell.iid) iidList.push(cell.iid)
+        else iidList.push(`pos:${x},${y}`)
+      }
+      const sig = iidList.slice().sort().join(';')
+      if (!lastToolbarPivot || lastPivotSelectionSig !== sig) {
+        // compute bounding box center of current positions and prefer upper-left
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+        for (const key of activeKeys) {
+          const [x, y] = key.split(',').map(Number)
+          if (x < minX) minX = x
+          if (x > maxX) maxX = x
+          if (y < minY) minY = y
+          if (y > maxY) maxY = y
+        }
+        const pivotX = Math.floor((minX + maxX) / 2)
+        const pivotY = Math.floor((minY + maxY) / 2)
+        lastToolbarPivot = { x: pivotX, y: pivotY }
+        lastPivotSelectionSig = sig
+      }
+      return lastToolbarPivot
+    }
+
+    function computeFallbackPivot(activeKeys) {
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+      for (const key of activeKeys) {
+        const [x, y] = key.split(',').map(Number)
+        if (x < minX) minX = x
+        if (x > maxX) maxX = x
+        if (y < minY) minY = y
+        if (y > maxY) maxY = y
+      }
+      return { x: Math.floor((minX + maxX) / 2), y: Math.floor((minY + maxY) / 2) }
+    }
+
+    // Clear cached toolbar pivot when selection content changes (not mere moves)
+    watch(selectedCells, (newSet) => {
+      const activeKeys = [...newSet].filter(key => {
+        const [x, y] = key.split(',').map(Number)
+        return !isCellGhosted(x, y)
+      })
+      const iidList = activeKeys.map(key => {
+        const [x, y] = key.split(',').map(Number)
+        const cell = getDisplayCell(x, y)
+        return (cell && cell.iid) ? cell.iid : `pos:${x},${y}`
+      })
+      const sig = iidList.slice().sort().join(';')
+      if (!lastPivotSelectionSig || lastPivotSelectionSig !== sig) {
+        lastToolbarPivot = null
+        lastPivotSelectionSig = ''
+      } else {
+        // same set of instances — keep cached pivot and refresh signature
+        lastPivotSelectionSig = sig
+      }
+    })
+    watch(() => state.activeTabId, () => {
+      lastToolbarPivot = null
+      lastPivotSelectionSig = ''
+    })
+    watch(pastePending, () => {
+      lastToolbarPivot = null
+      lastPivotSelectionSig = ''
+    })
+    watch(moveDragActive, () => {
+      lastToolbarPivot = null
+      lastPivotSelectionSig = ''
+    })
+    watch(paletteDragActive, () => {
+      lastToolbarPivot = null
+      lastPivotSelectionSig = ''
+    })
+
     // --- Teleporter pair line overlay ---
     // Returns an array of { x1, y1, x2, y2 } in grid-pixel coordinates for each
     // selected paired teleporter, so GridView can draw a dashed connector line.
@@ -1159,16 +1243,8 @@ export default {
         const [kx, ky] = key.split(',').map(Number); return !isCellGhosted(kx, ky)
       })
       if (activeKeys.length > 1) {
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
-        for (const key of activeKeys) {
-          const [x, y] = key.split(',').map(Number)
-          if (x < minX) minX = x
-          if (x > maxX) maxX = x
-          if (y < minY) minY = y
-          if (y > maxY) maxY = y
-        }
-        const pivotX = (minX + maxX) / 2
-        const pivotY = (minY + maxY) / 2
+        const p = computeToolbarPivot(activeKeys) || computeFallbackPivot(activeKeys)
+        const { x: pivotX, y: pivotY } = p
         const success = rotateGroupAroundCell(pivotX, pivotY)
         if (!success) flashGroupRed()
       } else {
@@ -1185,16 +1261,8 @@ export default {
         const [kx, ky] = key.split(',').map(Number); return !isCellGhosted(kx, ky)
       })
       if (activeKeys.length > 1) {
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
-        for (const key of activeKeys) {
-          const [x, y] = key.split(',').map(Number)
-          if (x < minX) minX = x
-          if (x > maxX) maxX = x
-          if (y < minY) minY = y
-          if (y > maxY) maxY = y
-        }
-        const pivotX = (minX + maxX) / 2
-        const pivotY = (minY + maxY) / 2
+        const p = computeToolbarPivot(activeKeys) || computeFallbackPivot(activeKeys)
+        const { x: pivotX, y: pivotY } = p
         const success = rotateGroupAroundCellCCW(pivotX, pivotY)
         if (!success) flashGroupRed()
       } else {
@@ -1361,11 +1429,18 @@ export default {
           const [kx, ky] = k.split(',').map(Number); return !isCellGhosted(kx, ky)
         }).length
         if (activeCount > 1) {
+          // Right-click group rotation — clear toolbar pivot cache so toolbar
+          // rotations don't reuse a pivot chosen by a previous toolbar action.
+          lastToolbarPivot = null
+          lastPivotSelectionSig = ''
           const success = ccw ? rotateGroupAroundCellCCW(x, y) : rotateGroupAroundCell(x, y)
           if (!success) flashGroupRed()
           return
         }
       }
+      // Single-cell right-click rotate — clear cached toolbar pivot as well.
+      lastToolbarPivot = null
+      lastPivotSelectionSig = ''
       ccw ? rotateCellCCW(x, y) : rotateCell(x, y)
     }
 
