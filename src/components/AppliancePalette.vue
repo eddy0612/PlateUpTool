@@ -190,26 +190,28 @@
       <template v-if="exportMenuVisible">
         <div class="context-menu-backdrop" @click="closeExportMenu" @contextmenu.prevent="closeExportMenu" />
         <div class="context-menu" :style="exportMenuPos.top != null ? { left: exportMenuPos.x + 'px', top: exportMenuPos.top + 'px' } : { left: exportMenuPos.x + 'px', bottom: exportMenuPos.bottom + 'px' }">
-          <div class="context-menu-group-label">Share</div>
+          <div class="context-menu-group-label">Share via Clipboard</div>
+          <div class="context-menu-item" :class="{ disabled: !hasNonGhostSelection }" @click="exportSelectedToClipboard"><span class="icon">📤</span> Selected cells...</div>
+          <div class="context-menu-item" @click="doExportClipboard('tab')"><span class="icon">📋</span> {{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
+          <div class="context-menu-item" @click="doExportClipboard('all-tabs')"><span class="icon">📋</span> All appliance tabs</div>
+          <div class="context-menu-item" @click="doExportClipboard('complete')"><span class="icon">📋</span> Complete</div>
+
           <div class="context-menu-item" @click="copyLinkFromMenu">
             <span class="icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" style="display:block">
                 <path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5z"/>
               </svg>
             </span>
-            Copy link to clipboard
+            Copy URL to clipboard
           </div>
-          <div class="context-menu-group-label">Copy image to clipboard</div>
-          <div class="context-menu-item" :class="{ disabled: !hasNonGhostSelection }" @click="exportSelectedToClipboard"><span class="icon">📤</span> Selected cells...</div>
-          <div class="context-menu-item" @click="doExportClipboard('tab')"><span class="icon">📋</span> {{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
-          <div class="context-menu-item" @click="doExportClipboard('all-tabs')"><span class="icon">📋</span> All appliance tabs</div>
-          <div class="context-menu-item" @click="doExportClipboard('complete')"><span class="icon">📋</span> Complete</div>
-          <div class="context-menu-group-label">Save as file...</div>
-          <div class="context-menu-item" :class="{ disabled: !hasNonGhostSelection }" @click="exportSelectedToFile"><span class="icon">📤</span> Selected cells...</div>
+
+          <div class="context-menu-group-label">Share via File</div>
+          <div class="context-menu-item" :class="{ disabled: !hasNonGhostSelection }" @click="exportSelectedToFile"><span class="icon">💾</span> Selected cells...</div>
           <div class="context-menu-item" @click="doExport('tab')"><span class="icon">💾</span> {{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</div>
           <div class="context-menu-item" @click="doExport('all-tabs')"><span class="icon">💾</span> All appliance tabs</div>
           <div class="context-menu-item" @click="doExport('complete')"><span class="icon">💾</span> Complete</div>
-          <div class="context-menu-group-label">Load</div>
+
+          <div class="context-menu-group-label">Import</div>
           <div class="context-menu-item" @click="loadFromMenu"><span class="icon">📂</span> Load from file...</div>
           <div class="context-menu-item" @click="importFromClipboard"><span class="icon">📋</span> Import from clipboard</div>
         </div>
