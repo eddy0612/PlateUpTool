@@ -197,7 +197,7 @@
         <AppliancePalette />
         <div class="palette-toolbox-box" title="Palette toolbox (controls) - Undo - Ctrl + Z">
           <div class="palette-toolbox" role="toolbar" aria-label="Palette toolbox">
-            <button class="toolbox-button toolbox-button--size" @click="showSizeModal = true" title="Change room size">
+            <button class="toolbox-button toolbox-button--size" @click="openChangeSizeModal" title="Change room size">
               <svg class="toolbox-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                 <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h13A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 12.5v-9zM1.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z"/>
                 <path d="M3 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1H4v4.5a.5.5 0 0 1-1 0v-5zm9-3a.5.5 0 0 1-.5.5H7v-5a.5.5 0 0 1 1 0V6h3.5a.5.5 0 0 1 .5.5z"/>
@@ -244,7 +244,7 @@
         </div>
       </div>
     </div>
-    <RestaurantSizeModal v-if="showSizeModal" @choose="onSizeChosen" />
+    <RestaurantSizeModal v-if="showSizeModal" :dismissable="sizeModalDismissable" @choose="onSizeChosen" @cancel="onSizeCancelled" />
     <transition name="toast">
       <div v-if="showCopiedToast" class="copied-toast">Link copied to clipboard</div>
     </transition>
@@ -285,6 +285,7 @@ export default {
     const showCredits = ref(false)
     const showTutorial = ref(false)
     const showSizeModal = ref(false)
+    const sizeModalDismissable = ref(false)
     const showCopiedToast = ref(false)
     const showFeedbackModal = ref(false)
     const darkMode = ref(localStorage.getItem('darkMode') === 'true')
@@ -312,6 +313,11 @@ export default {
 
     function openFeedback() {
       showFeedbackModal.value = true
+    }
+
+    function openChangeSizeModal() {
+      sizeModalDismissable.value = true
+      showSizeModal.value = true
     }
 
     function openGitHubIssues() {
@@ -407,6 +413,7 @@ export default {
         showTutorial.value = true
       } else if (isDefaultState()) {
         showSizeModal.value = true
+        sizeModalDismissable.value = false
       }
       window.addEventListener('hashchange', () => {
         loadFromHash()
@@ -420,6 +427,7 @@ export default {
         // state is the default (new restaurant) show the modal, otherwise hide it.
         try {
           showSizeModal.value = isDefaultState()
+          if (showSizeModal.value) sizeModalDismissable.value = false
         } catch (e) {
           showSizeModal.value = false
         }
@@ -521,14 +529,20 @@ export default {
       state.roomHeight = Number(h)
       loadGridFromState()
       showSizeModal.value = false
+      sizeModalDismissable.value = false
+    }
+
+    function onSizeCancelled() {
+      showSizeModal.value = false
+      sizeModalDismissable.value = false
     }
 
     // When tutorial closes, if state is default show the size picker
     watch(showTutorial, (v) => {
-      if (!v && isDefaultState()) showSizeModal.value = true
+      if (!v && isDefaultState()) { showSizeModal.value = true; sizeModalDismissable.value = false }
     })
 
-    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen, undo }
+    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, sizeModalDismissable, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, openChangeSizeModal, toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen, onSizeCancelled, undo }
   }
 }
 </script>
