@@ -520,6 +520,8 @@ function isCellOnActiveTab(x, y) {
 }
 
 function selectCell(x, y, shiftKey = false, ctrlKey = false) {
+  // Treat Shift+Click as Ctrl+Click (toggle) per user preference.
+  if (shiftKey) { ctrlKey = true; shiftKey = false }
   if (shiftKey && anchorCell.value) {
     const x0 = Math.min(anchorCell.value.x, x)
     const x1 = Math.max(anchorCell.value.x, x)
