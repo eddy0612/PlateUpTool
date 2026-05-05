@@ -1,6 +1,6 @@
 <template>
   <teleport to="body">
-    <div class="size-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="size-modal-backdrop" role="dialog" aria-modal="true" @click.self="onBackdropClick">
       <div class="size-modal">
         <div class="size-modal-header">
           <h2>Select Restaurant Size</h2>
@@ -52,8 +52,11 @@
 import { ref, onMounted, onBeforeUnmount, computed, reactive } from 'vue'
 export default {
   name: 'RestaurantSizeModal',
-  emits: ['choose'],
-  setup(_, { emit }) {
+  props: {
+    dismissable: { type: Boolean, default: false }
+  },
+  emits: ['choose', 'cancel'],
+  setup(props, { emit }) {
     const options = [
       { label: 'Diner', dim: '10×6', w: 10, h: 6 },
       { label: 'Small', dim: '10×7', w: 10, h: 7 },
@@ -113,16 +116,22 @@ export default {
       emit('choose', { w, h })
     }
 
-    // Prevent Escape from closing anything — stop propagation for Escape
+    function onBackdropClick() {
+      if (props.dismissable) emit('cancel')
+    }
+
+    // Handle Escape: when dismissable emit cancel, otherwise swallow Escape
     function onKey(e) {
       if (e.key === 'Escape') {
-        e.stopPropagation(); e.preventDefault();
+        e.preventDefault();
+        if (props.dismissable) emit('cancel')
+        else { e.stopPropagation(); }
       }
     }
     onMounted(() => window.addEventListener('keydown', onKey, true))
     onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 
-    return { options, customW, customH, choose, chooseCustom, validCustom, range, MIN_W, MAX_W, MIN_H, MAX_H, fallbackMap, getPreviewSrc, setFallback, getPreviewKey, isDark }
+    return { options, customW, customH, choose, chooseCustom, validCustom, range, MIN_W, MAX_W, MIN_H, MAX_H, fallbackMap, getPreviewSrc, setFallback, getPreviewKey, isDark, onBackdropClick }
   }
 }
 </script>
