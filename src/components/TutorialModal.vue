@@ -56,7 +56,9 @@
 <script>
 import { ref, computed } from 'vue'
 
-const STORAGE_KEY = 'plateuptool_tutorial_seen'
+// Bump this key when making changes to the tutorial content so returning
+// users see the updated tutorial. Current tutorial version: 2
+const STORAGE_KEY = 'plateuptool_tutorial_seen_v2'
 
 export function hasTutorialBeenSeen() {
   return localStorage.getItem(STORAGE_KEY) === 'true'
@@ -74,31 +76,31 @@ function gifUrl(filename) {
 const pages = [
   {
     title: 'Welcome to PlateUp Tool',
-    body: 'PlateUp Tool is a layout planner for PlateUp! Drag appliances from the palette on the right onto the grid to start designing your restaurant. Your design is saved automatically in the URL — no account needed.',
+    body: 'PlateUp Tool is a layout planner for PlateUp! Drag appliances from the palette on the right onto the grid to start designing your restaurant. It is easy to share your designs, no account needed.',
     gif: gifUrl('page1.gif'),
     gifAlt: 'Overview of the PlateUp Tool interface'
   },
   {
     title: 'Moving Items Around the Grid',
-    body: 'Click any cell to select it, then drag it to a new position. Right-click a selected item to rotate it 90° clockwise, or hold Shift while right-clicking to rotate counter-clockwise.',
+    body: 'Click any cell to select it, then drag it to a new position. Use the toolbar, or right-click a selected item to rotate it 90° clockwise; hold Shift while right-clicking to rotate counter-clockwise.',
     gif: gifUrl('page2.gif'),
     gifAlt: 'Dragging and rotating items on the grid'
   },
   {
     title: 'Selecting Multiple Items',
-    body: 'Hold Shift or Ctrl and drag across the grid to box-select multiple items at once. Ctrl+Click toggles individual cells in or out of the selection, and Ctrl+A selects everything on the current tab.',
+    body: 'Use the toolbar, or hold Shift or Ctrl and drag across the grid to box-select multiple items. Ctrl+Click toggles individual cells in the selection, and Ctrl+A selects everything on the current tab.',
     gif: gifUrl('page3.gif'),
     gifAlt: 'Selecting multiple grid cells'
   },
   {
     title: 'Working with Selections',
-    body: 'Right-click any cell within a selection to rotate the whole group around that pivot — Shift+Right-click rotates the other way. You can also cut (Ctrl+X), copy (Ctrl+C), paste (Ctrl+V) or duplicate (Ctrl+D) the entire selection.',
+    body: 'Use the toolbar or keyboard to cut (Ctrl+X), copy (Ctrl+C), paste (Ctrl+V) or duplicate (Ctrl+D) selected items. You can also rotate or flip them too.',
     gif: gifUrl('page4.gif'),
     gifAlt: 'Rotating and copying a selection'
   },
   {
     title: 'Adding Walls, Hatches and Doors',
-    body: 'Switch to the Structure tab to define the shape of your restaurant. Select a tool from the palette, then left-click any cell edge to apply it. Right-click an edge to clear it.',
+    body: 'Switch to the Structure tab to define the shape of your restaurant. Select a tool from the palette, then left-click any cell edge to apply it. Right-click an edge to clear it. If your seed is known, you may be able to just load it instead.',
     gif: gifUrl('page5.gif'),
     gifAlt: 'Adding walls and doors in Structure mode'
   },
@@ -110,25 +112,25 @@ const pages = [
   },
   {
     title: 'Previewing Your Design',
-    body: 'Click the Preview tab to see a fully rendered view of your complete layout, along with a full inventory of every appliance placed across all tabs.',
+    body: 'Click the Preview tab to see your complete layout, along with a full inventory of every appliance placed across all tabs.',
     gif: gifUrl('page7.gif'),
     gifAlt: 'Preview tab showing the finished layout'
   },
   {
     title: 'Sharing Your Design',
-    body: 'Your entire design — every appliance, wall and tab — is encoded directly in the page URL. Copy the address from your browser and share it with friends; they will see exactly what you see.',
+    body: 'Use the Share feature to create images of your restaurant that embed your design. Send to a friend and they will be able to import it, or just copy the page URL which contains your design.',
     gif: gifUrl('page8.gif'),
     gifAlt: 'Copying the URL to share a design'
   },
   {
-    title: 'Keyboard Shortcuts',
-    body: 'A full list of keyboard shortcuts and controls is available at any time. Click the ? button in the top-right corner of the screen to open the Controls & Shortcuts reference.',
+    title: 'More Help',
+    body: 'Click the ? on the toolbar for a description of each button, or the ? in the top-right for a full list of keyboard shortcuts.',
     gif: gifUrl('page9.gif'),
-    gifAlt: 'The keyboard shortcuts reference panel'
+    gifAlt: 'The two help pages'
   },
   {
-    title: 'Advanced: Blueprints & Import / Export',
-    body: 'Blueprints let you save a group of items as a reusable block. Select the cells you want, save them as a blueprint, and it will appear in the palette just like any appliance. You can also export or import the full restaurant structure, the entire design, or an individual blueprint to back up or share your work.',
+    title: 'Advanced: Blueprints',
+    body: 'Blueprints let you save a group of items as a reusable block. Select the cells you want, save them as a blueprint, and it will appear in the palette like any appliance. As with restaurant designs, you can share or import blueprints.',
     gif: gifUrl('page10.gif'),
     gifAlt: 'Creating and using blueprints'
   }
@@ -177,9 +179,10 @@ export default {
   border-radius: 12px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
   width: 50vw;
-  height: 50vh;
+  /* Increased height by ~25% to give more vertical space for GIFs */
+  height: 62.5vh;
   min-width: 400px;
-  min-height: 320px;
+  min-height: 400px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -217,12 +220,13 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 14px 20px 8px;
-  gap: 12px;
+  padding: 18px 22px 12px;
+  gap: 20px;
   overflow: hidden;
 }
 .tutorial-gif-area {
-  flex: 1;
+  /* Allocate more space to the embedded GIF area */
+  flex: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -231,7 +235,8 @@ export default {
 }
 .tutorial-gif {
   max-width: 100%;
-  max-height: 100%;
+  /* Allow GIFs to occupy more of the vertical space while preserving aspect */
+  max-height: 95%;
   object-fit: contain;
   border-radius: 6px;
   border: 1px solid #e0e4ec;
@@ -239,6 +244,8 @@ export default {
 .tutorial-text {
   width: 100%;
   flex-shrink: 0;
+  /* Keep the text compact so the GIF area remains dominant */
+  max-height: 28%;
 }
 .tutorial-text h3 {
   margin: 0 0 4px;
