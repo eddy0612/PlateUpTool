@@ -831,8 +831,12 @@ export default {
               const tw = Math.ceil(ctx.measureText(text).width)
               const bw = tw + padX * 2
               const bh = Math.ceil(parseInt(ctx.font)) + padY * 2
-              // background with rounded corners and outline
-              ctx.fillStyle = '#ffffff'
+              // theme-aware background, outline and text
+              const isDarkLocal = !!document.documentElement.classList.contains('dark')
+              const bgCol = isDarkLocal ? '#1c2030' : '#ffffff'
+              const outlineCol = isDarkLocal ? 'rgba(255,255,255,0.06)' : 'rgba(16,35,48,0.12)'
+              const textCol = isDarkLocal ? '#d0daea' : '#102330'
+              ctx.fillStyle = bgCol
               ctx.globalAlpha = 0.95
               const rx = lx - bw / 2, ry = ly - bh / 2
               const r = Math.min(8, Math.floor(bh / 2), Math.floor(bw / 4))
@@ -850,10 +854,10 @@ export default {
               ctx.fill()
               // outline
               ctx.lineWidth = 1
-              ctx.strokeStyle = 'rgba(16,35,48,0.12)'
+              ctx.strokeStyle = outlineCol
               ctx.stroke()
               ctx.globalAlpha = 1
-              ctx.fillStyle = '#102330'
+              ctx.fillStyle = textCol
               ctx.fillText(text, lx, ly)
               ctx.restore()
             }
@@ -1425,8 +1429,12 @@ export default {
             const tw = Math.ceil(ctx.measureText(text).width)
             const bw = tw + padX * 2
             const bh = Math.ceil(parseInt(ctx.font)) + padY * 2
+            const isDarkLocal = !!document.documentElement.classList.contains('dark')
+            const bgCol = isDarkLocal ? '#1c2030' : '#ffffff'
+            const outlineCol = isDarkLocal ? 'rgba(255,255,255,0.06)' : 'rgba(16,35,48,0.12)'
+            const textCol = isDarkLocal ? '#d0daea' : '#102330'
             // background with rounded corners and outline
-            ctx.fillStyle = '#ffffff'
+            ctx.fillStyle = bgCol
             ctx.globalAlpha = 0.95
             const rx = lx - bw / 2, ry = ly - bh / 2
             const r = Math.min(8, Math.floor(bh / 2), Math.floor(bw / 4))
@@ -1444,10 +1452,10 @@ export default {
             ctx.fill()
             // outline
             ctx.lineWidth = 1
-            ctx.strokeStyle = 'rgba(16,35,48,0.12)'
+            ctx.strokeStyle = outlineCol
             ctx.stroke()
             ctx.globalAlpha = 1
-            ctx.fillStyle = '#102330'
+            ctx.fillStyle = textCol
             ctx.fillText(text, lx, ly)
             ctx.restore()
           }
