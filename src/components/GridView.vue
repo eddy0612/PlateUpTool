@@ -44,7 +44,7 @@
           >
             <defs>
               <pattern id="hatchPattern" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
-                <rect width="4" height="8" fill="#777" />
+                  <rect width="4" height="8" :fill="hatchPatternColor" />
               </pattern>
             </defs>
             <rect
@@ -58,14 +58,14 @@
               v-for="(r, i) in wallRectsDoor"
               :key="'wall-door-' + i"
               :x="r.x" :y="r.y" :width="r.w" :height="r.h"
-              fill="#c8860a"
+              :fill="doorColor"
               :opacity="0.98"
             />
             <rect
               v-for="(r, i) in wallRectsWall"
               :key="'wall-wall-' + i"
               :x="r.x" :y="r.y" :width="r.w" :height="r.h"
-              fill="#1a1a2e"
+              :fill="wallColor"
               :opacity="0.98"
             />
           </svg>
@@ -1431,6 +1431,12 @@ export default {
     const wallRectsDoor = computed(() => wallRects.value.filter(r => r.type === 'door'))
     const wallRectsWall = computed(() => wallRects.value.filter(r => r.type === 'wall'))
 
+    // Colour overrides for dark mode so walls remain visible on dark backgrounds
+    // Even lighter dark-mode tones for better visibility on dark backgrounds
+    const wallColor = computed(() => isDark.value ? '#d1d5db' : '#1a1a2e')
+    const doorColor = computed(() => isDark.value ? '#ffbf66' : '#c8860a')
+    const hatchPatternColor = computed(() => isDark.value ? '#e6eef6' : '#777')
+
     const teleporterPairLines = computed(() => {
       const lines = []
       const cs = cellSize.value * state.zoom
@@ -2036,6 +2042,7 @@ export default {
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
       getApplianceIcon, isImageIcon, onApplianceImgError,
       TELEPORTER_APPLIANCE_ID, wallRects, wallRectsHatch, wallRectsDoor, wallRectsWall, teleporterPairLines, labelAnchorLines, showTeleporterLinesAlways, labelDisplayMode,
+      wallColor, doorColor, hatchPatternColor,
       flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
       createLabel, handleLabelPointerDown, getLabelStyle, editLabel, labelDialogVisible, labelDialogInitial, labelDialogTitle, onLabelDialogConfirm, closeLabelDialog,
       boxSelectArmed, armBoxSelect,
