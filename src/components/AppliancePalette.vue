@@ -236,7 +236,7 @@ import AddLabelDialog from './AddLabelDialog.vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
 import { useGrid } from '../composables/useGrid'
-import { readPngText, writePngText, writeStegoText, readStegoFromBytes, dataUrlToBytes, bytesToDataUrl, downloadDataUrl, readFileAsBytes } from '../composables/usePngMetadata'
+import { readPngText, writePngText, writeStegoText, readStegoFromBytes, dataUrlToBytes, bytesToDataUrl, downloadDataUrl, readFileAsBytes, writePngDpi } from '../composables/usePngMetadata'
 import { alert, confirm, toast } from '../utils/ui'
 
 const LS_BLUEPRINTS_KEY = 'plateup-blueprints'
@@ -322,7 +322,7 @@ export default {
     }
 
     // Clipboard export (uses same previews as file export but writes image to clipboard)
-    async function doExportClipboard(type) {
+    async function doExportClipboard(type, scale = 2, dpi = 300) {
       closeExportMenu()
       let dataUrl
       if (state.activeTabId === 'structure' && type === 'tab') {
@@ -428,6 +428,7 @@ export default {
           if (state.activeTabId === 'structure' && type === 'tab') {
             modified = writePngText(modified, 'plateup-structure', encodePayload({ roomWidth: state.roomWidth, roomHeight: state.roomHeight, walls: state.walls || {} }))
           }
+          try { modified = writePngDpi(modified, dpi) } catch (e) { /* ignore */ }
           finalBlob = new Blob([modified], { type: 'image/png' })
         } else {
           finalBlob = await (await fetch(dataUrl)).blob()
@@ -1076,7 +1077,8 @@ export default {
       const json = JSON.stringify({ name: bp.name, cells: bp.cells, labels: bp.labels || [] })
       const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
       const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(exportPreview), 'plateup-blueprint', payload))
-      const modified = writePngText(bytes, 'plateup-blueprint', payload)
+      let modified = writePngText(bytes, 'plateup-blueprint', payload)
+      try { modified = writePngDpi(modified, 300) } catch (e) {}
       const safeName = bp.name.replace(/[^a-z0-9_-]/gi, '_').slice(0, 40) || 'blueprint'
       downloadDataUrl(bytesToDataUrl(modified), `plateup-blueprint-${safeName}-${exportTimestamp()}.png`)
     }
@@ -1248,16 +1250,22 @@ export default {
     }
 
     // Generate a preview canvas with optional tab filter (null = all tabs) and optional walls overlay
-    async function generateGridPreview(tabId, includeWalls) {
+    async function generateGridPreview(tabId, includeWalls, scale = 2) {
       const CELL_PX = 42
       const PAD = 6
       const canvasW = state.roomWidth * CELL_PX + PAD * 2
       const canvasH = state.roomHeight * CELL_PX + PAD * 2
       const offscreen = document.createElement('canvas')
-      offscreen.width = canvasW
-      offscreen.height = canvasH
+      offscreen.width = canvasW * scale
+      offscreen.height = canvasH * scale
       const ctx = offscreen.getContext('2d')
+      // Draw in logical units then scale to produce higher-resolution export
+      ctx.scale(scale, scale)
       const isDark = document.documentElement.classList.contains('dark')
+      // Match export colours to the grid's dark-mode variants
+      const wallColor = isDark ? '#d1d5db' : '#1a1a2e'
+      const doorColor = isDark ? '#ffbf66' : '#c8860a'
+      const hatchColor = isDark ? '#e6eef6' : '#555555'
       ctx.fillStyle = isDark ? (includeWalls ? '#151a26' : '#1e2738') : (includeWalls ? '#f8f9fb' : '#e8eef8')
       ctx.fillRect(0, 0, canvasW, canvasH)
       ctx.strokeStyle = isDark ? '#2a3a54' : (includeWalls ? '#d0d8e8' : '#c8d4e4')
@@ -1273,14 +1281,14 @@ export default {
         // from state.walls can be drawn on top (prevents the border from
         // obscuring outer doors).
         ctx.setLineDash([])
-        ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3
+        ctx.strokeStyle = wallColor; ctx.lineWidth = 3
         ctx.strokeRect(PAD, PAD, state.roomWidth * CELL_PX, state.roomHeight * CELL_PX)
         for (const [key, type] of Object.entries(state.walls || {})) {
           const [orient, xStr, yStr] = key.split(',')
           const wx = parseInt(xStr), wy = parseInt(yStr)
-          if (type === 'wall')       { ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3; ctx.setLineDash([]) }
-          else if (type === 'hatch') { ctx.strokeStyle = isDark ? '#a0b4cc' : '#555555'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]) }
-          else if (type === 'door')  { ctx.strokeStyle = isDark ? '#f0a830' : '#c8860a'; ctx.lineWidth = 3; ctx.setLineDash([]) }
+          if (type === 'wall')       { ctx.strokeStyle = wallColor; ctx.lineWidth = 3; ctx.setLineDash([]) }
+          else if (type === 'hatch') { ctx.strokeStyle = hatchColor; ctx.lineWidth = 2; ctx.setLineDash([3, 3]) }
+          else if (type === 'door')  { ctx.strokeStyle = doorColor; ctx.lineWidth = 3; ctx.setLineDash([]) }
           ctx.beginPath()
           if (orient === 'h') {
             ctx.moveTo(PAD + wx * CELL_PX, PAD + wy * CELL_PX)
@@ -1518,14 +1526,19 @@ export default {
       return offscreen.toDataURL('image/png')
     }
 
-    async function generateStructureOnlyPreview() {
+    async function generateStructureOnlyPreview(scale = 2) {
       const CELL_PX = 36, PAD = 6
       const canvasW = state.roomWidth * CELL_PX + PAD * 2
       const canvasH = state.roomHeight * CELL_PX + PAD * 2
       const offscreen = document.createElement('canvas')
-      offscreen.width = canvasW; offscreen.height = canvasH
+      offscreen.width = canvasW * scale; offscreen.height = canvasH * scale
       const ctx = offscreen.getContext('2d')
+      ctx.scale(scale, scale)
       const isDark = document.documentElement.classList.contains('dark')
+      // Match dark-mode export colours to the grid
+      const wallColor = isDark ? '#d1d5db' : '#1a1a2e'
+      const doorColor = isDark ? '#ffbf66' : '#c8860a'
+      const hatchColor = isDark ? '#e6eef6' : '#555555'
       ctx.fillStyle = isDark ? '#151a26' : '#f8f9fb'
       ctx.fillRect(0, 0, canvasW, canvasH)
       ctx.strokeStyle = isDark ? '#2a3a54' : '#d0d8e8'; ctx.lineWidth = 0.5
@@ -1537,14 +1550,14 @@ export default {
       }
       // Draw outer rectangle first so explicit border doors/walls are drawn on top
       ctx.setLineDash([])
-      ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3
+      ctx.strokeStyle = wallColor; ctx.lineWidth = 3
       ctx.strokeRect(PAD, PAD, state.roomWidth * CELL_PX, state.roomHeight * CELL_PX)
       for (const [key, type] of Object.entries(state.walls || {})) {
         const [orient, xStr, yStr] = key.split(',')
         const wx = parseInt(xStr), wy = parseInt(yStr)
-        if (type === 'wall')       { ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3; ctx.setLineDash([]) }
-        else if (type === 'hatch') { ctx.strokeStyle = isDark ? '#a0b4cc' : '#555555'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]) }
-        else if (type === 'door')  { ctx.strokeStyle = isDark ? '#f0a830' : '#c8860a'; ctx.lineWidth = 3; ctx.setLineDash([]) }
+        if (type === 'wall')       { ctx.strokeStyle = wallColor; ctx.lineWidth = 3; ctx.setLineDash([]) }
+        else if (type === 'hatch') { ctx.strokeStyle = hatchColor; ctx.lineWidth = 2; ctx.setLineDash([3, 3]) }
+        else if (type === 'door')  { ctx.strokeStyle = doorColor; ctx.lineWidth = 3; ctx.setLineDash([]) }
         ctx.beginPath()
         if (orient === 'h') {
           ctx.moveTo(PAD + wx * CELL_PX, PAD + wy * CELL_PX)
@@ -1690,7 +1703,8 @@ export default {
       const preview = await generateBlueprintPreview(previewCells, 80, labelsForPreview, false)
       const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: exportCells, labels: exportLabels })
       const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
-      const modified = writePngText(bytes, 'plateup-v2-export', payload)
+      let modified = writePngText(bytes, 'plateup-v2-export', payload)
+      try { modified = writePngDpi(modified, 300) } catch (e) {}
       downloadDataUrl(bytesToDataUrl(modified), `plateup-selection-${exportTimestamp()}.png`)
     }
 
@@ -1807,7 +1821,8 @@ export default {
         const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] } })), labels: clipboardExportLabels })
         const stegoDataUrl = await writeStegoText(dataUrl, 'plateup-v2-export', payload)
         const bytes = dataUrlToBytes(stegoDataUrl)
-        const modified = writePngText(bytes, 'plateup-v2-export', payload)
+        let modified = writePngText(bytes, 'plateup-v2-export', payload)
+        try { modified = writePngDpi(modified, 300) } catch (e) {}
         const finalBlob = new Blob([modified], { type: 'image/png' })
         await navigator.clipboard.write([
           new window.ClipboardItem({ [finalBlob.type]: finalBlob })
@@ -1857,6 +1872,7 @@ export default {
         let modified = writePngText(bytes, 'plateup-v2-export', payload)
         // Also write legacy key for backward compat
         modified = writePngText(modified, 'plateup-structure', encodePayload({ roomWidth: state.roomWidth, roomHeight: state.roomHeight, walls: state.walls || {} }))
+        try { modified = writePngDpi(modified, 300) } catch (e) {}
         downloadDataUrl(bytesToDataUrl(modified), `plateup-structure-${state.roomWidth}x${state.roomHeight}-${exportTimestamp()}.png`)
         return
       }
@@ -1897,7 +1913,8 @@ export default {
         const preview = await generateGridPreview(tabId, false)
         const payload = encodePayload({ type: 'tab', tabId, tabLabel, cells: exportCells, labels: exportLabels })
         const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
-        const modified = writePngText(bytes, 'plateup-v2-export', payload)
+        let modified = writePngText(bytes, 'plateup-v2-export', payload)
+        try { modified = writePngDpi(modified, 300) } catch (e) {}
         const safeName = tabLabel.replace(/[^a-z0-9_-]/gi, '_').slice(0, 30) || tabId
         downloadDataUrl(bytesToDataUrl(modified), `plateup-tab-${safeName}-${exportTimestamp()}.png`)
 
@@ -1932,7 +1949,8 @@ export default {
         const preview = await generateGridPreview(null, false)
         const payload = encodePayload({ type: 'all-tabs', cells: exportCells, labels: exportLabels })
         const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
-        const modified = writePngText(bytes, 'plateup-v2-export', payload)
+        let modified = writePngText(bytes, 'plateup-v2-export', payload)
+        try { modified = writePngDpi(modified, 300) } catch (e) {}
         downloadDataUrl(bytesToDataUrl(modified), `plateup-all-tabs-${exportTimestamp()}.png`)
 
       } else if (type === 'complete') {
@@ -1948,7 +1966,8 @@ export default {
           labels: state.labels || []
         })
         const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
-        const modified = writePngText(bytes, 'plateup-v2-export', payload)
+        let modified = writePngText(bytes, 'plateup-v2-export', payload)
+        try { modified = writePngDpi(modified, 300) } catch (e) {}
         downloadDataUrl(bytesToDataUrl(modified), `plateup-complete-${exportTimestamp()}.png`)
       }
     }
