@@ -1,6 +1,8 @@
 <template>
   <section class="left-panel">
-    <div style="position:relative; width:100%;">
+    <div style="position:relative; width:100%;"> 
+      <button class="debug-dump-btn" @click="dumpWallDebug">Dump Walls</button>
+      <button class="debug-toggle-btn" @click="showDebugOverlay = !showDebugOverlay">{{ showDebugOverlay ? 'Hide Debug' : 'Show Debug' }}</button>
 
       <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }" :class="{ 'file-drag-over': fileDragOver }" @mousemove="onViewportMouseMove" @mouseleave="onViewportMouseLeave" @dragover.prevent="onFileDragOver" @dragleave="onFileDragLeave" @drop.prevent="onFileDrop">
         <div class="grid-centering-wrapper">
@@ -33,242 +35,55 @@
                 >{{ getDisplayCell(cellInfo.x, cellInfo.y).extraData }}</span>
               </template>
             </div>
-            <!-- wall edges are now rendered by a single SVG overlay (see wallRects) -->
+            <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'top')"    :class="['edge-marker', 'edge-top',    `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'top')}`]"></div>
+
+            <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'right')"  :class="['edge-marker', 'edge-right',  `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'right')}`]"></div>
+            <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'bottom')" :class="['edge-marker', 'edge-bottom', `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'bottom')}`]"></div>
+            <div v-if="getWallEdge(cellInfo.x, cellInfo.y, 'left')"   :class="['edge-marker', 'edge-left',   `edge-type-${getWallEdge(cellInfo.x, cellInfo.y, 'left')}`]"></div>
           </div>
           <svg
-            v-if="wallRects.length > 0"
-            class="wall-overlay"
-            :width="state.roomWidth * cellSize * state.zoom"
-            :height="state.roomHeight * cellSize * state.zoom"
+            v-if="teleporterPairLines.length > 0 || labelAnchorLines.length > 0 || wallSegments.length > 0"
+            class="teleporter-pair-overlay"
+            :width="svgWidth"
+            :height="svgHeight"
+            :viewBox="svgViewBox"
             xmlns="http://www.w3.org/2000/svg"
           >
+            <!-- Wall segments (deduplicated rects) -->
+            <rect
+              v-for="(seg, i) in wallSegments"
+              :key="'wall-' + i"
+              :x="seg.x"
+              :y="seg.y"
+              :width="seg.w"
+              :height="seg.h"
+              :fill="seg.type === 'wall' ? (isDark && isDark.value ? '#c8d4e8' : '#1a1a2e') : seg.type === 'door' ? '#c8860a' : 'url(#hatch)'
+              "
+                opacity="1"
+                shape-rendering="crispEdges"
+            />
+
+            <!-- Pattern for hatch (diagonal stripes) -->
             <defs>
-              <pattern id="hatchPattern" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
-                <rect width="4" height="8" fill="#777" />
+              <pattern id="hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+                <rect width="8" height="8" fill="#ffffff" />
+                <path d="M0 7 L8 7 L8 8 L0 8 Z" fill="#c0c0c0" />
               </pattern>
             </defs>
-            <rect
-              v-for="(r, i) in wallRectsHatch"
-              :key="'wall-hatch-' + i"
-              :x="r.x" :y="r.y" :width="r.w" :height="r.h"
-              fill="url(#hatchPattern)"
-              :opacity="0.98"
-            />
-            <rect
-              v-for="(r, i) in wallRectsDoor"
-              :key="'wall-door-' + i"
-              :x="r.x" :y="r.y" :width="r.w" :height="r.h"
-              fill="#c8860a"
-              :opacity="0.98"
-            />
-            <rect
-              v-for="(r, i) in wallRectsWall"
-              :key="'wall-wall-' + i"
-              :x="r.x" :y="r.y" :width="r.w" :height="r.h"
-              fill="#1a1a2e"
-              :opacity="0.98"
-            />
           </svg>
 
-          <svg
-            v-if="teleporterPairLines.length > 0 || labelAnchorLines.length > 0"
-            class="teleporter-pair-overlay"
-            :width="state.roomWidth * cellSize * state.zoom"
-            :height="state.roomHeight * cellSize * state.zoom"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <line
-              v-for="(line, i) in teleporterPairLines"
-              :key="'tpline-' + i"
-              :x1="line.x1" :y1="line.y1" :x2="line.x2" :y2="line.y2"
-              stroke="#4dbb5f"
-              stroke-width="2"
-              stroke-dasharray="7,4"
-              stroke-linecap="round"
-              opacity="0.85"
-            />
-            <line
-              v-for="(line, i) in labelAnchorLines"
-              :key="'lbline-' + i"
-              :x1="line.x1" :y1="line.y1" :x2="line.x2" :y2="line.y2"
-              stroke="#2b88ff"
-              stroke-width="1.6"
-              stroke-dasharray="6,4"
-              stroke-linecap="round"
-              opacity="0.9"
-            />
-            <circle
-              v-for="(line, i) in labelAnchorLines"
-              :key="'lbdot-' + i"
-              :cx="line.x1" :cy="line.y1" :r="line.r"
-              :fill="'#2b88ff'"
-              opacity="0.95"
-            />
-          </svg>
-          <!-- Label overlays (above grid items) -->
-          <div v-for="lbl in state.labels" :key="'lbl-' + lbl.id"
-            v-if="labelDisplayMode !== 2"
-            :class="['planner-label', { 'label-selected': selectedLabelIds && selectedLabelIds.has(lbl.id) }]"
-            :data-label-id="lbl.id"
-            @pointerdown="handleLabelPointerDown(lbl, $event)"
-            @dblclick.stop.prevent="editLabel(lbl)"
-            :style="getLabelStyle(lbl)">
-            {{ lbl.text }}
-          </div>
-          <!-- Label paste previews -->
-          <div v-for="lbl in pastePendingLabels" :key="lbl.id"
-            v-if="labelDisplayMode !== 2"
-            class="planner-label label-paste-preview"
-            :style="getLabelStyle(lbl)">
-            {{ lbl.text }}
-          </div>
-        </div>
-        </div>
-      </div>
-
-      <div class="tabs">
-        <div
-          v-for="tab in state.tabs"
-          :key="tab.id"
-          :class="['tab-postit', getTabColorClass(tab), { active: state.activeTabId === tab.id }]"
-          @click="selectTab(tab)"
-          @mousedown="onTabMouseDown(tab, $event)"
-          @mouseup="cancelTabRenameTimer"
-          @mouseleave="cancelTabRenameTimer"
-          @contextmenu.prevent="onTabContextMenu(tab, $event)"
-        >
-          <input
-            v-if="editingTabId === tab.id"
-            class="tab-rename-input"
-            v-model="editingTabLabel"
-            maxlength="12"
-            @keydown.enter.prevent="commitTabRename"
-            @keydown.escape.prevent="cancelTabRename"
-            @blur="commitTabRename"
-            @click.stop
-            @mousedown.stop
-          />
-          <template v-else>{{ tab.label }}</template>
-        </div>
-        <div class="tab-postit add" v-if="state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure').length < 10" @click="addTab">+</div>
-      </div>
-
-    </div>
-
-    <div class="controls-with-status">
-      <div class="controls-right">
-        <div class="controls">
-          <!-- Zoom slider moved to the palette side-controls (no text) -->
-        </div>
-      </div>
-      <div class="toolbox-box" title="Toolbox (mouse-friendly controls)">
-          <div class="toolbox" role="toolbar" aria-label="Touch toolbox">
-          <button class="toolbox-button" data-help-id="undo" @click="doUndo" title="Undo — Ctrl+Z">
-            <span class="toolbox-char" aria-hidden="true">↶</span>
-          </button>
-          <button class="toolbox-button" data-help-id="cut" @click="cutToClipboard" title="Cut selection — Ctrl+X">
-            <span class="toolbox-char" aria-hidden="true">✂</span>
-          </button>
-
-          <button class="toolbox-button" data-help-id="copy" @click="copyToClipboard" title="Copy selection — Ctrl+C">
-            <span class="toolbox-char" aria-hidden="true">📋</span>
-          </button>
-
-          <button class="toolbox-button" data-help-id="paste" @click="startPaste" title="Paste — Ctrl+V">
-            <span class="toolbox-char" aria-hidden="true">📥</span>
-          </button>
-
-          <button class="toolbox-button" data-help-id="duplicate" @click="startDuplicate" title="Duplicate selection — Ctrl+D">
-            <span class="toolbox-char" aria-hidden="true">⎘</span>
-          </button>
-
-          <button class="toolbox-button" data-help-id="box-select" @click="armBoxSelect" :aria-pressed="boxSelectArmed" :class="{ active: boxSelectArmed }" aria-label="Box select" title="Box Select (Shift or Ctrl + left click and drag)">
-            <svg class="toolbox-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-              <rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          </button>
-
-          <button class="toolbox-button" data-help-id="select-all" @click="selectAll" title="Select all — Ctrl+A">
-            <span class="toolbox-char" aria-hidden="true">▣</span>
-          </button>
-
-          <button class="toolbox-button" data-help-id="invert" @click="invertSelection" title="Invert selection — Ctrl+I">
-            <svg class="hp-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect x="2.5" y="2.5" width="19" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2" />
-              <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-              <polyline points="9,9 6,12 9,15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-              <polyline points="15,9 18,12 15,15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          </button>
-
-          <button class="toolbox-button" data-help-id="rotate-left" @click="rotateSelectionLeft" title="Rotate selection left — Shift + Right-click">
-            <span class="toolbox-char" aria-hidden="true">⟲</span>
-          </button>
-
-          <button class="toolbox-button" data-help-id="rotate-right" @click="rotateSelectionRight" title="Rotate selection right — Right-click">
-            <span class="toolbox-char" aria-hidden="true">⟳</span>
-          </button>
-
-          <button class="toolbox-button" data-help-id="flip-h" @click="flipSelectionHorizontal" title="Flip selection horizontally — Ctrl+Shift+F">
-            <span class="toolbox-char rotate-90" aria-hidden="true">⇋</span>
-          </button>
-
-          <button class="toolbox-button" data-help-id="flip-v" @click="flipSelectionVertical" title="Flip selection vertically — Ctrl+F">
-            <span class="toolbox-char" aria-hidden="true">⇋</span>
-          </button>
-
-          <button class="toolbox-button" data-help-id="label" @click="createLabel" :disabled="state.activeTabId === 'complete' || isStructureMode || (selectedCells && selectedCells.size > 1)" title="Add label — Click to add a text label" :aria-disabled="state.activeTabId === 'complete' || isStructureMode || (selectedCells && selectedCells.size > 1)">
-            <svg class="toolbox-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-              <!-- Textbox outline -->
-              <rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6" />
-              <!-- Caret cursor on the left -->
-              <line x1="7.5" y1="9.5" x2="7.5" y2="14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-            </svg>
-          </button>
-
-          <button class="toolbox-button" data-help-id="delete" @click="removeSelected" title="Delete selection — Delete / Backspace">
-            <span class="toolbox-char" aria-hidden="true">🗑</span>
-          </button>
-
-          <!-- Help button -->
-          <button class="toolbox-button" data-help-id="help" @click.stop="toggleHelp" :aria-pressed="helpActive" title="Show help for toolbox">
-            <span class="toolbox-char" aria-hidden="true">?</span>
-          </button>
-
-          <!-- teleporter toggle moved to palette area; GridView listens for changes -->
-        </div>
-      </div>
-
-      <!-- Help modal: single centered list of toolbar items -->
-      <div v-if="helpActive" class="help-backdrop" @click="hideHelp">
-        <div class="help-modal" @click.stop>
-          <ul class="help-list">
-            <li v-for="(item, idx) in helpItems" :key="item.id || ('div-' + idx)" :class="item.divider ? 'help-list-divider-li' : 'help-list-item'">
-              <template v-if="item.divider">
-                <div class="help-list-divider" />
-              </template>
-              <template v-else>
-                <span class="help-list-icon" v-html="helpIcon(item.id)"></span>
-                <div class="help-list-text">
-                  <div class="help-popup-title">{{ item.id === 'dark-mode' ? (isDark ? 'Light Mode' : 'Dark Mode') : item.title }}</div>
-                  <div class="help-popup-desc">{{ item.id === 'dark-mode' ? (isDark ? 'Switch to light theme.' : 'Toggle the UI dark theme.') : item.desc }}</div>
-                </div>
-              </template>
-            </li>
-          </ul>
-          <div class="help-modal-actions"><button @click="hideHelp">Close</button></div>
-        </div>
-      </div>
-    </div>
+          </div> <!-- .grid -->
+        </div> <!-- .grid-centering-wrapper -->
+      </div> <!-- .viewport-box -->
 
     <div
       v-if="isDragging && dragStart && dragEnd"
       class="drag-select-overlay"
       :style="dragRectStyle"
-    />
+    ></div>
 
     <template v-if="contextMenuVisible">
-      <div class="context-menu-backdrop" @click="closeContextMenu" @contextmenu.prevent="closeContextMenu" />
+      <div class="context-menu-backdrop" @click="closeContextMenu" @contextmenu.prevent="closeContextMenu"></div>
       <div class="context-menu" :style="{ left: contextMenuPos.x + 'px', top: contextMenuPos.y + 'px' }">
         <div class="context-menu-item" @click="doMoveToThisLevel">Move selection to this level</div>
         <div class="context-menu-item" @click="doShowInBothLevels">Show selected items in both levels</div>
@@ -277,7 +92,7 @@
     </template>
 
     <template v-if="tabContextMenuVisible">
-      <div class="context-menu-backdrop" @click="closeTabContextMenu" @contextmenu.prevent="closeTabContextMenu" />
+      <div class="context-menu-backdrop" @click="closeTabContextMenu" @contextmenu.prevent="closeTabContextMenu"></div>
       <div class="context-menu" :style="{ left: tabContextMenuPos.x + 'px', top: tabContextMenuPos.y + 'px' }">
         <div class="context-menu-item" @click="doTabContextRename">Rename tab</div>
         <div class="context-menu-item" @click="doTabContextDelete">Delete tab</div>
@@ -286,7 +101,7 @@
     </template>
 
     <template v-if="tabDeleteConfirmVisible">
-      <div class="context-menu-backdrop" @click="cancelTabDeleteConfirm" @contextmenu.prevent="cancelTabDeleteConfirm" />
+      <div class="context-menu-backdrop" @click="cancelTabDeleteConfirm" @contextmenu.prevent="cancelTabDeleteConfirm"></div>
       <div class="context-menu" :style="{ left: tabContextMenuPos.x + 'px', top: tabContextMenuPos.y + 'px' }">
         <div class="context-menu-item context-menu-warn">This tab has items on it. Delete them all?</div>
         <div class="context-menu-item" @click="confirmTabDelete">Yes, delete all</div>
@@ -299,6 +114,7 @@
       :maxLength="15"
       @confirm="onLabelDialogConfirm"
       @cancel="closeLabelDialog" />
+    </div> <!-- top container -->
   </section>
 </template>
 
@@ -334,20 +150,307 @@ export default {
       , skipLabelAnchorSync
     } = useGrid()
 
-    // --- Tab colours (10 light, differentiable) ---
-    const TAB_COLORS = [
-      { bg: '#f3f4f6', border: '#d0d0d0' }, // 0 soft off-white
-      { bg: '#aad6ff', border: '#5090d0' }, // 1 sky blue
-      { bg: '#a0f0b8', border: '#48c870' }, // 2 green
-      { bg: '#ffb0d0', border: '#d87098' }, // 3 pink
-      { bg: '#d8b0ff', border: '#9060d0' }, // 4 lavender
-      { bg: '#ffd898', border: '#d09048' }, // 5 orange
-      { bg: '#80ffe0', border: '#28c090' }, // 6 teal
-      { bg: '#ffb0a8', border: '#d06858' }, // 7 salmon
-      { bg: '#b0e8ff', border: '#58a8d8' }, // 8 cyan
-      { bg: '#ccffb0', border: '#80c048' }, // 9 lime
-    ]
+    // Compute deduplicated wall segments as filled rects so walls sit centered in seams.
+    // Prefer exact DOM cell bounds when available to avoid off-by-one with borders.
+    const computeImmediateWallSegments = () => {
+      const segMap = new Map()
+      const cellEls = (gridEl.value) ? Array.from(gridEl.value.querySelectorAll('.grid-item')) : []
+      const gotAllCells = cellEls.length === state.roomWidth * state.roomHeight
+      let rects = null
+      if (gotAllCells) {
+        rects = Array.from({ length: state.roomHeight }, () => Array(state.roomWidth).fill(null))
+        const gridR = gridEl.value.getBoundingClientRect()
+        for (const el of cellEls) {
+          const x = parseInt(el.dataset.x)
+          const y = parseInt(el.dataset.y)
+          const r = el.getBoundingClientRect()
+          rects[y][x] = { left: r.left - gridR.left, top: r.top - gridR.top, right: r.right - gridR.left, bottom: r.bottom - gridR.top, width: r.width, height: r.height }
+        }
+      }
 
+      const snapHalf = v => Math.round(v * 2) / 2
+      const thickness = edgeStrokeWidth.value
+
+      const pushH = (x, yIndex, type) => {
+        const key = `h_${x}_${yIndex}`
+        if (segMap.has(key) || segMap.has(key + '_a') || segMap.has(key + '_b')) return
+        let sx, sy, w, h
+        if (rects) {
+          const c = rects[Math.max(0, Math.min(state.roomHeight - 1, Math.min(yIndex, state.roomHeight - 1)))][x]
+          sx = c.left
+          w = c.width
+          const topCell = (yIndex > 0) ? rects[yIndex - 1][x] : null
+          const bottomCell = (yIndex < state.roomHeight) ? rects[Math.min(state.roomHeight - 1, yIndex)][x] : null
+          const refCell = bottomCell || topCell || c
+          sx = refCell.left
+          w = refCell.width
+          if (topCell && bottomCell) {
+            const yTop = topCell.bottom
+            const yBottom = bottomCell.top
+            const gap = Math.max(0, yBottom - yTop)
+            const baseThickness = Math.max(thickness, gap)
+            const extra = Math.max(2, Math.round(edgeStrokeWidth.value / 2))
+            const totalWithExtra = baseThickness + extra
+            const sxOut = snapHalf(sx - extra)
+            const wOut = snapHalf(w + extra * 2)
+            const syOut = snapHalf(((yTop + yBottom) / 2) - (totalWithExtra / 2))
+            const hOut = snapHalf(totalWithExtra)
+            segMap.set(key, { x: sxOut, y: syOut, w: wOut, h: hOut, type })
+            return
+          } else if (bottomCell) {
+            if (yIndex === 0) {
+              const gh = (gridEl.value && gridEl.value.clientHeight) ? gridEl.value.clientHeight : (state.roomHeight * cellSize.value * state.zoom)
+              const extra = Math.max(2, Math.round(edgeStrokeWidth.value / 2))
+              const totalWithExtra = thickness + extra
+              const syOut = snapHalf(0 - (totalWithExtra / 2))
+              const hOut = snapHalf(totalWithExtra)
+              segMap.set(key, { x: snapHalf(sx - extra), y: syOut, w: snapHalf(w + extra * 2), h: hOut, type })
+              return
+            }
+            sy = bottomCell.top - (thickness / 2)
+            h = thickness
+          } else if (topCell) {
+            if (yIndex === state.roomHeight) {
+              const gh = (gridEl.value && gridEl.value.clientHeight) ? gridEl.value.clientHeight : (state.roomHeight * cellSize.value * state.zoom)
+              const extra = Math.max(2, Math.round(edgeStrokeWidth.value / 2))
+              const totalWithExtra = thickness + extra
+              const syOut = snapHalf(gh - (totalWithExtra / 2))
+              const hOut = snapHalf(totalWithExtra)
+              segMap.set(key, { x: snapHalf(sx - extra), y: syOut, w: snapHalf(w + extra * 2), h: hOut, type })
+              return
+            }
+            sy = topCell.bottom - (thickness / 2)
+            h = thickness
+          } else {
+            const gw = (gridEl.value && gridEl.value.clientWidth) ? gridEl.value.clientWidth : (state.roomWidth * cellSize.value * state.zoom)
+            const gwCell = gw / state.roomWidth
+            sx = x * gwCell
+            sy = yIndex * ( (gridEl.value && gridEl.value.clientHeight) ? gridEl.value.clientHeight / state.roomHeight : (state.roomHeight * cellSize.value * state.zoom / state.roomHeight) ) - (thickness / 2)
+            w = gwCell
+            h = thickness
+          }
+        } else {
+          const gw = (gridEl.value && gridEl.value.clientWidth) ? gridEl.value.clientWidth : (state.roomWidth * cellSize.value * state.zoom)
+          const gwCell = gw / state.roomWidth
+          sx = x * gwCell
+          sy = yIndex * ( (gridEl.value && gridEl.value.clientHeight) ? gridEl.value.clientHeight / state.roomHeight : (state.roomHeight * cellSize.value * state.zoom / state.roomHeight) ) - (thickness / 2)
+          w = gwCell
+          h = thickness
+        }
+        const extra = Math.max(2, Math.round(edgeStrokeWidth.value / 2))
+        sx = snapHalf(sx - extra)
+        w = snapHalf(w + extra * 2)
+        const centerY = sy + (h / 2)
+        sy = snapHalf(centerY - (h + extra) / 2)
+        h = snapHalf(h + extra)
+        segMap.set(key, { x: sx, y: sy, w, h, type })
+      }
+
+      const pushV = (xIndex, y, type) => {
+        const key = `v_${xIndex}_${y}`
+        if (segMap.has(key) || segMap.has(key + '_a') || segMap.has(key + '_b')) return
+        let sx, sy, w, h
+        if (rects) {
+          const c = rects[y][Math.max(0, Math.min(state.roomWidth - 1, Math.min(xIndex, state.roomWidth - 1)))]
+          sy = c.top
+          h = c.height
+          if (xIndex > 0 && rects[y] && rects[y][xIndex - 1]) {
+            const leftCell = rects[y][xIndex - 1]
+            const rightCell = rects[y][Math.min(state.roomWidth - 1, xIndex)]
+            const xLeft = leftCell.right
+            const xRight = rightCell.left
+            const gap = Math.max(0, xRight - xLeft)
+            const extraV = Math.max(2, Math.round(edgeStrokeWidth.value / 2))
+            if (leftCell && rightCell) {
+              const gw = (gridEl.value && gridEl.value.clientWidth) ? gridEl.value.clientWidth : (state.roomWidth * cellSize.value * state.zoom)
+              const gwCell = gw / state.roomWidth
+              const centerX = xIndex * gwCell
+              const gap2 = Math.max(0, rightCell.left - leftCell.right)
+              const baseThickness = Math.max(thickness, gap2)
+              const totalWithExtra = baseThickness + extraV
+              const syOut = snapHalf(sy - extraV)
+              const hOut = snapHalf(h + extraV * 2)
+              const sxOut = snapHalf(centerX - (totalWithExtra / 2))
+              const wOut = snapHalf(totalWithExtra)
+              segMap.set(key, { x: sxOut, y: syOut, w: wOut, h: hOut, type })
+              return
+            }
+            sx = (xLeft + xRight) / 2 - (thickness / 2)
+          } else {
+            sx = rects[y][Math.min(state.roomWidth - 1, xIndex)].left - (thickness / 2)
+          }
+          w = thickness
+        } else {
+          const gh = (gridEl.value && gridEl.value.clientHeight) ? gridEl.value.clientHeight : (state.roomHeight * cellSize.value * state.zoom)
+          const ghCell = gh / state.roomHeight
+          sx = xIndex * ( (gridEl.value && gridEl.value.clientWidth) ? gridEl.value.clientWidth / state.roomWidth : (state.roomWidth * cellSize.value * state.zoom / state.roomWidth) ) - (thickness / 2)
+          sy = y * ghCell
+          w = thickness
+          h = ghCell
+        }
+        const extraV = Math.max(2, Math.round(edgeStrokeWidth.value / 2))
+        sy = snapHalf(sy - extraV)
+        h = snapHalf(h + extraV * 2)
+        const centerX = sx + (thickness / 2)
+        sx = snapHalf(centerX - (thickness + extraV) / 2)
+        w = snapHalf(thickness + extraV)
+        segMap.set(key, { x: sx, y: sy, w, h, type })
+      }
+
+      // horizontal seams
+      for (let y = 0; y <= state.roomHeight; y++) {
+        for (let x = 0; x < state.roomWidth; x++) {
+          const keyEdge = `h,${x},${y}`
+          const t = (state.walls && state.walls[keyEdge]) ? state.walls[keyEdge] : ( (y === 0 || y === state.roomHeight) ? 'wall' : null )
+          if (!t) continue
+          pushH(x, y, t)
+        }
+      }
+
+      // vertical seams
+      for (let x = 0; x <= state.roomWidth; x++) {
+        for (let y = 0; y < state.roomHeight; y++) {
+          const keyEdge = `v,${x},${y}`
+          const t = (state.walls && state.walls[keyEdge]) ? state.walls[keyEdge] : ( (x === 0 || x === state.roomWidth) ? 'wall' : null )
+          if (!t) continue
+          pushV(x, y, t)
+        }
+      }
+
+      return Array.from(segMap.values())
+    }
+
+    const showDebugOverlay = ref(true)
+    const debugSegments = computed(() => computeImmediateWallSegments())
+
+    const debugCells = computed(() => {
+      const cellEls = (gridEl.value) ? Array.from(gridEl.value.querySelectorAll('.grid-item')) : []
+      if (!cellEls.length) return []
+      const gridR = gridEl.value.getBoundingClientRect()
+      return cellEls.map(el => {
+        const x = parseInt(el.dataset.x), y = parseInt(el.dataset.y)
+        const r = el.getBoundingClientRect()
+        return { x, y, left: r.left - gridR.left, top: r.top - gridR.top, right: r.right - gridR.left, bottom: r.bottom - gridR.top, width: r.width, height: r.height }
+      })
+    })
+
+    const edgeStrokeWidth = computed(() => Math.max(cellSize.value * state.zoom * 0.125, 2))
+
+    const svgPad = computed(() => edgeStrokeWidth.value / 2)
+    const svgWidth = computed(() => {
+      return (gridEl.value && gridEl.value.clientWidth) ? gridEl.value.clientWidth + edgeStrokeWidth.value : (state.roomWidth * cellSize.value * state.zoom) + edgeStrokeWidth.value
+    })
+    const svgHeight = computed(() => {
+      return (gridEl.value && gridEl.value.clientHeight) ? gridEl.value.clientHeight + edgeStrokeWidth.value : (state.roomHeight * cellSize.value * state.zoom) + edgeStrokeWidth.value
+    })
+    const svgViewBox = computed(() => `${-svgPad.value} ${-svgPad.value} ${svgWidth.value} ${svgHeight.value}`)
+
+    // --- Diagnostics: log segment placement when walls change ---
+    function debugComputeEdgeSegments(edgeKey) {
+      if (!edgeKey) return []
+      const parts = edgeKey.split(',')
+      if (parts.length !== 3) return []
+      const type = parts[0] // 'h' or 'v'
+      const ex = parseInt(parts[1], 10)
+      const ey = parseInt(parts[2], 10)
+      const thickness = edgeStrokeWidth.value
+      const cellEls = (gridEl.value) ? Array.from(gridEl.value.querySelectorAll('.grid-item')) : []
+      const gotAllCells = cellEls.length === state.roomWidth * state.roomHeight
+      let rects = null
+      if (gotAllCells) {
+        rects = Array.from({ length: state.roomHeight }, () => Array(state.roomWidth).fill(null))
+        const gridR = gridEl.value.getBoundingClientRect()
+        for (const el of cellEls) {
+          const x = parseInt(el.dataset.x)
+          const y = parseInt(el.dataset.y)
+          const r = el.getBoundingClientRect()
+          rects[y][x] = {
+            left: r.left - gridR.left,
+            top: r.top - gridR.top,
+            right: r.right - gridR.left,
+            bottom: r.bottom - gridR.top,
+            width: r.width,
+            height: r.height
+          }
+        }
+      }
+      const snapHalf = v => Math.round(v * 2) / 2
+      const segs = []
+      if (type === 'h') {
+        const x = ex, yIndex = ey
+        if (rects) {
+          const topCell = (yIndex > 0) ? rects[yIndex - 1][x] : null
+          const bottomCell = (yIndex < state.roomHeight) ? rects[Math.min(state.roomHeight - 1, yIndex)][x] : null
+          const refCell = bottomCell || topCell || rects[Math.max(0, Math.min(state.roomHeight - 1, Math.min(yIndex, state.roomHeight - 1)))][x]
+          const sx = refCell.left
+          const w = refCell.width
+          if (topCell && bottomCell) {
+            const yTop = topCell.bottom
+            const yBottom = bottomCell.top
+            const gap = Math.max(0, yBottom - yTop)
+            const totalT = Math.max(thickness, gap + thickness)
+            const extra = Math.max(2, Math.round(edgeStrokeWidth.value / 2))
+            const totalWithExtra = totalT + extra
+            const halfT = totalWithExtra / 2
+            const center = (yTop + yBottom) / 2
+            const sxOut = snapHalf(sx - extra)
+            const wOut = snapHalf(w + extra * 2)
+            const topSy = snapHalf(center - halfT)
+            const topH = snapHalf(halfT)
+            const bottomSy = snapHalf(center)
+            const bottomH = snapHalf(halfT)
+            segs.push({ x: sxOut, y: topSy, w: wOut, h: topH, part: 'a' })
+            segs.push({ x: sxOut, y: bottomSy, w: wOut, h: bottomH, part: 'b' })
+            return { edgeKey, kind: 'h', x, y: yIndex, topCell, bottomCell, segs }
+          } else if (bottomCell) {
+            const sy = bottomCell.top - (thickness / 2)
+            segs.push({ x: sx, y: sy, w, h: thickness })
+            return { edgeKey, kind: 'h', x, y: yIndex, topCell, bottomCell, segs }
+          } else if (topCell) {
+            const sy = topCell.bottom - (thickness / 2)
+            segs.push({ x: sx, y: sy, w, h: thickness })
+            return { edgeKey, kind: 'h', x, y: yIndex, topCell, bottomCell, segs }
+          }
+        }
+      } else if (type === 'v') {
+        const xIndex = ex, y = ey
+        if (rects) {
+          const leftCell = (xIndex > 0) ? rects[y][xIndex - 1] : null
+          const rightCell = (xIndex < state.roomWidth) ? rects[y][Math.min(state.roomWidth - 1, xIndex)] : null
+          const c = rects[y][Math.max(0, Math.min(state.roomWidth - 1, Math.min(xIndex, state.roomWidth - 1)))]
+          const sy = c.top
+          const h = c.height
+          if (leftCell && rightCell) {
+            const xLeft = leftCell.right
+            const xRight = rightCell.left
+            const gap = Math.max(0, xRight - xLeft)
+            const extraV = Math.max(2, Math.round(edgeStrokeWidth.value / 2))
+            const totalT = Math.max(thickness, gap + thickness)
+            const totalWithExtra = totalT + extraV
+            const halfT = totalWithExtra / 2
+            const centerX = (xLeft + xRight) / 2
+            const syOut = snapHalf(sy - extraV)
+            const hOut = snapHalf(h + extraV * 2)
+            const leftSx = snapHalf(centerX - halfT)
+            const leftW = snapHalf(halfT)
+            const rightSx = snapHalf(centerX)
+            const rightW = snapHalf(halfT)
+            segs.push({ x: leftSx, y: syOut, w: leftW, h: hOut, part: 'a' })
+            segs.push({ x: rightSx, y: syOut, w: rightW, h: hOut, part: 'b' })
+            return { edgeKey, kind: 'v', x: xIndex, y, leftCell, rightCell, segs }
+          } else if (leftCell) {
+            const sx = leftCell.right - (thickness / 2)
+            segs.push({ x: sx, y: sy, w: thickness, h })
+            return { edgeKey, kind: 'v', x: xIndex, y, leftCell, rightCell, segs }
+          } else if (rightCell) {
+            const sx = rightCell.left - (thickness / 2)
+            segs.push({ x: sx, y: sy, w: thickness, h })
+            return { edgeKey, kind: 'v', x: xIndex, y, leftCell, rightCell, segs }
+          }
+        }
+      }
+      return { edgeKey, segs }
+    }
     // Dark-mode variants (used for the inline background behind appliances)
     const TAB_COLORS_DARK = [
       { bg: '#2e3340', border: '#5a6070' }, // 0 base (toned down in dark)
@@ -517,10 +620,217 @@ export default {
     const gridEl = ref(null)
     const viewportEl = ref(null)
     const wasDragging = ref(false)
-    const layoutTick = ref(0)
-    let gridResizeObserver = null
 
-    const bumpWallLayout = () => { layoutTick.value++ }
+    // Incremented whenever grid layout may have changed so computed geometry can re-run
+    const layoutTick = ref(0)
+
+    // Observe resizes to the grid and window to keep measurements in sync
+    let __gridResizeObserver = null
+    const __onWindowResizeForGrid = () => { layoutTick.value++ }
+    onMounted(() => {
+      nextTick(() => { layoutTick.value++ })
+      try {
+        if (typeof ResizeObserver !== 'undefined' && gridEl.value) {
+          __gridResizeObserver = new ResizeObserver(() => { layoutTick.value++ })
+          __gridResizeObserver.observe(gridEl.value)
+        }
+      } catch (e) {}
+      window.addEventListener('resize', __onWindowResizeForGrid)
+      // expose a debug helper to instantly compute segments from DOM
+      try { window.__dumpWallSegments = () => computeImmediateWallSegments() } catch (e) {}
+    })
+    onUnmounted(() => {
+      try { if (__gridResizeObserver) __gridResizeObserver.disconnect() } catch (e) {}
+      try { window.removeEventListener('resize', __onWindowResizeForGrid) } catch (e) {}
+      try { delete window.__dumpWallSegments } catch (e) {}
+    })
+
+    // Ensure we re-measure when zoom or grid size changes
+    watch(() => state.zoom, () => { layoutTick.value++ })
+    watch(() => state.roomWidth, () => { layoutTick.value++ })
+    watch(() => state.roomHeight, () => { layoutTick.value++ })
+
+    // Immediate debug helper used when the user paints a wall — logs adjacent cell rects
+    function logEdgeDebug(x, y, dir) {
+      try {
+        const cellEls = (gridEl.value) ? Array.from(gridEl.value.querySelectorAll('.grid-item')) : []
+        const gotAllCells = cellEls.length === state.roomWidth * state.roomHeight
+        if (!gotAllCells) { console.log('[GridView][edge-debug] DOM cells not ready', { x, y, dir, cellCount: cellEls.length }); return }
+        const gridR = gridEl.value.getBoundingClientRect()
+        const info = { edge: `${x},${y},${dir}` }
+        if (dir === 'top' || dir === 'bottom') {
+          const aboveEl = (y > 0) ? cellEls.find(el => parseInt(el.dataset.x) === x && parseInt(el.dataset.y) === (y-1)) : null
+          const belowEl = (y < state.roomHeight) ? cellEls.find(el => parseInt(el.dataset.x) === x && parseInt(el.dataset.y) === y) : null
+          const above = aboveEl ? aboveEl.getBoundingClientRect() : null
+          const below = belowEl ? belowEl.getBoundingClientRect() : null
+          info.above = above ? { left: above.left - gridR.left, top: above.top - gridR.top, right: above.right - gridR.left, bottom: above.bottom - gridR.top, width: above.width, height: above.height } : null
+          info.below = below ? { left: below.left - gridR.left, top: below.top - gridR.top, right: below.right - gridR.left, bottom: below.bottom - gridR.top, width: below.width, height: below.height } : null
+        } else {
+          const leftEl = (x > 0) ? cellEls.find(el => parseInt(el.dataset.x) === (x-1) && parseInt(el.dataset.y) === y) : null
+          const rightEl = (x < state.roomWidth) ? cellEls.find(el => parseInt(el.dataset.x) === x && parseInt(el.dataset.y) === y) : null
+          const left = leftEl ? leftEl.getBoundingClientRect() : null
+          const right = rightEl ? rightEl.getBoundingClientRect() : null
+          info.left = left ? { left: left.left - gridR.left, top: left.top - gridR.top, right: left.right - gridR.left, bottom: left.bottom - gridR.top, width: left.width, height: left.height } : null
+          info.right = right ? { left: right.left - gridR.left, top: right.top - gridR.top, right: right.right - gridR.left, bottom: right.bottom - gridR.top, width: right.width, height: right.height } : null
+        }
+        console.log('[GridView][edge-debug] ', info)
+      } catch (e) { console.error('[GridView][edge-debug] error', e) }
+    }
+
+    // Dev helper: dump wall state, computed segments, and DOM rects
+    async function dumpWallDebug() {
+      try {
+        console.log('--- WALL DUMP START ---')
+        const immediate = computeImmediateWallSegments()
+        const cellEls = (gridEl.value) ? Array.from(gridEl.value.querySelectorAll('.grid-item')) : []
+        const gridR = (gridEl.value) ? gridEl.value.getBoundingClientRect() : null
+        const cells = cellEls.map(el => {
+          const x = parseInt(el.dataset.x), y = parseInt(el.dataset.y)
+          const r = el.getBoundingClientRect()
+          return { x, y, left: r.left - (gridR ? gridR.left : 0), top: r.top - (gridR ? gridR.top : 0), right: r.right - (gridR ? gridR.left : 0), bottom: r.bottom - (gridR ? gridR.top : 0), width: r.width, height: r.height }
+        })
+
+        // build per-segment diagnostics: SVG-space center, screen-space center, nearest cell-pair midpoint and delta
+        // index cells by row and by column for axis-appropriate matching
+        const cellsByRow = {}
+        const cellsByCol = {}
+        for (const c of cells) {
+          if (!cellsByRow[c.y]) cellsByRow[c.y] = []
+          cellsByRow[c.y].push(c)
+          if (!cellsByCol[c.x]) cellsByCol[c.x] = []
+          cellsByCol[c.x].push(c)
+        }
+        for (const y in cellsByRow) cellsByRow[y].sort((a, b) => a.x - b.x)
+        for (const x in cellsByCol) cellsByCol[x].sort((a, b) => a.y - b.y)
+
+        const segDiags = immediate.map(seg => {
+          // compute both SVG and screen centers
+          const centerSvgX = seg.x + (seg.w / 2)
+          const centerSvgY = seg.y + (seg.h / 2)
+          const screenLeft = gridR ? gridR.left : 0
+          const screenTop = gridR ? gridR.top : 0
+          const pad = svgPad ? svgPad.value : 0
+          const centerScreenX = screenLeft + pad + centerSvgX
+          const centerScreenY = screenTop + pad + centerSvgY
+
+          // decide orientation: vertical if height > width, else horizontal
+          const isVertical = seg.h > seg.w
+
+          let best = null
+          let bestDist = Infinity
+          let midpointSvg = null
+          let midpointScreen = null
+
+          if (isVertical) {
+            // match against vertical seam midpoints (between left/right cells) in the same row
+            // find the row whose vertical span contains seg center Y
+            const rowKeys = Object.keys(cellsByRow).map(Number).sort((a, b) => a - b)
+            let targetRow = null
+            for (const ry of rowKeys) {
+              const row = cellsByRow[ry]
+              if (!row || !row.length) continue
+              const top = row[0].top
+              const bottom = row[0].bottom + (row[row.length - 1].bottom - row[0].bottom) // approximate
+              if (centerSvgY >= row[0].top && centerSvgY <= row[0].bottom) { targetRow = ry; break }
+            }
+            const rowsToSearch = targetRow != null ? [targetRow] : rowKeys
+            for (const ry of rowsToSearch) {
+              const row = cellsByRow[ry]
+              if (!row) continue
+              for (let i = 0; i < row.length - 1; i++) {
+                const a = row[i]
+                const b = row[i + 1]
+                const mScreen = screenLeft + pad + ((a.right + b.left) / 2)
+                const d = Math.abs(mScreen - centerScreenX)
+                if (d < bestDist) { bestDist = d; best = { leftCell: a, rightCell: b }; midpointScreen = mScreen }
+              }
+            }
+            // if the segment center is left of the first column or right of the last column,
+            // treat it as an outer border and set the expected seam accordingly
+            const firstRow = cellsByRow[rowKeys[0]]
+            const lastRow = cellsByRow[rowKeys[rowKeys.length - 1]]
+            if (firstRow && centerScreenX < (screenLeft + pad + firstRow[0].left)) {
+              midpointScreen = screenLeft + pad + firstRow[0].left
+              best = { leftCell: null, rightCell: firstRow[0] }
+            } else if (lastRow && centerScreenX > (screenLeft + lastRow[lastRow.length - 1].right)) {
+              midpointScreen = screenLeft + pad + lastRow[lastRow.length - 1].right
+              best = { leftCell: lastRow[lastRow.length - 1], rightCell: null }
+            }
+            midpointSvg = midpointScreen != null ? (midpointScreen - screenLeft) : null
+          } else {
+            // horizontal: match against horizontal seam midpoints (between top/bottom cells) in the same column
+            const colKeys = Object.keys(cellsByCol).map(Number).sort((a, b) => a - b)
+            let targetCol = null
+            for (const cx of colKeys) {
+              const col = cellsByCol[cx]
+              if (!col || !col.length) continue
+              if (centerSvgX >= col[0].left && centerSvgX <= col[0].right) { targetCol = cx; break }
+            }
+            const colsToSearch = targetCol != null ? [targetCol] : colKeys
+            for (const cx of colsToSearch) {
+              const col = cellsByCol[cx]
+              if (!col) continue
+              for (let i = 0; i < col.length - 1; i++) {
+                const a = col[i]
+                const b = col[i + 1]
+                const mScreen = screenTop + pad + ((a.bottom + b.top) / 2)
+                const d = Math.abs(mScreen - centerScreenY)
+                if (d < bestDist) { bestDist = d; best = { topCell: a, bottomCell: b }; midpointScreen = mScreen }
+              }
+            }
+            // detect top/bottom outer borders
+            const firstCol = cellsByCol[colKeys[0]]
+            const lastCol = cellsByCol[colKeys[colKeys.length - 1]]
+            if (firstCol && centerScreenY < (screenTop + pad + firstCol[0].top)) {
+              midpointScreen = screenTop + pad + firstCol[0].top
+              best = { topCell: null, bottomCell: firstCol[0] }
+            } else if (lastCol && centerScreenY > (screenTop + lastCol[lastCol.length - 1].bottom)) {
+              midpointScreen = screenTop + pad + lastCol[lastCol.length - 1].bottom
+              best = { topCell: lastCol[lastCol.length - 1], bottomCell: null }
+            }
+            midpointSvg = midpointScreen != null ? (midpointScreen - screenTop) : null
+          }
+
+          const deltaSvg = (midpointSvg != null) ? ((isVertical ? centerSvgX : centerSvgY) - midpointSvg) : null
+          const deltaScreen = (midpointScreen != null) ? ((isVertical ? centerScreenX : centerScreenY) - midpointScreen) : null
+
+          return { seg, centerSvgX, centerSvgY, centerScreenX, centerScreenY, matched: best ? (isVertical ? { left: best.leftCell && { x: best.leftCell.x, y: best.leftCell.y }, right: best.rightCell && { x: best.rightCell.x, y: best.rightCell.y } } : { top: best.topCell && { x: best.topCell.x, y: best.topCell.y }, bottom: best.bottomCell && { x: best.bottomCell.x, y: best.bottomCell.y } }) : null, midpointSvg, midpointScreen, deltaSvg, deltaScreen }
+        })
+
+        const debugObj = {
+          timestamp: Date.now(),
+          stateWalls: state.walls,
+          edgeStrokeWidth: edgeStrokeWidth.value,
+          svgViewBox: svgViewBox.value,
+          svgPad: svgPad.value,
+          wallSegments: immediate,
+          wallSegmentsDiagnostics: segDiags,
+          gridBoundingRect: gridR ? { left: gridR.left, top: gridR.top, width: gridR.width, height: gridR.height } : null,
+          cells
+        }
+
+        const json = JSON.stringify(debugObj)
+        // Try clipboard first
+        let copied = false
+        try {
+          if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(json)
+            console.log('[GridView][dump] copied JSON to clipboard')
+            copied = true
+          }
+        } catch (e) {
+          console.warn('[GridView][dump] clipboard copy failed', e)
+        }
+
+        if (!copied) {
+          // Fallback: open in console (may be large)
+          console.log('wall dump (JSON):', json)
+        }
+
+        console.log('--- WALL DUMP END ---')
+        return debugObj
+      } catch (e) { console.error('dumpWallDebug error', e); return null }
+    }
 
     // --- Select-box drag state ---
     const isDragging = ref(false)
@@ -609,6 +919,8 @@ export default {
           if (existing === tool) setWallEdge(x, y, dirToUse, tool)
         }
       }
+      // log debug info for immediate feedback when user paints
+      logEdgeDebug(x, y, dirToUse)
     }
 
     function onStructureWindowMouseUp() {
@@ -689,8 +1001,10 @@ export default {
           const tool = selectedStructureTool.value
           if (tool === 'nothing') {
             clearWallEdge(x, y, dir)
+            logEdgeDebug(x, y, dir)
           } else {
             setWallEdge(x, y, dir, tool)
+            logEdgeDebug(x, y, dir)
           }
         }
         return
@@ -732,13 +1046,16 @@ export default {
         if (tool === 'nothing') {
           structureDragAction.value = 'remove'
           if (existing) clearWallEdge(cx, cy, dir)
+          logEdgeDebug(cx, cy, dir)
         } else {
           if (existing === tool) {
             structureDragAction.value = 'remove'
             clearWallEdge(cx, cy, dir)
+            logEdgeDebug(cx, cy, dir)
           } else {
             structureDragAction.value = 'add'
             setWallEdge(cx, cy, dir, tool)
+            logEdgeDebug(cx, cy, dir)
           }
         }
 
@@ -968,6 +1285,10 @@ export default {
       const paste = getCellPasteState(x, y)
       return {
         'grid-item': true,
+        'wall-top': !!getWallEdge(x, y, 'top'),
+        'wall-bottom': !!getWallEdge(x, y, 'bottom'),
+        'wall-left': !!getWallEdge(x, y, 'left'),
+        'wall-right': !!getWallEdge(x, y, 'right'),
         selected: isSelected(x, y),
         'move-source': move === 'source',
         'move-delete-preview': move === 'delete-preview',
@@ -1306,131 +1627,6 @@ export default {
       }
     }
 
-    const wallRects = computed(() => {
-      const _layoutTick = layoutTick.value
-      const rects = []
-      const cs = cellSize.value * state.zoom
-      const W = state.roomWidth
-      const H = state.roomHeight
-      const grid = gridEl.value
-      if (!grid) return rects
-
-      const cellEls = Array.from(grid.querySelectorAll('.grid-item'))
-      if (cellEls.length !== W * H) return rects
-
-      const gridRect = grid.getBoundingClientRect()
-      const leftInset = grid.clientLeft
-      const topInset = grid.clientTop
-      const cellRects = Array.from({ length: H }, () => Array(W).fill(null))
-
-      for (const el of cellEls) {
-        const x = Number(el.dataset.x)
-        const y = Number(el.dataset.y)
-        const rect = el.getBoundingClientRect()
-        cellRects[y][x] = {
-          left: rect.left - gridRect.left - leftInset,
-          top: rect.top - gridRect.top - topInset,
-          right: rect.right - gridRect.left - leftInset,
-          bottom: rect.bottom - gridRect.top - topInset,
-        }
-      }
-
-      const edgeThickness = Math.max(cs * 0.125, 2)
-      // Reduce overlap to avoid corner bleeding; clamp so overlap never
-      // exceeds a portion of the thickness (prevents long corner projection).
-      const rawOverlap = Math.max(cs * 0.06, 1.5)
-      const edgeOverlap = Math.min(rawOverlap, edgeThickness * 0.6)
-      const wallsMap = state.walls || {}
-      const outerInset = Math.min(edgeThickness * 0.2, 1)
-      const rowRefForEdge = y => Math.min(Math.max(y, 0), H - 1)
-      const colRefForEdge = x => Math.min(Math.max(x, 0), W - 1)
-      const edgeX = x => {
-        const row = rowRefForEdge(0)
-        if (x === 0) return cellRects[row][0].left - edgeThickness + outerInset
-        if (x === W) return cellRects[row][W - 1].right - outerInset
-        const leftCell = cellRects[row][x - 1]
-        const rightCell = cellRects[row][x]
-        return ((leftCell.right + rightCell.left) / 2) - edgeThickness / 2
-      }
-      const edgeY = y => {
-        const col = colRefForEdge(0)
-        if (y === 0) return cellRects[0][col].top - edgeThickness + outerInset
-        if (y === H) return cellRects[H - 1][col].bottom - outerInset
-        const topCell = cellRects[y - 1][col]
-        const bottomCell = cellRects[y][col]
-        return ((topCell.bottom + bottomCell.top) / 2) - edgeThickness / 2
-      }
-
-      // Horizontal edges: keys are h,x,y for x in [0,W-1], y in [0,H]
-      for (let y = 0; y <= H; y++) {
-        let x = 0
-        while (x < W) {
-          const key = `h,${x},${y}`
-          let type = wallsMap[key]
-          if (!type) {
-            if (y === 0 || y === H) type = 'wall'
-          }
-          if (!type) { x++; continue }
-          let start = x, end = x
-          while (end + 1 < W) {
-            const k2 = `h,${end + 1},${y}`
-            let t2 = wallsMap[k2]
-            if (!t2 && (y === 0 || y === H)) t2 = 'wall'
-            if (t2 !== type) break
-            end++
-          }
-          const rowRef = rowRefForEdge(y)
-          const startCell = cellRects[rowRef][start]
-          const endCell = cellRects[rowRef][end]
-          let x_px = startCell.left - edgeOverlap
-          let right_px = endCell.right + edgeOverlap
-          if (start === 0) x_px = Math.min(x_px, edgeX(0))
-          if (end === W - 1) right_px = Math.max(right_px, edgeX(W) + edgeThickness)
-          const width_px = right_px - x_px
-          const y_px = edgeY(y)
-          rects.push({ x: x_px, y: y_px, w: width_px, h: edgeThickness, type })
-          x = end + 1
-        }
-      }
-
-      // Vertical edges: keys are v,x,y for y in [0,H-1], x in [0,W]
-      for (let x = 0; x <= W; x++) {
-        let y = 0
-        while (y < H) {
-          const key = `v,${x},${y}`
-          let type = wallsMap[key]
-          if (!type) {
-            if (x === 0 || x === W) type = 'wall'
-          }
-          if (!type) { y++; continue }
-          let start = y, end = y
-          while (end + 1 < H) {
-            const k2 = `v,${x},${end + 1}`
-            let t2 = wallsMap[k2]
-            if (!t2 && (x === 0 || x === W)) t2 = 'wall'
-            if (t2 !== type) break
-            end++
-          }
-          const colRef = colRefForEdge(x)
-          const startCell = cellRects[start][colRef]
-          const endCell = cellRects[end][colRef]
-          let y_px = startCell.top - edgeOverlap
-          let bottom_px = endCell.bottom + edgeOverlap
-          if (start === 0) y_px = Math.min(y_px, edgeY(0))
-          if (end === H - 1) bottom_px = Math.max(bottom_px, edgeY(H) + edgeThickness)
-          const height_px = bottom_px - y_px
-          const x_px = edgeX(x)
-          rects.push({ x: x_px, y: y_px, w: edgeThickness, h: height_px, type })
-          y = end + 1
-        }
-      }
-      return rects
-    })
-
-    const wallRectsHatch = computed(() => wallRects.value.filter(r => r.type === 'hatch'))
-    const wallRectsDoor = computed(() => wallRects.value.filter(r => r.type === 'door'))
-    const wallRectsWall = computed(() => wallRects.value.filter(r => r.type === 'wall'))
-
     const teleporterPairLines = computed(() => {
       const lines = []
       const cs = cellSize.value * state.zoom
@@ -1642,12 +1838,6 @@ export default {
     onMounted(() => {
       window.addEventListener('keydown', onKeyDown)
       if (viewportEl.value) viewportEl.value.addEventListener('wheel', onWheel, { passive: false })
-      nextTick(() => { layoutTick.value++ })
-      if (typeof ResizeObserver !== 'undefined' && gridEl.value) {
-        gridResizeObserver = new ResizeObserver(() => { layoutTick.value++ })
-        gridResizeObserver.observe(gridEl.value)
-      }
-      window.addEventListener('resize', bumpWallLayout)
       // Initialize teleporter lines toggle from localStorage
       try { showTeleporterLinesAlways.value = localStorage.getItem('teleporterLines') === '1' } catch (e) {}
       // Listen for teleporter toggle events from App
@@ -1665,14 +1855,9 @@ export default {
       window.removeEventListener('mousemove', onWindowMouseMove)
       window.removeEventListener('mouseup', onWindowMouseUp)
       window.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('resize', bumpWallLayout)
       window.removeEventListener('mousemove', onRightDragMouseMove)
       window.removeEventListener('mouseup', onRightDragMouseUp)
       window.removeEventListener('mousemove', onPasteMouseMove)
-      if (gridResizeObserver) {
-        gridResizeObserver.disconnect()
-        gridResizeObserver = null
-      }
       const vp = viewportEl.value
       if (vp) vp.removeEventListener('wheel', onWheel)
       // remove palette teleporter handler
@@ -1688,10 +1873,6 @@ export default {
     // Persist teleporter-lines toggle to localStorage
     watch(showTeleporterLinesAlways, (v) => {
       try { localStorage.setItem('teleporterLines', v ? '1' : '0') } catch (e) {}
-    })
-
-    watch(() => [state.zoom, state.roomWidth, state.roomHeight], () => {
-      nextTick(() => { layoutTick.value++ })
     })
 
     // --- Label tool state & handlers ---
@@ -2032,23 +2213,27 @@ export default {
       cancelTabDeleteConfirm, confirmTabDelete,
       pastePending, pastePendingLabels,
       isStructureMode, getWallEdge,
+      wallSegments, edgeStrokeWidth,
       getTabColorClass, getApplianceBgStyle,
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
       getApplianceIcon, isImageIcon, onApplianceImgError,
-      TELEPORTER_APPLIANCE_ID, wallRects, wallRectsHatch, wallRectsDoor, wallRectsWall, teleporterPairLines, labelAnchorLines, showTeleporterLinesAlways, labelDisplayMode,
+      TELEPORTER_APPLIANCE_ID, teleporterPairLines, labelAnchorLines, showTeleporterLinesAlways, labelDisplayMode,
       flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
       createLabel, handleLabelPointerDown, getLabelStyle, editLabel, labelDialogVisible, labelDialogInitial, labelDialogTitle, onLabelDialogConfirm, closeLabelDialog,
-      boxSelectArmed, armBoxSelect,
+      boxSelectArmed, armBoxSelect, dumpWallDebug, showDebugOverlay, debugSegments,
       // Help overlay API
       helpActive, toggleHelp, hideHelp, helpItems, helpIcon, isDark,
       doUndo,
-      fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
+      fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop,
+      svgWidth, svgHeight, svgViewBox, svgPad
     }
   }
 }
 </script>
 
 <style scoped>
+.debug-dump-btn { position: absolute; right: 8px; top: 8px; z-index: 60; padding: 6px 10px; background:#fff; border-radius:6px; border:1px solid rgba(0,0,0,0.08); cursor:pointer }
+.debug-toggle-btn { position: absolute; right: 110px; top: 8px; z-index: 60; padding: 6px 10px; background:#fff; border-radius:6px; border:1px solid rgba(0,0,0,0.08); cursor:pointer }
 .left-panel {
   flex: 1 1 0%;
   min-width: 0;
@@ -2093,7 +2278,7 @@ export default {
   background: #e8eef8;
   border: 2px solid #b0c7dd;
   position: relative;
-  overflow: visible;
+  overflow: hidden;
   transform-origin: center;
   min-height: 0;
   min-width: 0;
@@ -2114,6 +2299,11 @@ export default {
   box-sizing: border-box;
   position: relative;
 }
+/* When a wall overlays a cell edge, hide that cell's border on that side so the wall appears continuous */
+.grid-item.wall-top    { border-top: none }
+.grid-item.wall-bottom { border-bottom: none }
+.grid-item.wall-left   { border-left: none }
+.grid-item.wall-right  { border-right: none }
 .grid-item.selected { border: 2px dashed #000000; background: #dde9ff }
 .grid-item.selected { cursor: grab }
 .grid-item.selected.ghosted { border: 2px dashed #000000; background: #e4e4e4 }
@@ -2164,14 +2354,6 @@ export default {
   left: 0;
   pointer-events: none;
   z-index: 20;
-  overflow: visible;
-}
-.wall-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 30;
   overflow: visible;
 }
 .tabs {
@@ -2318,20 +2500,20 @@ export default {
   width: 100%;
   height: 100%;
 }
-/* Edge marker overlays (scale with --cell-size) */
+/* Edge marker overlays */
 .edge-marker {
   position: absolute;
   pointer-events: none;
   z-index: 10;
   border-radius: 2px;
   box-sizing: border-box;
-  /* Thickness and overlap are clamped to avoid subpixel gaps when zoomed out.
-     Raise the minimums slightly to prevent visual seams at intermediate zooms. */
-  --edge-thickness: max(calc(var(--cell-size) * 0.125), 2px);
-  --edge-overlap: max(calc(var(--cell-size) * 0.09), 3px);
-  /* Rendering hints to reduce subpixel tearing */
-  will-change: transform;
-  backface-visibility: hidden;
+    /* Thickness and overlap are clamped to avoid subpixel gaps when zoomed out.
+      Raise the minimums slightly to prevent visual seams at intermediate zooms. */
+    --edge-thickness: max(calc(var(--cell-size) * 0.125), 2px);
+    --edge-overlap: max(calc(var(--cell-size) * 0.09), 3px);
+    /* Rendering hints to reduce subpixel tearing */
+    will-change: transform;
+    backface-visibility: hidden;
 }
 .edge-marker.edge-top,
 .edge-marker.edge-bottom {
@@ -2350,33 +2532,13 @@ export default {
 .edge-marker.edge-left   { left: calc(var(--edge-overlap) * -0.5); }
 .edge-marker.edge-right  { right: calc(var(--edge-overlap) * -0.5); }
 .edge-marker.edge-type-wall   { background: #1a1a2e }
-.edge-marker.edge-type-hatch  { background: repeating-linear-gradient(45deg, #555 0px, #555 3px, transparent 3px, transparent 7px); }
-.edge-marker.edge-type-door   { background: #c8860a }
-
-/* Edge marker overlays */
-.edge-marker {
-  position: absolute;
-  pointer-events: none;
-  z-index: 10;
-  border-radius: 2px;
-}
-.edge-marker.edge-top,
-.edge-marker.edge-bottom {
-  left: -3px; right: -3px; height: 5px;
-}
-.edge-marker.edge-left,
-.edge-marker.edge-right {
-  top: -3px; bottom: -3px; width: 5px;
-}
-.edge-marker.edge-top    { top: -2px }
-.edge-marker.edge-bottom { bottom: -2px }
-.edge-marker.edge-left   { left: -2px }
-.edge-marker.edge-right  { right: -2px }
-.edge-marker.edge-type-wall   { background: #1a1a2e }
 .edge-marker.edge-type-hatch  {
   background: repeating-linear-gradient(45deg, #555 0px, #555 3px, transparent 3px, transparent 7px);
 }
 .edge-marker.edge-type-door   { background: #c8860a }
+
+/* Hide old div-based edge markers now that walls render via SVG overlay */
+.edge-marker { display: none }
 
 /* Group rotation blocked: flash cells red */
 @keyframes group-flash-red {

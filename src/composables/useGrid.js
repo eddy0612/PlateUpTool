@@ -85,7 +85,10 @@ const gridStyleDynamic = computed(() => ({
   gridTemplateRows: `repeat(${state.roomHeight}, 1fr)`,
   width: `${state.roomWidth * cellSize.value * state.zoom}px`,
   height: `${state.roomHeight * cellSize.value * state.zoom}px`,
-  transform: `rotate(${state.orientation}deg)`
+  transform: `rotate(${state.orientation}deg)`,
+  // Expose the current cell size (already multiplied by zoom) so CSS can
+  // scale overlays (walls/edges) consistently with the grid.
+  ['--cell-size']: `${cellSize.value * state.zoom}px`
 }))
 
 function rotationStyle(rot) {
