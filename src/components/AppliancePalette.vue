@@ -1269,6 +1269,12 @@ export default {
         ctx.beginPath(); ctx.moveTo(PAD, PAD + y * CELL_PX); ctx.lineTo(PAD + state.roomWidth * CELL_PX, PAD + y * CELL_PX); ctx.stroke()
       }
       if (includeWalls) {
+        // Draw outer rectangle first so explicit wall/door/hatch entries
+        // from state.walls can be drawn on top (prevents the border from
+        // obscuring outer doors).
+        ctx.setLineDash([])
+        ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3
+        ctx.strokeRect(PAD, PAD, state.roomWidth * CELL_PX, state.roomHeight * CELL_PX)
         for (const [key, type] of Object.entries(state.walls || {})) {
           const [orient, xStr, yStr] = key.split(',')
           const wx = parseInt(xStr), wy = parseInt(yStr)
@@ -1285,9 +1291,6 @@ export default {
           }
           ctx.stroke()
         }
-        ctx.setLineDash([])
-        ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3
-        ctx.strokeRect(PAD, PAD, state.roomWidth * CELL_PX, state.roomHeight * CELL_PX)
       }
       const cells = []
       for (let y = 0; y < grid.value.length; y++) {
@@ -1532,6 +1535,10 @@ export default {
       for (let x = 0; x <= state.roomWidth; x++) {
         ctx.beginPath(); ctx.moveTo(PAD + x * CELL_PX, PAD); ctx.lineTo(PAD + x * CELL_PX, PAD + state.roomHeight * CELL_PX); ctx.stroke()
       }
+      // Draw outer rectangle first so explicit border doors/walls are drawn on top
+      ctx.setLineDash([])
+      ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3
+      ctx.strokeRect(PAD, PAD, state.roomWidth * CELL_PX, state.roomHeight * CELL_PX)
       for (const [key, type] of Object.entries(state.walls || {})) {
         const [orient, xStr, yStr] = key.split(',')
         const wx = parseInt(xStr), wy = parseInt(yStr)
@@ -1548,8 +1555,6 @@ export default {
         }
         ctx.stroke()
       }
-      ctx.setLineDash([]); ctx.strokeStyle = isDark ? '#c8d4e8' : '#1a1a2e'; ctx.lineWidth = 3
-      ctx.strokeRect(PAD, PAD, state.roomWidth * CELL_PX, state.roomHeight * CELL_PX)
       return offscreen.toDataURL('image/png')
     }
 
