@@ -85,6 +85,54 @@ export function writePngText(bytes, keyword, value) {
   return result
 }
 
+/**
+ * Insert a pHYs chunk specifying pixels-per-unit (px per metre) and unit specifier.
+ * @param {Uint8Array} bytes
+ * @param {number} ppmX
+ * @param {number} ppmY
+ * @param {number} unit  0 = unknown, 1 = metre
+ * @returns {Uint8Array}
+ */
+export function writePngPhys(bytes, ppmX, ppmY, unit = 1) {
+  const data = new Uint8Array([
+    (ppmX >>> 24) & 0xff, (ppmX >>> 16) & 0xff, (ppmX >>> 8) & 0xff, ppmX & 0xff,
+    (ppmY >>> 24) & 0xff, (ppmY >>> 16) & 0xff, (ppmY >>> 8) & 0xff, ppmY & 0xff,
+    unit & 0xff
+  ])
+  const typeBytes = [0x70, 0x48, 0x59, 0x73] // 'pHYs'
+  const crcInput = new Uint8Array([...typeBytes, ...data])
+  const crc = _crc32(crcInput)
+  const newChunk = new Uint8Array([..._u32be(data.length), ...typeBytes, ...Array.from(data), ..._u32be(crc)])
+
+  // Find IEND offset
+  let iendOff = bytes.length - 12
+  let off = 8
+  while (off + 12 <= bytes.length) {
+    const len = _readU32be(bytes, off)
+    const type = String.fromCharCode(bytes[off + 4], bytes[off + 5], bytes[off + 6], bytes[off + 7])
+    if (type === 'IEND') { iendOff = off; break }
+    off += 12 + len
+  }
+
+  const result = new Uint8Array(bytes.length + newChunk.length)
+  result.set(bytes.subarray(0, iendOff))
+  result.set(newChunk, iendOff)
+  result.set(bytes.subarray(iendOff), iendOff + newChunk.length)
+  return result
+}
+
+/**
+ * Convenience helper: write DPI (dots-per-inch) into pHYs as pixels-per-metre.
+ * @param {Uint8Array} bytes
+ * @param {number} dpi
+ * @returns {Uint8Array}
+ */
+export function writePngDpi(bytes, dpi) {
+  // 1 inch = 0.0254 m -> pixels per metre = dpi / 0.0254
+  const ppm = Math.round(dpi / 0.0254)
+  return writePngPhys(bytes, ppm, ppm, 1)
+}
+
 /** Convert a PNG data URL to Uint8Array */
 export function dataUrlToBytes(dataUrl) {
   const base64 = dataUrl.split(',')[1]
