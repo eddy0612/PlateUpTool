@@ -254,7 +254,7 @@
                 <div class="help-list-divider" />
               </template>
               <template v-else>
-                <span class="help-list-icon" v-html="helpIcon(item.id)"></span>
+                <HelpIcon :id="item.id" :is-dark="isDark" :label-display-mode="labelDisplayMode" />
                 <div class="help-list-text">
                   <div class="help-popup-title">{{ item.id === 'dark-mode' ? (isDark ? 'Light Mode' : 'Dark Mode') : item.title }}</div>
                   <div class="help-popup-desc">{{ item.id === 'dark-mode' ? (isDark ? 'Switch to light theme.' : 'Toggle the UI dark theme.') : item.desc }}</div>
@@ -314,11 +314,12 @@ import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useGrid, TELEPORTER_APPLIANCE_ID } from '../composables/useGrid'
 import { readPngText, readStegoFromBytes, readFileAsBytes } from '../composables/usePngMetadata'
 import AddLabelDialog from './AddLabelDialog.vue'
+import HelpIcon from './HelpIcon.vue'
 import { alert, confirm, toast } from '../utils/ui'
 
 export default {
   name: 'GridView',
-  components: { AddLabelDialog },
+  components: { AddLabelDialog, HelpIcon },
   setup() {
     const { state } = useRestaurantStore()
     const {
