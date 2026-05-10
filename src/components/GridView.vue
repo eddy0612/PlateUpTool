@@ -126,7 +126,7 @@
         </div>
       </div>
 
-      <div class="touch-debug-panel">
+      <div v-if="showTouchDebug" class="touch-debug-panel">
         <div class="touch-debug-title">Touch Debug</div>
         <div class="touch-debug-state">tab={{ state.activeTabId }} box={{ boxSelectArmed ? '1' : '0' }} sel={{ selectedCells.size }} pendingMove={{ pendingMoveCellDebug }} moving={{ isMoveDraggingDebug }} boxing={{ isDragging ? '1' : '0' }} ptr={{ activeGridPointerDebug }}</div>
         <div class="touch-debug-state">dragStart={{ dragStartDebug }} dragEnd={{ dragEndDebug }}</div>
@@ -563,6 +563,7 @@ export default {
     const isMoveDragging = ref(false)
     const moveDragStartMouse = ref(null)
 
+    const showTouchDebug = ref(false)
     const touchDebugCounter = ref(0)
     const touchDebugLog = ref([])
 
@@ -737,8 +738,17 @@ export default {
     })
 
     // --- Structure mode edge detection ---
+    function getGridCellElementAtPoint(clientX, clientY, fallbackTarget = null) {
+      const hit = document.elementFromPoint?.(clientX, clientY)
+      const pointCell = hit && hit.closest ? hit.closest('.grid-item') : null
+      if (pointCell) return pointCell
+      const fallbackCell = fallbackTarget?.closest?.('.grid-item')
+      if (fallbackCell) return fallbackCell
+      return null
+    }
+
     function detectEdgeDir(e) {
-      const el = e.target.closest?.('.grid-item') || e.currentTarget
+      const el = getGridCellElementAtPoint(e.clientX, e.clientY, e.target) || e.currentTarget
       if (!el) return null
       const rect = el.getBoundingClientRect()
       const relX = (e.clientX - rect.left) / rect.width
@@ -798,6 +808,22 @@ export default {
     }
 
     const activeGridPointerId = ref(null)
+    const recentGridTouchStart = ref(null)
+
+    function rememberGridTouchStart(clientX, clientY) {
+      recentGridTouchStart.value = { time: Date.now(), clientX, clientY }
+    }
+
+    function isDuplicateTouchPointerDown(e) {
+      if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return false
+      const lastTouchStart = recentGridTouchStart.value
+      if (!lastTouchStart) return false
+      const dt = Date.now() - lastTouchStart.time
+      if (dt > 750) return false
+      const dx = Math.abs(e.clientX - lastTouchStart.clientX)
+      const dy = Math.abs(e.clientY - lastTouchStart.clientY)
+      return dx <= 18 && dy <= 18
+    }
 
     function addGridPointerListeners() {
       window.addEventListener('pointermove', onGridPointerMove, { passive: false })
@@ -865,6 +891,7 @@ export default {
     function onGridTouchStart(e) {
       const touchPoint = e.changedTouches?.[0]
       if (!touchPoint) return
+      rememberGridTouchStart(touchPoint.clientX, touchPoint.clientY)
       logTouchDebug('touchstart', `${Math.round(touchPoint.clientX)},${Math.round(touchPoint.clientY)} id=${touchPoint.identifier}`)
       try {
         onGridPointerDown(buildTouchLikeEvent(e, touchPoint))
@@ -902,6 +929,11 @@ export default {
 
     function onGridPointerDown(e) {
       logTouchDebug('grid-down', `${e.pointerType || 'mouse'} ${Math.round(e.clientX)},${Math.round(e.clientY)} btn=${e.button}`)
+      if (isDuplicateTouchPointerDown(e)) {
+        logTouchDebug('grid-down-skip', `${e.pointerType} ${Math.round(e.clientX)},${Math.round(e.clientY)}`)
+        try { e.preventDefault() } catch (err) {}
+        return
+      }
       if (pastePending.value) return
       if (e.button === 2) {
         if (!viewportEl.value) return
@@ -936,12 +968,18 @@ export default {
       if (isStructureMode.value) {
         // Start structure-mode edge paint drag: determine edge under cursor
         if (e.button !== 0) return
-        const el = e.target.closest('.grid-item')
-        if (!el) return
+        const el = getGridCellElementAtPoint(e.clientX, e.clientY, e.target)
+        if (!el) {
+          logTouchDebug('structure-no-cell', `${Math.round(e.clientX)},${Math.round(e.clientY)}`)
+          return
+        }
         const cx = parseInt(el.dataset.x)
         const cy = parseInt(el.dataset.y)
         const dir = detectEdgeDir(e)
-        if (!dir) return
+        if (!dir) {
+          logTouchDebug('structure-no-edge', `${cx},${cy}`)
+          return
+        }
         const existing = getWallEdge(cx, cy, dir)
         const tool = selectedStructureTool.value
 
@@ -1101,6 +1139,9 @@ export default {
     function onGridPointerUp(e) {
       if (!isActiveGridPointerEvent(e)) return
       logTouchDebug('grid-up', `${e.pointerType || e.eventType || 'mouse'} ${Math.round(e.clientX)},${Math.round(e.clientY)}`)
+      if (e.pointerType === 'touch' || e.eventType === 'touch' || e.pointerType === 'pen') {
+        recentGridTouchStart.value = null
+      }
 
       if (structureDragActive.value) {
         removeGridPointerListeners()
@@ -2288,7 +2329,7 @@ export default {
       rotateCell, selectedCells, isSelected, addTab, selectTab,
       selectedLabelIds,
       gridEl, viewportEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
-      touchDebugLog, pendingMoveCellDebug, isMoveDraggingDebug, activeGridPointerDebug, dragStartDebug, dragEndDebug,
+      showTouchDebug, touchDebugLog, pendingMoveCellDebug, isMoveDraggingDebug, activeGridPointerDebug, dragStartDebug, dragEndDebug,
       handleCellClick, handleCellContextMenu, onGridPointerDown, onGridTouchStart, cellClasses, getDisplayCell,
       editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename,
       contextMenuVisible, contextMenuPos, closeContextMenu, doMoveToThisLevel, doShowInBothLevels,
