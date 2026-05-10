@@ -2,7 +2,7 @@
   <section class="left-panel">
     <div style="position:relative; width:100%;">
 
-      <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }" :class="{ 'file-drag-over': fileDragOver }" @mousemove="onViewportMouseMove" @mouseleave="onViewportMouseLeave" @dragover.prevent="onFileDragOver" @dragleave="onFileDragLeave" @drop.prevent="onFileDrop" @contextmenu.prevent>
+      <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }" :class="{ 'file-drag-over': fileDragOver }" @mousemove="onViewportMouseMove" @mouseleave="onViewportMouseLeave" @touchstart="onViewportTouchStart" @touchmove="onViewportTouchMove" @touchend="onViewportTouchEnd" @touchcancel="onViewportTouchEnd" @dragover.prevent="onFileDragOver" @dragleave="onFileDragLeave" @drop.prevent="onFileDrop" @contextmenu.prevent>
         <div class="grid-centering-wrapper">
         <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive, 'paste-pending': pastePending, 'structure-mode': isStructureMode, 'touch-drag-enabled': isStructureMode || pastePending || boxSelectArmed || selectedCells.size > 0 }" @pointerdown="onGridPointerDown" @touchstart="onGridTouchStart" @dragstart.prevent @contextmenu.prevent>
           <div
@@ -889,6 +889,7 @@ export default {
     }
 
     function onGridTouchStart(e) {
+      if (viewportTouchGesture.value || (e.touches?.length || 0) > 1) return
       const touchPoint = e.changedTouches?.[0]
       if (!touchPoint) return
       rememberGridTouchStart(touchPoint.clientX, touchPoint.clientY)
@@ -901,6 +902,7 @@ export default {
     }
 
     function onGridTouchMove(e) {
+      if (viewportTouchGesture.value || (e.touches?.length || 0) > 1) return
       const touchPoint = findTrackedTouch(e.touches) || findTrackedTouch(e.changedTouches)
       if (!touchPoint) return
       logTouchDebug('touchmove', `${Math.round(touchPoint.clientX)},${Math.round(touchPoint.clientY)} id=${touchPoint.identifier}`)
@@ -912,6 +914,7 @@ export default {
     }
 
     function onGridTouchEnd(e) {
+      if (viewportTouchGesture.value) return
       const touchPoint = findTrackedTouch(e.changedTouches)
       if (!touchPoint && activeGridPointerId.value == null) return
       const endTouch = touchPoint || e.changedTouches?.[0]
@@ -929,6 +932,7 @@ export default {
 
     function onGridPointerDown(e) {
       logTouchDebug('grid-down', `${e.pointerType || 'mouse'} ${Math.round(e.clientX)},${Math.round(e.clientY)} btn=${e.button}`)
+      if (viewportTouchGesture.value && (e.pointerType === 'touch' || e.pointerType === 'pen')) return
       if (isDuplicateTouchPointerDown(e)) {
         logTouchDebug('grid-down-skip', `${e.pointerType} ${Math.round(e.clientX)},${Math.round(e.clientY)}`)
         try { e.preventDefault() } catch (err) {}
@@ -1080,6 +1084,7 @@ export default {
     }
 
     function onGridPointerMove(e) {
+      if (viewportTouchGesture.value && (e.pointerType === 'touch' || e.eventType === 'touch' || e.pointerType === 'pen')) return
       if (!isActiveGridPointerEvent(e)) return
       if (e.pointerType === 'touch' || e.pointerType === 'pen') {
         try { e.preventDefault() } catch (err) {}
@@ -1137,6 +1142,7 @@ export default {
     }
 
     function onGridPointerUp(e) {
+      if (viewportTouchGesture.value && (e.pointerType === 'touch' || e.eventType === 'touch' || e.pointerType === 'pen')) return
       if (!isActiveGridPointerEvent(e)) return
       logTouchDebug('grid-up', `${e.pointerType || e.eventType || 'mouse'} ${Math.round(e.clientX)},${Math.round(e.clientY)}`)
       if (e.pointerType === 'touch' || e.eventType === 'touch' || e.pointerType === 'pen') {
@@ -1844,6 +1850,83 @@ export default {
     const rightDragScrollStart = ref(null)
     let isRightDragging = false
     const wasRightDragging = ref(false)
+    const viewportTouchGesture = ref(null)
+
+    function clampZoom(nextZoom) {
+      return Math.min(2.5, Math.max(0.3, Math.round(nextZoom * 100) / 100))
+    }
+
+    function getTouchDistance(firstTouch, secondTouch) {
+      const dx = secondTouch.clientX - firstTouch.clientX
+      const dy = secondTouch.clientY - firstTouch.clientY
+      return Math.sqrt(dx * dx + dy * dy)
+    }
+
+    function getTouchMidpoint(firstTouch, secondTouch) {
+      return {
+        x: (firstTouch.clientX + secondTouch.clientX) / 2,
+        y: (firstTouch.clientY + secondTouch.clientY) / 2,
+      }
+    }
+
+    function clearGridTouchInteractionForViewportGesture() {
+      removeGridMouseListeners()
+      removeGridPointerListeners()
+      if (structureDragActive.value) onStructureWindowMouseUp()
+      if (isMoveDragging.value) cancelMoveDrag()
+      pendingMoveCell.value = null
+      moveDragStartMouse.value = null
+      dragStart.value = null
+      dragEnd.value = null
+      isDragging.value = false
+    }
+
+    function onViewportTouchStart(e) {
+      if (e.touches.length < 2 || !viewportEl.value) return
+      const [firstTouch, secondTouch] = e.touches
+      const midpoint = getTouchMidpoint(firstTouch, secondTouch)
+      viewportTouchGesture.value = {
+        initialDistance: Math.max(1, getTouchDistance(firstTouch, secondTouch)),
+        initialMidpoint: midpoint,
+        initialZoom: state.zoom,
+        initialScrollLeft: viewportEl.value.scrollLeft,
+        initialScrollTop: viewportEl.value.scrollTop,
+      }
+      clearGridTouchInteractionForViewportGesture()
+      try { e.preventDefault() } catch (err) {}
+    }
+
+    function onViewportTouchMove(e) {
+      if (!viewportTouchGesture.value || e.touches.length < 2 || !viewportEl.value) return
+      const [firstTouch, secondTouch] = e.touches
+      const midpoint = getTouchMidpoint(firstTouch, secondTouch)
+      const distance = Math.max(1, getTouchDistance(firstTouch, secondTouch))
+      const gesture = viewportTouchGesture.value
+      const nextZoom = clampZoom(gesture.initialZoom * (distance / gesture.initialDistance))
+      const zoomRatio = nextZoom / gesture.initialZoom
+      state.zoom = nextZoom
+      viewportEl.value.scrollLeft = Math.max(0, ((gesture.initialScrollLeft + gesture.initialMidpoint.x) * zoomRatio) - midpoint.x)
+      viewportEl.value.scrollTop = Math.max(0, ((gesture.initialScrollTop + gesture.initialMidpoint.y) * zoomRatio) - midpoint.y)
+      try { e.preventDefault() } catch (err) {}
+    }
+
+    function onViewportTouchEnd(e) {
+      if (!viewportTouchGesture.value) return
+      if (e.touches.length >= 2 && viewportEl.value) {
+        const [firstTouch, secondTouch] = e.touches
+        const midpoint = getTouchMidpoint(firstTouch, secondTouch)
+        viewportTouchGesture.value = {
+          initialDistance: Math.max(1, getTouchDistance(firstTouch, secondTouch)),
+          initialMidpoint: midpoint,
+          initialZoom: state.zoom,
+          initialScrollLeft: viewportEl.value.scrollLeft,
+          initialScrollTop: viewportEl.value.scrollTop,
+        }
+      } else {
+        viewportTouchGesture.value = null
+      }
+      try { e.preventDefault() } catch (err) {}
+    }
 
     function onRightDragMouseMove(e) {
       if (!rightDragStartMouse.value || !viewportEl.value) return
@@ -1908,7 +1991,7 @@ export default {
     function onWheel(e) {
       e.preventDefault()
       const delta = e.deltaY > 0 ? -0.05 : 0.05
-      state.zoom = Math.min(2.5, Math.max(0.3, Math.round((state.zoom + delta) * 100) / 100))
+      state.zoom = clampZoom(state.zoom + delta)
     }
 
     // --- File drag-and-drop import ---
@@ -1994,6 +2077,7 @@ export default {
       // help overlay listeners removed (no-op positioning for modal)
       cancelMoveDrag()
       cancelPaste()
+      viewportTouchGesture.value = null
       if (tabRenameTimer) clearTimeout(tabRenameTimer)
     })
 
@@ -2346,7 +2430,7 @@ export default {
       pastePending, pastePendingLabels,
       isStructureMode, getWallEdge,
       getTabColorClass, getApplianceBgStyle,
-      hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave,
+      hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave, onViewportTouchStart, onViewportTouchMove, onViewportTouchEnd,
       getApplianceIcon, isImageIcon, onApplianceImgError,
       TELEPORTER_APPLIANCE_ID, wallRects, wallRectsHatch, wallRectsDoor, wallRectsWall, teleporterPairLines, labelAnchorLines, showTeleporterLinesAlways, labelDisplayMode,
       wallColor, doorColor, hatchPatternColor,
