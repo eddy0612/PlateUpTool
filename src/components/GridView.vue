@@ -2,9 +2,9 @@
   <section class="left-panel">
     <div style="position:relative; width:100%;">
 
-      <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }" :class="{ 'file-drag-over': fileDragOver }" @mousemove="onViewportMouseMove" @mouseleave="onViewportMouseLeave" @dragover.prevent="onFileDragOver" @dragleave="onFileDragLeave" @drop.prevent="onFileDrop">
+      <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }" :class="{ 'file-drag-over': fileDragOver }" @mousemove="onViewportMouseMove" @mouseleave="onViewportMouseLeave" @dragover.prevent="onFileDragOver" @dragleave="onFileDragLeave" @drop.prevent="onFileDrop" @contextmenu.prevent>
         <div class="grid-centering-wrapper">
-        <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive, 'paste-pending': pastePending, 'structure-mode': isStructureMode }" @mousedown="onGridMouseDown" @dragstart.prevent>
+        <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive, 'paste-pending': pastePending, 'structure-mode': isStructureMode, 'touch-drag-enabled': isStructureMode || pastePending || boxSelectArmed || selectedCells.size > 0 }" @pointerdown="onGridPointerDown" @touchstart="onGridTouchStart" @dragstart.prevent @contextmenu.prevent>
           <div
             v-for="cellInfo in flatGrid"
             :key="'cell-' + cellInfo.x + '-' + cellInfo.y"
@@ -124,6 +124,13 @@
           </div>
         </div>
         </div>
+      </div>
+
+      <div class="touch-debug-panel">
+        <div class="touch-debug-title">Touch Debug</div>
+        <div class="touch-debug-state">tab={{ state.activeTabId }} box={{ boxSelectArmed ? '1' : '0' }} sel={{ selectedCells.size }} pendingMove={{ pendingMoveCellDebug }} moving={{ isMoveDraggingDebug }} boxing={{ isDragging ? '1' : '0' }} ptr={{ activeGridPointerDebug }}</div>
+        <div class="touch-debug-state">dragStart={{ dragStartDebug }} dragEnd={{ dragEndDebug }}</div>
+        <div v-for="entry in touchDebugLog" :key="entry.id" class="touch-debug-line">{{ entry.text }}</div>
       </div>
 
       <div class="tabs">
@@ -556,6 +563,21 @@ export default {
     const isMoveDragging = ref(false)
     const moveDragStartMouse = ref(null)
 
+    const touchDebugCounter = ref(0)
+    const touchDebugLog = ref([])
+
+    function logTouchDebug(label, extra = '') {
+      const suffix = extra ? ` ${extra}` : ''
+      touchDebugLog.value.unshift({ id: ++touchDebugCounter.value, text: `${label}${suffix}` })
+      if (touchDebugLog.value.length > 10) touchDebugLog.value.length = 10
+    }
+
+    const pendingMoveCellDebug = computed(() => pendingMoveCell.value ? `${pendingMoveCell.value.x},${pendingMoveCell.value.y}` : '-')
+    const isMoveDraggingDebug = computed(() => isMoveDragging.value ? '1' : '0')
+    const activeGridPointerDebug = computed(() => activeGridPointerId.value == null ? '-' : String(activeGridPointerId.value))
+    const dragStartDebug = computed(() => dragStart.value ? `${Math.round(dragStart.value.x)},${Math.round(dragStart.value.y)}` : '-')
+    const dragEndDebug = computed(() => dragEnd.value ? `${Math.round(dragEnd.value.x)},${Math.round(dragEnd.value.y)}` : '-')
+
     // --- Structure-mode drag (hold mouse to paint walls/hatches/doors) ---
     const structureDragActive = ref(false)
     const structureDragAction = ref(null) // 'add' | 'remove'
@@ -636,19 +658,82 @@ export default {
     // ---- Event handlers ----
 
     // --- Paste pending tracking ---
-    function onPasteMouseMove(e) {
-      const _hit = document.elementFromPoint(e.clientX, e.clientY)
+    function updatePasteAnchorFromPoint(clientX, clientY) {
+      const _hit = document.elementFromPoint(clientX, clientY)
       const el = _hit && _hit.closest ? _hit.closest('.grid-item') : null
       if (el && el.dataset.x !== undefined) {
         setPasteAnchor(parseInt(el.dataset.x), parseInt(el.dataset.y))
+        return true
+      }
+      return false
+    }
+
+    function onPasteMouseMove(e) {
+      updatePasteAnchorFromPoint(e.clientX, e.clientY)
+    }
+
+    function onPastePointerMove(e) {
+      if (!pastePending.value) return
+      if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+        try { e.preventDefault() } catch (err) {}
+      }
+      const updated = updatePasteAnchorFromPoint(e.clientX, e.clientY)
+      if (updated && (e.pointerType === 'touch' || e.pointerType === 'pen')) {
+        logTouchDebug('paste-move', `${Math.round(e.clientX)},${Math.round(e.clientY)}`)
       }
     }
+
+    function onPasteTouchMove(e) {
+      const touchPoint = e.touches?.[0] || e.changedTouches?.[0]
+      if (!touchPoint) return
+      try { e.preventDefault() } catch (err) {}
+      const updated = updatePasteAnchorFromPoint(touchPoint.clientX, touchPoint.clientY)
+      if (updated) logTouchDebug('paste-touchmove', `${Math.round(touchPoint.clientX)},${Math.round(touchPoint.clientY)}`)
+    }
+
+    function onPasteTouchEnd(e) {
+      if (!pastePending.value) return
+      const touchPoint = e.changedTouches?.[0]
+      if (touchPoint) {
+        updatePasteAnchorFromPoint(touchPoint.clientX, touchPoint.clientY)
+        logTouchDebug('paste-touchend', `${Math.round(touchPoint.clientX)},${Math.round(touchPoint.clientY)}`)
+      }
+      if (confirmPaste) {
+        try { confirmPaste() } catch (err) { logTouchDebug('error-paste-touchend', err?.message || String(err)) }
+      }
+    }
+
+    function onPastePointerUp(e) {
+      if (!pastePending.value) return
+      if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return
+      updatePasteAnchorFromPoint(e.clientX, e.clientY)
+      logTouchDebug('paste-pointerup', `${Math.round(e.clientX)},${Math.round(e.clientY)}`)
+      try { confirmPaste() } catch (err) { logTouchDebug('error-paste-pointerup', err?.message || String(err)) }
+    }
+
+    function syncPastePendingListeners(enabled) {
+      if (enabled) {
+        window.addEventListener('mousemove', onPasteMouseMove)
+        window.addEventListener('pointermove', onPastePointerMove, { passive: false })
+        window.addEventListener('pointerup', onPastePointerUp, { passive: false })
+        window.addEventListener('touchmove', onPasteTouchMove, { passive: false })
+        window.addEventListener('touchend', onPasteTouchEnd, { passive: false })
+        window.addEventListener('touchcancel', onPasteTouchEnd, { passive: false })
+      } else {
+        window.removeEventListener('mousemove', onPasteMouseMove)
+        window.removeEventListener('pointermove', onPastePointerMove)
+        window.removeEventListener('pointerup', onPastePointerUp)
+        window.removeEventListener('touchmove', onPasteTouchMove)
+        window.removeEventListener('touchend', onPasteTouchEnd)
+        window.removeEventListener('touchcancel', onPasteTouchEnd)
+      }
+    }
+
     function doUndo() {
       try { window.dispatchEvent(new Event('plateup-undo')) } catch (e) {}
     }
     watch(pastePending, (val) => {
-      if (val) window.addEventListener('mousemove', onPasteMouseMove)
-      else window.removeEventListener('mousemove', onPasteMouseMove)
+      syncPastePendingListeners(val)
     })
 
     // --- Structure mode edge detection ---
@@ -712,7 +797,111 @@ export default {
       selectCell(x, y, e.shiftKey, e.ctrlKey || e.metaKey)
     }
 
-    function onGridMouseDown(e) {
+    const activeGridPointerId = ref(null)
+
+    function addGridPointerListeners() {
+      window.addEventListener('pointermove', onGridPointerMove, { passive: false })
+      window.addEventListener('pointerup', onGridPointerUp, { passive: false })
+      window.addEventListener('pointercancel', onGridPointerUp, { passive: false })
+    }
+
+    function addGridTouchListeners() {
+      window.addEventListener('touchmove', onGridTouchMove, { passive: false })
+      window.addEventListener('touchend', onGridTouchEnd, { passive: false })
+      window.addEventListener('touchcancel', onGridTouchEnd, { passive: false })
+    }
+
+    function removeGridPointerListeners() {
+      window.removeEventListener('pointermove', onGridPointerMove)
+      window.removeEventListener('pointerup', onGridPointerUp)
+      window.removeEventListener('pointercancel', onGridPointerUp)
+      window.removeEventListener('touchmove', onGridTouchMove)
+      window.removeEventListener('touchend', onGridTouchEnd)
+      window.removeEventListener('touchcancel', onGridTouchEnd)
+      activeGridPointerId.value = null
+    }
+
+    function addGridMouseListeners() {
+      window.addEventListener('mousemove', onGridPointerMove)
+      window.addEventListener('mouseup', onGridPointerUp)
+    }
+
+    function removeGridMouseListeners() {
+      window.removeEventListener('mousemove', onGridPointerMove)
+      window.removeEventListener('mouseup', onGridPointerUp)
+    }
+
+    function attachGridDragListeners(mode) {
+      if (mode === 'touch-fallback') addGridTouchListeners()
+      else if (mode === 'pointer') addGridPointerListeners()
+      else addGridMouseListeners()
+    }
+
+    function buildTouchLikeEvent(sourceEvent, touchPoint) {
+      return {
+        target: sourceEvent.target,
+        currentTarget: sourceEvent.currentTarget || gridEl.value,
+        clientX: touchPoint.clientX,
+        clientY: touchPoint.clientY,
+        button: 0,
+        pointerType: 'touch',
+        pointerId: touchPoint.identifier,
+        ctrlKey: !!sourceEvent.ctrlKey,
+        metaKey: !!sourceEvent.metaKey,
+        shiftKey: !!sourceEvent.shiftKey,
+        eventType: 'touch',
+        preventDefault: () => sourceEvent.preventDefault()
+      }
+    }
+
+    function findTrackedTouch(touchList) {
+      if (!touchList || activeGridPointerId.value == null) return null
+      for (const touchPoint of touchList) {
+        if (touchPoint.identifier === activeGridPointerId.value) return touchPoint
+      }
+      return null
+    }
+
+    function onGridTouchStart(e) {
+      const touchPoint = e.changedTouches?.[0]
+      if (!touchPoint) return
+      logTouchDebug('touchstart', `${Math.round(touchPoint.clientX)},${Math.round(touchPoint.clientY)} id=${touchPoint.identifier}`)
+      try {
+        onGridPointerDown(buildTouchLikeEvent(e, touchPoint))
+      } catch (err) {
+        logTouchDebug('error-touchstart', err?.message || String(err))
+      }
+    }
+
+    function onGridTouchMove(e) {
+      const touchPoint = findTrackedTouch(e.touches) || findTrackedTouch(e.changedTouches)
+      if (!touchPoint) return
+      logTouchDebug('touchmove', `${Math.round(touchPoint.clientX)},${Math.round(touchPoint.clientY)} id=${touchPoint.identifier}`)
+      try {
+        onGridPointerMove(buildTouchLikeEvent(e, touchPoint))
+      } catch (err) {
+        logTouchDebug('error-touchmove', err?.message || String(err))
+      }
+    }
+
+    function onGridTouchEnd(e) {
+      const touchPoint = findTrackedTouch(e.changedTouches)
+      if (!touchPoint && activeGridPointerId.value == null) return
+      const endTouch = touchPoint || e.changedTouches?.[0]
+      if (endTouch) logTouchDebug('touchend', `${Math.round(endTouch.clientX)},${Math.round(endTouch.clientY)} id=${endTouch.identifier}`)
+      try {
+        onGridPointerUp(buildTouchLikeEvent(e, touchPoint || e.changedTouches?.[0] || { clientX: 0, clientY: 0, identifier: activeGridPointerId.value }))
+      } catch (err) {
+        logTouchDebug('error-touchend', err?.message || String(err))
+      }
+    }
+
+    function isActiveGridPointerEvent(e) {
+      return activeGridPointerId.value == null || e.pointerId === activeGridPointerId.value
+    }
+
+    function onGridPointerDown(e) {
+      logTouchDebug('grid-down', `${e.pointerType || 'mouse'} ${Math.round(e.clientX)},${Math.round(e.clientY)} btn=${e.button}`)
       if (pastePending.value) return
       if (e.button === 2) {
         if (!viewportEl.value) return
@@ -723,6 +912,27 @@ export default {
         window.addEventListener('mouseup', onRightDragMouseUp)
         return
       }
+
+      const targetCell = e.target.closest('.grid-item')
+      const pointerIsTouchLike = e.pointerType === 'touch' || e.pointerType === 'pen'
+      const dragListenerMode = pointerIsTouchLike ? (e.eventType === 'touch' ? 'touch-fallback' : 'pointer') : 'mouse'
+      const targetX = targetCell ? parseInt(targetCell.dataset.x) : null
+      const targetY = targetCell ? parseInt(targetCell.dataset.y) : null
+      const targetHasAppliance = targetCell && targetX != null && targetY != null && !!getDisplayCell(targetX, targetY)?.applianceId
+      const shouldOwnTouchGesture = pointerIsTouchLike && (
+        isStructureMode.value ||
+        pastePending.value ||
+        boxSelectArmed.value ||
+        targetHasAppliance
+      )
+
+      if (shouldOwnTouchGesture) {
+        activeGridPointerId.value = e.pointerId
+        try { e.preventDefault() } catch (err) {}
+        try { e.currentTarget?.setPointerCapture?.(e.pointerId) } catch (err) {}
+        logTouchDebug('capture', `pointer=${e.pointerId}`)
+      }
+
       if (isStructureMode.value) {
         // Start structure-mode edge paint drag: determine edge under cursor
         if (e.button !== 0) return
@@ -760,8 +970,15 @@ export default {
         else if (dir === 'right') structureDragInitialCanonical.value = { type: 'v', x: cx + 1, y: cy }
         structureDragActiveAxis.value = (structureDragInitialCanonical.value.type === 'h') ? 'horizontal' : 'vertical'
         structureDragAnchor.value = { x: cx, y: cy }
-        window.addEventListener('mousemove', onStructureWindowMouseMove)
-        window.addEventListener('mouseup', onStructureWindowMouseUp)
+        if (dragListenerMode === 'pointer') {
+          addGridPointerListeners()
+        } else if (dragListenerMode === 'touch-fallback') {
+          addGridTouchListeners()
+        } else {
+          window.addEventListener('mousemove', onStructureWindowMouseMove)
+          window.addEventListener('mouseup', onStructureWindowMouseUp)
+        }
+        logTouchDebug('structure-drag', dragListenerMode)
         return
       }
 
@@ -774,8 +991,8 @@ export default {
         dragStart.value = { x: e.clientX, y: e.clientY }
         dragEnd.value = { x: e.clientX, y: e.clientY }
         isDragging.value = false
-        window.addEventListener('mousemove', onWindowMouseMove)
-        window.addEventListener('mouseup', onWindowMouseUp)
+        attachGridDragListeners(dragListenerMode)
+        logTouchDebug('box-arm-start', dragListenerMode)
         // keep `boxSelectArmed` true so the button remains highlighted until mouseup
         return
       }
@@ -792,8 +1009,8 @@ export default {
             // Already-selected cell → potential move drag
             pendingMoveCell.value = { x: cx, y: cy }
             moveDragStartMouse.value = { x: e.clientX, y: e.clientY }
-            window.addEventListener('mousemove', onWindowMouseMove)
-            window.addEventListener('mouseup', onWindowMouseUp)
+            attachGridDragListeners(dragListenerMode)
+            logTouchDebug('move-start', `${dragListenerMode} cell=${cx},${cy}`)
             return
           }
           // Unselected cell → clear selection, select this cell, start potential move drag
@@ -803,8 +1020,8 @@ export default {
           if (isSelected(cx, cy) && !isCellGhosted(cx, cy)) {
             pendingMoveCell.value = { x: cx, y: cy }
             moveDragStartMouse.value = { x: e.clientX, y: e.clientY }
-            window.addEventListener('mousemove', onWindowMouseMove)
-            window.addEventListener('mouseup', onWindowMouseUp)
+            attachGridDragListeners(dragListenerMode)
+            logTouchDebug('move-start-after-select', `${dragListenerMode} cell=${cx},${cy}`)
             return
           }
           // Empty or ghosted cell: selection cleared, no drag
@@ -820,11 +1037,24 @@ export default {
       dragStart.value = { x: e.clientX, y: e.clientY }
       dragEnd.value = { x: e.clientX, y: e.clientY }
       isDragging.value = false
-      window.addEventListener('mousemove', onWindowMouseMove)
-      window.addEventListener('mouseup', onWindowMouseUp)
+      attachGridDragListeners(dragListenerMode)
+      logTouchDebug('modifier-box-start', dragListenerMode)
     }
 
-    function onWindowMouseMove(e) {
+    function onGridPointerMove(e) {
+      if (!isActiveGridPointerEvent(e)) return
+      if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+        try { e.preventDefault() } catch (err) {}
+      }
+      if (e.pointerType === 'touch' || e.eventType === 'touch') {
+        logTouchDebug('grid-move', `${Math.round(e.clientX)},${Math.round(e.clientY)} pending=${pendingMoveCell.value ? '1' : '0'} boxing=${dragStart.value ? '1' : '0'}`)
+      }
+
+      if (structureDragActive.value) {
+        onStructureWindowMouseMove(e)
+        return
+      }
+
       // --- Move drag path ---
       if (pendingMoveCell.value) {
         const dx = e.clientX - moveDragStartMouse.value.x
@@ -832,6 +1062,7 @@ export default {
         if (!isMoveDragging.value && Math.sqrt(dx * dx + dy * dy) > 5) {
           isMoveDragging.value = true
           startMoveDrag()
+          logTouchDebug('move-activated', `${Math.round(dx)},${Math.round(dy)}`)
         }
         if (isMoveDragging.value) {
           const _hit = document.elementFromPoint(e.clientX, e.clientY)
@@ -860,13 +1091,25 @@ export default {
       if (!dragStart.value) return
       const dx = e.clientX - dragStart.value.x
       const dy = e.clientY - dragStart.value.y
-      if (!isDragging.value && Math.sqrt(dx * dx + dy * dy) > 5) isDragging.value = true
+      if (!isDragging.value && Math.sqrt(dx * dx + dy * dy) > 5) {
+        isDragging.value = true
+        logTouchDebug('box-activated', `${Math.round(dx)},${Math.round(dy)}`)
+      }
       if (isDragging.value) dragEnd.value = { x: e.clientX, y: e.clientY }
     }
 
-    function onWindowMouseUp(e) {
-      window.removeEventListener('mousemove', onWindowMouseMove)
-      window.removeEventListener('mouseup', onWindowMouseUp)
+    function onGridPointerUp(e) {
+      if (!isActiveGridPointerEvent(e)) return
+      logTouchDebug('grid-up', `${e.pointerType || e.eventType || 'mouse'} ${Math.round(e.clientX)},${Math.round(e.clientY)}`)
+
+      if (structureDragActive.value) {
+        removeGridPointerListeners()
+        onStructureWindowMouseUp()
+        return
+      }
+
+      removeGridMouseListeners()
+      removeGridPointerListeners()
 
       // --- Move drag path ---
       if (pendingMoveCell.value) {
@@ -874,8 +1117,10 @@ export default {
           if (isMoveAllOutside.value) {
             removeSelected()
             cancelMoveDrag()
+            logTouchDebug('move-commit', 'delete')
           } else {
             commitMoveDrag()
+            logTouchDebug('move-commit', 'placed')
           }
           isMoveDragging.value = false
           // Suppress click after an actual drag
@@ -891,6 +1136,7 @@ export default {
       // --- Select-box drag path ---
       if (isDragging.value) {
         finalizeDragSelection(e.ctrlKey || e.metaKey || e.shiftKey)
+        logTouchDebug('box-commit', `add=${e.ctrlKey || e.metaKey || e.shiftKey ? '1' : '0'}`)
         wasDragging.value = true
         setTimeout(() => { wasDragging.value = false }, 0)
         isDragging.value = false
@@ -1675,13 +1921,18 @@ export default {
     })
 
     onUnmounted(() => {
-      window.removeEventListener('mousemove', onWindowMouseMove)
-      window.removeEventListener('mouseup', onWindowMouseUp)
+      removeGridMouseListeners()
+      window.removeEventListener('pointermove', onGridPointerMove)
+      window.removeEventListener('pointerup', onGridPointerUp)
+      window.removeEventListener('pointercancel', onGridPointerUp)
+      window.removeEventListener('touchmove', onGridTouchMove)
+      window.removeEventListener('touchend', onGridTouchEnd)
+      window.removeEventListener('touchcancel', onGridTouchEnd)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('resize', bumpWallLayout)
       window.removeEventListener('mousemove', onRightDragMouseMove)
       window.removeEventListener('mouseup', onRightDragMouseUp)
-      window.removeEventListener('mousemove', onPasteMouseMove)
+      syncPastePendingListeners(false)
       if (gridResizeObserver) {
         gridResizeObserver.disconnect()
         gridResizeObserver = null
@@ -2037,7 +2288,8 @@ export default {
       rotateCell, selectedCells, isSelected, addTab, selectTab,
       selectedLabelIds,
       gridEl, viewportEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
-      handleCellClick, handleCellContextMenu, onGridMouseDown, cellClasses, getDisplayCell,
+      touchDebugLog, pendingMoveCellDebug, isMoveDraggingDebug, activeGridPointerDebug, dragStartDebug, dragEndDebug,
+      handleCellClick, handleCellContextMenu, onGridPointerDown, onGridTouchStart, cellClasses, getDisplayCell,
       editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename,
       contextMenuVisible, contextMenuPos, closeContextMenu, doMoveToThisLevel, doShowInBothLevels,
       tabContextMenuVisible, tabContextMenuPos, tabDeleteConfirmVisible,
@@ -2114,6 +2366,28 @@ export default {
   flex-shrink: 0;
   user-select: none;
 }
+.grid.touch-drag-enabled {
+  touch-action: none;
+}
+.viewport-box,
+.grid,
+.grid-item,
+.cell-content,
+.cell-content *,
+.planner-label {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.grid.touch-drag-enabled .grid-item,
+.grid.touch-drag-enabled .cell-content {
+  touch-action: none;
+}
+.grid.touch-drag-enabled .cell-content *,
+.grid.touch-drag-enabled img,
+.grid.touch-drag-enabled span {
+  touch-action: none;
+}
 .grid-item {
   width: 100%;
   height: 100%;
@@ -2145,6 +2419,13 @@ export default {
 .grid.paste-pending .grid-item { cursor: copy }
 .grid-item.ghosted .cell-content { opacity: 0.7; }
 .grid-item.ghosted .cell-content > span { opacity: 0.3; filter: grayscale(0.7); }
+.cell-content img,
+.cell-content canvas {
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-touch-callout: none;
+}
 .drag-select-overlay {
   position: fixed;
   border: 2px dashed #1f79ff;
@@ -2152,6 +2433,30 @@ export default {
   pointer-events: none;
   z-index: 9999;
   border-radius: 4px;
+}
+.touch-debug-panel {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 120;
+  max-width: min(420px, calc(100% - 24px));
+  background: rgba(11, 17, 27, 0.88);
+  color: #e8f3ff;
+  border: 1px solid rgba(130, 170, 220, 0.45);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+.touch-debug-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.touch-debug-state,
+.touch-debug-line {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .cell-label { font-size: 10px; color: #bbb; position: absolute; top: 2px; left: 2px; }
 .planner-label { cursor: grab; user-select: none; white-space: nowrap; border-radius: 10px; border: 1px solid rgba(0,0,0,0.2); box-shadow: 0 4px 10px rgba(16,35,48,0.06), inset 0 1px 0 rgba(255,255,255,0.6); padding: 4px 6px; transition: box-shadow .12s, transform .08s; }
