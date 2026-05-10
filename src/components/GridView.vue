@@ -2418,6 +2418,8 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 /* Disabled toolbox button appearance */
 .toolbox-button:disabled,
