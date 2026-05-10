@@ -217,13 +217,19 @@
             <span class="toolbox-char" aria-hidden="true">⇋</span>
           </button>
 
-          <button class="toolbox-button" data-help-id="label" @click="createLabel" :disabled="state.activeTabId === 'complete' || isStructureMode || (selectedCells && selectedCells.size > 1)" title="Add label — Click to add a text label" :aria-disabled="state.activeTabId === 'complete' || isStructureMode || (selectedCells && selectedCells.size > 1)">
+          <button class="toolbox-button" data-help-id="label" @click="createLabel" :disabled="state.activeTabId === 'complete' || isStructureMode || (selectedCells && selectedCells.size > 1)" :title="(selectedCells && selectedCells.size === 1) ? 'Add a label anchored to the selected item' : 'Add label — Click to add a text label'" :aria-disabled="state.activeTabId === 'complete' || isStructureMode || (selectedCells && selectedCells.size > 1)">
             <svg class="toolbox-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
               <!-- Textbox outline -->
               <rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6" />
               <!-- Caret cursor on the left -->
               <line x1="7.5" y1="9.5" x2="7.5" y2="14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
             </svg>
+            <!-- Anchor badge: shown only when exactly one cell is selected -->
+            <span v-if="selectedCells && selectedCells.size === 1" class="anchor-badge" aria-hidden="true">
+              <svg class="anchor-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z" fill="currentColor"/>
+              </svg>
+            </span>
           </button>
 
           <button class="toolbox-button" data-help-id="delete" @click="removeSelected" title="Delete selection — Delete / Backspace">
@@ -1067,7 +1073,7 @@ export default {
       { id: 'rotate-right', title: 'Rotate Right', desc: 'Rotate selection clockwise.' },
       { id: 'flip-h', title: 'Flip H', desc: 'Flip selection horizontally.' },
       { id: 'flip-v', title: 'Flip V', desc: 'Flip selection vertically.' },
-      { id: 'label', title: 'Add Label', desc: 'Add a text label to the grid.' },
+      { id: 'label', title: 'Add Label', desc: 'Add a label anchored to the selected item.' },
       { id: 'delete', title: 'Delete', desc: 'Delete the selected cells.' },
       { id: 'help', title: 'Help', desc: 'Show this help overlay.' },
       { divider: true },
@@ -2398,6 +2404,8 @@ export default {
 .dark .toolbox-box { background: #1e2629; border-color: #33393d }
 .toolbox { display:flex; gap:8px; align-items:center; }
 .toolbox-button {
+  position: relative;
+  overflow: visible;
   background: #fff;
   border: 1px solid #c8d6e8;
   border-radius: 6px;
@@ -2472,6 +2480,24 @@ export default {
 .help-popup-icon .rotate-90 { display: inline-block; transform: rotate(90deg); }
 .rotate-90 { display: inline-block; transform: rotate(90deg); }
 .toolbox-button .hp-svg { width: 22px; height: 22px }
+.anchor-badge {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(0,0,0,0.64);
+  border-radius: 5px;
+  padding: 2px;
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+.anchor-badge .anchor-icon { width: 16px; height: 16px; display: block }
+.dark .anchor-badge { background: rgba(0,0,0,0.5); color: #fff }
 .help-popup-icon .hp-svg { width: 28px; height: 28px }
 .help-popup-body { min-width: 140px }
 .help-popup-title { font-weight: 700; margin-bottom: 4px }
