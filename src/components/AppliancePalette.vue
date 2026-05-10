@@ -86,7 +86,7 @@
                 :key="item.id"
                 class="palette-item"
                 @click="onPaletteItemClick(item)"
-                @mousedown="onPaletteItemMouseDown(item, $event)"
+                @pointerdown="onPaletteItemPointerDown(item, $event)"
               >
                 <div class="item-icon">
                   <canvas :data-icon="item.icon" class="palette-canvas"></canvas>
@@ -124,7 +124,7 @@
                 class="palette-item blueprint-item"
                 :title="bp.name + '\n(right-click to delete)'"
                 @click="applyBlueprint(bp)"
-                @mousedown="onBlueprintMouseDown(bp, $event)"
+                @pointerdown="onBlueprintPointerDown(bp, $event)"
                 @dragstart.prevent
                 @contextmenu.prevent="deleteBlueprint(bp)"
               >
@@ -508,37 +508,100 @@ export default {
       addToGrid(item)
     }
 
-    function onPaletteItemMouseDown(item, e) {
-      if (e.button !== 0) return
-      // Prevent the browser from selecting the label text when starting a drag
-      try { e.preventDefault() } catch (err) {}
-      if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
-      const startX = e.clientX, startY = e.clientY
+    function isPointWithinRect(clientX, clientY, rect) {
+      return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom
+    }
+
+    function beginDeferredPalettePointerDrag(e, options) {
+      if (e.button !== 0 || e.isPrimary === false) return
+
+      const boundaryEl = e.currentTarget?.closest?.('.palette') || e.currentTarget
+      const boundaryRect = boundaryEl?.getBoundingClientRect?.()
+      if (!boundaryRect) return
+
+      const pointerType = e.pointerType || 'mouse'
+      const startX = e.clientX
+      const startY = e.clientY
+      const isTouchLike = pointerType === 'touch' || pointerType === 'pen'
       let dragStarted = false
 
-      function onMove(e) {
-        if (!dragStarted) {
-          const dx = e.clientX - startX
-          const dy = e.clientY - startY
-              if (Math.sqrt(dx * dx + dy * dy) > 6) {
-                dragStarted = true
-                startPaletteDrag(item)
-              }
-        }
-        if (dragStarted) updatePaletteDrag(e.clientX, e.clientY)
+      if (pointerType === 'mouse') {
+        try { e.preventDefault() } catch (err) {}
       }
 
-      function onUp() {
-        window.removeEventListener('mousemove', onMove)
-        window.removeEventListener('mouseup', onUp)
+      function cleanup() {
+        window.removeEventListener('pointermove', onMove)
+        window.removeEventListener('pointerup', onUp)
+        window.removeEventListener('pointercancel', onCancel)
+      }
+
+      function maybeStartDrag(moveEvent) {
+        if (dragStarted) return true
+        const dx = moveEvent.clientX - startX
+        const dy = moveEvent.clientY - startY
+        const movedEnough = Math.sqrt(dx * dx + dy * dy) > 6
+        if (!movedEnough) return false
+
+        if (isTouchLike) {
+          const stillInPalette = isPointWithinRect(moveEvent.clientX, moveEvent.clientY, boundaryRect)
+          if (stillInPalette) return false
+          try { moveEvent.preventDefault() } catch (err) {}
+        }
+
+        dragStarted = true
+        options.onStart()
+        return true
+      }
+
+      function onMove(moveEvent) {
+        if (!maybeStartDrag(moveEvent)) return
+        if (isTouchLike) {
+          try { moveEvent.preventDefault() } catch (err) {}
+        }
+        options.onMove(moveEvent.clientX, moveEvent.clientY)
+      }
+
+      function onUp(upEvent) {
+        cleanup()
         if (dragStarted) {
-          const placed = commitPaletteDrag()
-          if (placed) suppressNextClickForId.value = item.id
+          if (isTouchLike) {
+            try { upEvent.preventDefault() } catch (err) {}
+          }
+          options.onCommit(upEvent.clientX, upEvent.clientY)
+          options.onSuppressClick()
+          return
+        }
+        if (!isTouchLike) return
+        const dx = upEvent.clientX - startX
+        const dy = upEvent.clientY - startY
+        if (Math.sqrt(dx * dx + dy * dy) > 6) {
+          options.onSuppressClick()
         }
       }
 
-      window.addEventListener('mousemove', onMove)
-      window.addEventListener('mouseup', onUp)
+      function onCancel() {
+        cleanup()
+        if (dragStarted) options.onCancel()
+      }
+
+      window.addEventListener('pointermove', onMove, { passive: false })
+      window.addEventListener('pointerup', onUp, { passive: false })
+      window.addEventListener('pointercancel', onCancel, { passive: false })
+
+      if (pointerType !== 'mouse') {
+        try { e.currentTarget?.setPointerCapture?.(e.pointerId) } catch (err) {}
+      }
+    }
+
+    function onPaletteItemPointerDown(item, e) {
+      if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
+      beginDeferredPalettePointerDrag(e, {
+        onStart: () => startPaletteDrag(item),
+        onMove: (clientX, clientY) => updatePaletteDrag(clientX, clientY),
+        onCommit: () => commitPaletteDrag(),
+        onCancel: () => {},
+        onSuppressClick: () => { suppressNextClickForId.value = item.id }
+      })
     }
 
     // ── Blueprints ───────────────────────────────────────────────────────────
@@ -1017,13 +1080,8 @@ export default {
 
     const suppressNextBlueprintClickForId = ref(null)
 
-    function onBlueprintMouseDown(bp, e) {
-      if (e.button !== 0) return
-      // Prevent the browser from selecting the blueprint name when starting a drag
-      try { e.preventDefault() } catch (err) {}
+    function onBlueprintPointerDown(bp, e) {
       if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
-      const startX = e.clientX, startY = e.clientY
-      let dragStarted = false
 
       function getCellFromPoint(clientX, clientY) {
         const el = document.elementFromPoint(clientX, clientY)?.closest?.('.grid-item')
@@ -1031,33 +1089,25 @@ export default {
         return null
       }
 
-      function onMove(e) {
-        if (!dragStarted) {
-          const dx = e.clientX - startX
-          const dy = e.clientY - startY
-          if (Math.sqrt(dx * dx + dy * dy) > 5) {
-            dragStarted = true
-            startPasteFromCells(bp)
+      beginDeferredPalettePointerDrag(e, {
+        onStart: () => startPasteFromCells(bp),
+        onMove: (clientX, clientY) => {
+          const cell = getCellFromPoint(clientX, clientY)
+          if (cell) setPasteAnchor(cell.x, cell.y)
+        },
+        onCommit: (clientX, clientY) => {
+          const cell = getCellFromPoint(clientX, clientY)
+          if (cell) {
+            setPasteAnchor(cell.x, cell.y)
+            confirmPaste()
+            return true
           }
-        }
-        if (dragStarted) {
-        const cell = getCellFromPoint(e.clientX, e.clientY)
-        if (cell) setPasteAnchor(cell.x, cell.y)
-      }
-      }
-
-      function onUp(e) {
-        window.removeEventListener('mousemove', onMove)
-        window.removeEventListener('mouseup', onUp)
-        if (dragStarted) {
-          const cell = getCellFromPoint(e.clientX, e.clientY)
-          if (cell) { setPasteAnchor(cell.x, cell.y); confirmPaste(); suppressNextBlueprintClickForId.value = bp.id }
-          else cancelPaste()
-        }
-      }
-
-      window.addEventListener('mousemove', onMove)
-      window.addEventListener('mouseup', onUp)
+          cancelPaste()
+          return false
+        },
+        onCancel: () => cancelPaste(),
+        onSuppressClick: () => { suppressNextBlueprintClickForId.value = bp.id }
+      })
     }
 
     async function deleteBlueprint(bp) {
@@ -2386,9 +2436,9 @@ export default {
       })
     }
 
-    return { state, filteredPalette, addToGrid, hoverLabel, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemMouseDown, rightPanelStyle, paletteGridStyle,
+    return { state, filteredPalette, addToGrid, hoverLabel, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemPointerDown, rightPanelStyle, paletteGridStyle,
       // blueprints
-      paletteTab, blueprintFilter, filteredBlueprints, createBlueprint, applyBlueprint, deleteBlueprint, onBlueprintMouseDown,
+      paletteTab, blueprintFilter, filteredBlueprints, createBlueprint, applyBlueprint, deleteBlueprint, onBlueprintPointerDown,
       blueprintDialogVisible, blueprintDialogInitial, onBlueprintDialogConfirm, closeBlueprintDialog,
       exportBlueprint, handleBlueprintImport, triggerBlueprintImport, blueprintImportInput,
       bpDragOver, onBpDragOver, onBpDragLeave, onBpFileDrop,
@@ -2465,6 +2515,7 @@ export default {
   align-content: start;
   flex: 1 1 auto;
   min-height: 0;
+  touch-action: pan-y;
 }
 .palette-item {
   border: 1px solid #cbd6e5;
@@ -2479,6 +2530,7 @@ export default {
   width: 100%;
   box-sizing: border-box;
   text-align: center;
+  touch-action: pan-y;
 }
 /* Prevent text selection inside palette items to avoid drag visual issues */
 .palette-item, .palette-item * {
