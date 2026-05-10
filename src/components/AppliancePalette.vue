@@ -471,10 +471,28 @@ export default {
     const ICON_GAP = 8
     const SIDE_BOX_INSET = 22 + 15  // 10px padding + 1px border each side = 22, +15 for scrollbar-gutter
 
-    const windowWidth = ref(window.innerWidth)
-    function onWindowResize() { windowWidth.value = window.innerWidth }
-    onMounted(() => window.addEventListener('resize', onWindowResize))
-    onUnmounted(() => window.removeEventListener('resize', onWindowResize))
+    function getViewportWidth() {
+      return Math.round(window.visualViewport?.width || window.innerWidth || document.documentElement?.clientWidth || 0)
+    }
+
+    const windowWidth = ref(getViewportWidth())
+
+    function onWindowResize() {
+      windowWidth.value = getViewportWidth()
+    }
+
+    onMounted(() => {
+      window.addEventListener('resize', onWindowResize)
+      window.visualViewport?.addEventListener?.('resize', onWindowResize)
+      window.visualViewport?.addEventListener?.('scroll', onWindowResize)
+      onWindowResize()
+    })
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', onWindowResize)
+      window.visualViewport?.removeEventListener?.('resize', onWindowResize)
+      window.visualViewport?.removeEventListener?.('scroll', onWindowResize)
+    })
 
     function handleGlobalSaveLoadMenu(e) { showExportMenu(e.detail) }
     onMounted(() => window.addEventListener('plateup-open-saveload-menu', handleGlobalSaveLoadMenu))
