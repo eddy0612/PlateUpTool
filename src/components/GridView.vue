@@ -1551,6 +1551,7 @@ export default {
     // Returns an array of { x1, y1, x2, y2 } in grid-pixel coordinates for each
     // selected paired teleporter, so GridView can draw a dashed connector line.
     const showTeleporterLinesAlways = ref(false)
+    const showContextTeleporterLines = ref(true)
     const labelDisplayMode = ref(Number(localStorage.getItem('labelDisplayMode') || '0'))
 
     function toggleTeleporterLines() {
@@ -1756,7 +1757,7 @@ export default {
             lines.push({ x1: cx(x), y1: cy(y), x2: cx(partner.x), y2: cy(partner.y) })
           }
         }
-      } else {
+      } else if (showContextTeleporterLines.value) {
         for (const key of selectedCells.value) {
           const [x, y] = key.split(',').map(Number)
           const cell = getDisplayCell(x, y)
@@ -1943,6 +1944,12 @@ export default {
       window.addEventListener('keydown', onKeyDown)
       if (viewportEl.value) viewportEl.value.addEventListener('wheel', onWheel, { passive: false })
       nextTick(() => { layoutTick.value++ })
+      try {
+        const hoverCapable = window.matchMedia?.('(hover: hover) and (pointer: fine)')?.matches
+        showContextTeleporterLines.value = !!hoverCapable
+      } catch (e) {
+        showContextTeleporterLines.value = true
+      }
       if (typeof ResizeObserver !== 'undefined' && gridEl.value) {
         gridResizeObserver = new ResizeObserver(() => { layoutTick.value++ })
         gridResizeObserver.observe(gridEl.value)
