@@ -258,9 +258,9 @@ export default {
     const { addToGrid, hoverLabel, viewportBoxHeight, removeSelected, selectedCells, selectedLabelIds, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState, getTeleporterPairPos } = useGrid()
 
     const structureTools = [
-      { id: 'wall',    label: 'Wall',    description: 'Full-height wall' },
-      { id: 'hatch',   label: 'Hatch',   description: 'Half-height wall' },
-      { id: 'door',    label: 'Door',    description: 'Doorway / opening' },
+      { id: 'wall', label: 'Wall', description: 'Full-height wall' },
+      { id: 'hatch', label: 'Hatch', description: 'Half-height wall' },
+      { id: 'door', label: 'Door', description: 'Doorway / opening' },
       { id: 'nothing', label: 'Nothing', description: 'Remove any wall, hatch or door' },
     ]
 
@@ -2747,6 +2747,13 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  padding-right: 4px;
+  touch-action: pan-y;
 }
 .structure-tool-item {
   display: flex;
@@ -2776,9 +2783,7 @@ export default {
 }
 .swatch-wall  { background: #1a1a2e }
 .swatch-hatch {
-  background: repeating-linear-gradient(
-    45deg, #555 0px, #555 4px, transparent 4px, transparent 8px
-  );
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='24' viewBox='0 0 12 24'%3E%3Ccircle cx='6' cy='6' r='5' fill='%23555'/%3E%3Ccircle cx='6' cy='18' r='5' fill='%23555'/%3E%3C/svg%3E") center/12px 24px repeat;
   border: 1px solid #555;
 }
 .swatch-door  { background: #c8860a }
