@@ -42,6 +42,15 @@
               <button class="custom-confirm" @click="chooseCustom" :disabled="!validCustom">Choose</button>
             </div>
           </div>
+          <button
+            class="theme-toggle"
+            type="button"
+            @click="toggleTheme"
+            :title="darkMode ? 'Change to Light Mode' : 'Change to Dark Mode'"
+          >
+            <HelpIcon id="dark-mode" :is-dark="darkMode" />
+            <span>{{ darkMode ? 'Change to Light Mode' : 'Change to Dark Mode' }}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -50,12 +59,15 @@
 
 <script>
 import { ref, onMounted, onBeforeUnmount, computed, reactive } from 'vue'
+import HelpIcon from './HelpIcon.vue'
 export default {
   name: 'RestaurantSizeModal',
+  components: { HelpIcon },
   props: {
-    dismissable: { type: Boolean, default: false }
+    dismissable: { type: Boolean, default: false },
+    darkMode: { type: Boolean, default: false }
   },
-  emits: ['choose', 'cancel'],
+  emits: ['choose', 'cancel', 'toggle-dark-mode'],
   setup(props, { emit }) {
     const options = [
       { label: 'Diner', dim: '10×6', w: 10, h: 6 },
@@ -120,6 +132,10 @@ export default {
       if (props.dismissable) emit('cancel')
     }
 
+    function toggleTheme() {
+      emit('toggle-dark-mode')
+    }
+
     // Handle Escape: when dismissable emit cancel, otherwise swallow Escape
     function onKey(e) {
       if (e.key === 'Escape') {
@@ -131,7 +147,7 @@ export default {
     onMounted(() => window.addEventListener('keydown', onKey, true))
     onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 
-    return { options, customW, customH, choose, chooseCustom, validCustom, range, MIN_W, MAX_W, MIN_H, MAX_H, fallbackMap, getPreviewSrc, setFallback, getPreviewKey, isDark, onBackdropClick }
+    return { options, customW, customH, choose, chooseCustom, validCustom, range, MIN_W, MAX_W, MIN_H, MAX_H, fallbackMap, getPreviewSrc, setFallback, getPreviewKey, isDark, onBackdropClick, toggleTheme }
   }
 }
 </script>
@@ -148,6 +164,27 @@ export default {
 .size-modal-header h2 { margin: 0 0 8px; font-size: 1.25rem }
 .size-modal-body { margin-top: 6px }
 .size-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px }
+.theme-toggle {
+  width: 100%;
+  margin-top: 14px;
+  border: 1.5px solid rgba(31,111,235,0.18);
+  border-radius: 10px;
+  background: #eef6ff;
+  color: #0b1220;
+  min-height: 64px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.theme-toggle:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(31,111,235,0.07) }
+.theme-toggle :deep(.help-list-icon) { width: 32px }
+.theme-toggle :deep(.hp-svg) { width: 22px; height: 22px }
 .size-card {
   background: #eef6ff; border-radius: 10px; padding: 19px; display:flex; flex-direction:column; align-items:center; gap:10px;
   border: 1.5px solid rgba(31,111,235,0.14); cursor: pointer; min-height: 101px;
@@ -193,6 +230,11 @@ html.dark .size-modal {
 }
 html.dark .size-card {
   background: #071029;
+  border: 1.5px solid rgba(90,140,255,0.18);
+}
+html.dark .theme-toggle {
+  background: #071029;
+  color: #e6f0ff;
   border: 1.5px solid rgba(90,140,255,0.18);
 }
 html.dark .size-label { color: #e6f0ff }
