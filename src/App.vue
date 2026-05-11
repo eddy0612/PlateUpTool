@@ -240,6 +240,12 @@
                 <line x1="3" y1="5" x2="15" y2="11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
               </svg>
             </button>
+
+            <button v-if="false" :class="['toolbox-button', 'toolbox-button--icon', 'toolbox-button--teleporter', { active: showTouchDebug }]" @click="toggleTouchDebug" :title="showTouchDebug ? 'Hide touch debug panel' : 'Show touch debug panel'">
+              <svg class="toolbox-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <path d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13zm0 1.2a5.3 5.3 0 1 1 0 10.6A5.3 5.3 0 0 1 8 2.7zm-.6 2.1h1.2v4.1H7.4V4.8zm0 5.2h1.2v1.2H7.4V10z" fill="currentColor"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -272,6 +278,7 @@ import TutorialModal, { hasTutorialBeenSeen } from './components/TutorialModal.v
 import RestaurantSizeModal from './components/RestaurantSizeModal.vue'
 import { isDefaultState } from './store/restaurant'
 import { alert, confirm, toast } from './utils/ui'
+import { useTouchDebug } from './composables/useTouchDebug'
 
 export default {
   name: 'App',
@@ -280,6 +287,7 @@ export default {
     const { state, loadFromHash, syncToHash } = useRestaurantStore()
     const _encodeState = encodeStateFn
     const { loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, selectedCells, selectedLabelIds } = useGrid()
+    const { showTouchDebug, toggleTouchDebug } = useTouchDebug()
 
     const showHelp = ref(false)
     const showCredits = ref(false)
@@ -552,7 +560,7 @@ export default {
       if (!v && isDefaultState()) { showSizeModal.value = true; sizeModalDismissable.value = false }
     })
 
-    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, sizeModalDismissable, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, openChangeSizeModal, toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen, onSizeCancelled, undo }
+    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, sizeModalDismissable, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, openChangeSizeModal, toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen, onSizeCancelled, undo, showTouchDebug, toggleTouchDebug }
   }
 }
 </script>
