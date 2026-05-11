@@ -1489,7 +1489,9 @@ export default {
       }
       const sig = iidList.slice().sort().join(';')
       if (!lastToolbarPivot || lastPivotSelectionSig !== sig) {
-        // compute bounding box center of current positions and prefer upper-left
+          // Use the geometric midpoint of the selection bounds. Even-sized
+          // selections need half-cell pivots so 2x2/4x4 groups rotate around
+          // their true center instead of snapping to one corner cell.
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
         for (const key of activeKeys) {
           const [x, y] = key.split(',').map(Number)
@@ -1498,8 +1500,8 @@ export default {
           if (y < minY) minY = y
           if (y > maxY) maxY = y
         }
-        const pivotX = Math.floor((minX + maxX) / 2)
-        const pivotY = Math.floor((minY + maxY) / 2)
+          const pivotX = (minX + maxX) / 2
+          const pivotY = (minY + maxY) / 2
         lastToolbarPivot = { x: pivotX, y: pivotY }
         lastPivotSelectionSig = sig
       }
@@ -1515,7 +1517,7 @@ export default {
         if (y < minY) minY = y
         if (y > maxY) maxY = y
       }
-      return { x: Math.floor((minX + maxX) / 2), y: Math.floor((minY + maxY) / 2) }
+        return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 }
     }
 
     // Clear cached toolbar pivot when selection content changes (not mere moves)
