@@ -236,6 +236,7 @@ import AddLabelDialog from './AddLabelDialog.vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
 import { useGrid } from '../composables/useGrid'
+import { useTouchDebug } from '../composables/useTouchDebug'
 import { readPngText, writePngText, writeStegoText, readStegoFromBytes, dataUrlToBytes, bytesToDataUrl, downloadDataUrl, readFileAsBytes, writePngDpi } from '../composables/usePngMetadata'
 import { alert, confirm, toast } from '../utils/ui'
 
@@ -255,6 +256,7 @@ export default {
   setup() {
     const { state } = useRestaurantStore()
     const { palette, loading } = useAppliancePalette()
+    const { logTouchDebug } = useTouchDebug()
     const { addToGrid, hoverLabel, viewportBoxHeight, removeSelected, selectedCells, selectedLabelIds, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState, getTeleporterPairPos } = useGrid()
 
     const structureTools = [
@@ -543,6 +545,10 @@ export default {
       const isTouchLike = pointerType === 'touch' || pointerType === 'pen'
       let dragStarted = false
 
+      if (isTouchLike) {
+        logTouchDebug('palette-down', `${pointerType} ${Math.round(startX)},${Math.round(startY)} item=${options.label}`)
+      }
+
       if (pointerType === 'mouse') {
         try { e.preventDefault() } catch (err) {}
       }
@@ -562,12 +568,21 @@ export default {
 
         if (isTouchLike) {
           const stillInPalette = isPointWithinRect(moveEvent.clientX, moveEvent.clientY, boundaryRect)
-          if (stillInPalette) return false
+          if (stillInPalette) {
+            logTouchDebug('palette-wait', `${Math.round(moveEvent.clientX)},${Math.round(moveEvent.clientY)} in-palette=1`)
+            return false
+          }
           try { moveEvent.preventDefault() } catch (err) {}
         }
 
         dragStarted = true
-        options.onStart()
+        try {
+          options.onStart()
+          logTouchDebug('palette-start', `${Math.round(moveEvent.clientX)},${Math.round(moveEvent.clientY)} item=${options.label}`)
+        } catch (err) {
+          logTouchDebug('error-palette-start', err?.message || String(err))
+          throw err
+        }
         return true
       }
 
@@ -576,7 +591,13 @@ export default {
         if (isTouchLike) {
           try { moveEvent.preventDefault() } catch (err) {}
         }
-        options.onMove(moveEvent.clientX, moveEvent.clientY)
+        try {
+          options.onMove(moveEvent.clientX, moveEvent.clientY)
+          if (isTouchLike) logTouchDebug('palette-move', `${Math.round(moveEvent.clientX)},${Math.round(moveEvent.clientY)}`)
+        } catch (err) {
+          logTouchDebug('error-palette-move', err?.message || String(err))
+          throw err
+        }
       }
 
       function onUp(upEvent) {
@@ -585,7 +606,13 @@ export default {
           if (isTouchLike) {
             try { upEvent.preventDefault() } catch (err) {}
           }
-          options.onCommit(upEvent.clientX, upEvent.clientY)
+          try {
+            options.onCommit(upEvent.clientX, upEvent.clientY)
+            logTouchDebug('palette-up', `${Math.round(upEvent.clientX)},${Math.round(upEvent.clientY)} item=${options.label}`)
+          } catch (err) {
+            logTouchDebug('error-palette-up', err?.message || String(err))
+            throw err
+          }
           options.onSuppressClick()
           return
         }
@@ -597,9 +624,21 @@ export default {
         }
       }
 
-      function onCancel() {
+      function onCancel(cancelEvent) {
         cleanup()
-        if (dragStarted) options.onCancel()
+        if (isTouchLike) {
+          const cx = cancelEvent?.clientX != null ? Math.round(cancelEvent.clientX) : '-'
+          const cy = cancelEvent?.clientY != null ? Math.round(cancelEvent.clientY) : '-'
+          logTouchDebug('palette-cancel', `${cx},${cy} item=${options.label} started=${dragStarted ? '1' : '0'}`)
+        }
+        if (dragStarted) {
+          try {
+            options.onCancel()
+          } catch (err) {
+            logTouchDebug('error-palette-cancel', err?.message || String(err))
+            throw err
+          }
+        }
       }
 
       window.addEventListener('pointermove', onMove, { passive: false })
@@ -607,13 +646,19 @@ export default {
       window.addEventListener('pointercancel', onCancel, { passive: false })
 
       if (pointerType !== 'mouse') {
-        try { e.currentTarget?.setPointerCapture?.(e.pointerId) } catch (err) {}
+        try {
+          e.currentTarget?.setPointerCapture?.(e.pointerId)
+          logTouchDebug('palette-capture', `pointer=${e.pointerId}`)
+        } catch (err) {
+          logTouchDebug('palette-capture-fail', err?.message || String(err))
+        }
       }
     }
 
     function onPaletteItemPointerDown(item, e) {
       if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
       beginDeferredPalettePointerDrag(e, {
+        label: item.label,
         onStart: () => startPaletteDrag(item),
         onMove: (clientX, clientY) => updatePaletteDrag(clientX, clientY),
         onCommit: () => commitPaletteDrag(),
@@ -1108,6 +1153,7 @@ export default {
       }
 
       beginDeferredPalettePointerDrag(e, {
+        label: bp.name,
         onStart: () => startPasteFromCells(bp),
         onMove: (clientX, clientY) => {
           const cell = getCellFromPoint(clientX, clientY)

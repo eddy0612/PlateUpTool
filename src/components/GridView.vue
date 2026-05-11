@@ -124,7 +124,13 @@
       </div>
 
       <div v-if="showTouchDebug" class="touch-debug-panel">
-        <div class="touch-debug-title">Touch Debug</div>
+        <div class="touch-debug-header">
+          <div class="touch-debug-title">Touch Debug</div>
+          <div class="touch-debug-actions">
+            <button type="button" class="touch-debug-action" @click="copyTouchDebug">Copy</button>
+            <button type="button" class="touch-debug-action" @click="clearTouchDebugLog">Clear</button>
+          </div>
+        </div>
         <div class="touch-debug-state">tab={{ state.activeTabId }} box={{ boxSelectArmed ? '1' : '0' }} sel={{ selectedCells.size }} pendingMove={{ pendingMoveCellDebug }} moving={{ isMoveDraggingDebug }} boxing={{ isDragging ? '1' : '0' }} ptr={{ activeGridPointerDebug }}</div>
         <div class="touch-debug-state">dragStart={{ dragStartDebug }} dragEnd={{ dragEndDebug }}</div>
         <div v-for="entry in touchDebugLog" :key="entry.id" class="touch-debug-line">{{ entry.text }}</div>
@@ -316,6 +322,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useGrid, TELEPORTER_APPLIANCE_ID } from '../composables/useGrid'
+import { useTouchDebug } from '../composables/useTouchDebug'
 import { readPngText, readStegoFromBytes, readFileAsBytes } from '../composables/usePngMetadata'
 import AddLabelDialog from './AddLabelDialog.vue'
 import HelpIcon from './HelpIcon.vue'
@@ -560,14 +567,12 @@ export default {
     const isMoveDragging = ref(false)
     const moveDragStartMouse = ref(null)
 
-    const showTouchDebug = ref(false)
-    const touchDebugCounter = ref(0)
-    const touchDebugLog = ref([])
+    const { showTouchDebug, touchDebugLog, logTouchDebug, clearTouchDebugLog, copyTouchDebugLog } = useTouchDebug()
 
-    function logTouchDebug(label, extra = '') {
-      const suffix = extra ? ` ${extra}` : ''
-      touchDebugLog.value.unshift({ id: ++touchDebugCounter.value, text: `${label}${suffix}` })
-      if (touchDebugLog.value.length > 10) touchDebugLog.value.length = 10
+    async function copyTouchDebug() {
+      const copied = await copyTouchDebugLog()
+      if (copied) toast('Touch debug copied to clipboard.')
+      else toast('Unable to copy touch debug log.')
     }
 
     const pendingMoveCellDebug = computed(() => pendingMoveCell.value ? `${pendingMoveCell.value.x},${pendingMoveCell.value.y}` : '-')
@@ -2492,7 +2497,7 @@ export default {
       rotateCell, selectedCells, isSelected, addTab, selectTab,
       selectedLabelIds,
       gridEl, viewportEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
-      showTouchDebug, touchDebugLog, pendingMoveCellDebug, isMoveDraggingDebug, activeGridPointerDebug, dragStartDebug, dragEndDebug,
+      showTouchDebug, touchDebugLog, pendingMoveCellDebug, isMoveDraggingDebug, activeGridPointerDebug, dragStartDebug, dragEndDebug, clearTouchDebugLog, copyTouchDebug,
       handleCellClick, handleCellContextMenu, onGridPointerDown, onGridTouchStart, cellClasses, getDisplayCell,
       editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename,
       contextMenuVisible, contextMenuPos, closeContextMenu, doMoveToThisLevel, doShowInBothLevels,
@@ -2650,12 +2655,36 @@ export default {
   border-radius: 8px;
   padding: 8px 10px;
   font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  pointer-events: none;
+  pointer-events: auto;
   backdrop-filter: blur(4px);
+}
+.touch-debug-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 .touch-debug-title {
   font-weight: 700;
   margin-bottom: 4px;
+}
+.touch-debug-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+.touch-debug-action {
+  border: 1px solid rgba(130, 170, 220, 0.45);
+  background: rgba(255, 255, 255, 0.96);
+  color: #21313a;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+}
+.dark .touch-debug-action {
+  background: rgba(24, 34, 48, 0.96);
+  color: #e8f3ff;
 }
 .touch-debug-state,
 .touch-debug-line {
