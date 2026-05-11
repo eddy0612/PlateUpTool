@@ -42,57 +42,6 @@
             :height="state.roomHeight * cellSize * state.zoom"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <defs>
-              <pattern
-                v-for="patternRect in wallPatternInstances"
-                :id="patternRect.id"
-                :key="patternRect.id"
-                patternUnits="userSpaceOnUse"
-                :x="patternRect.anchorX"
-                :y="patternRect.anchorY"
-                :width="patternRect.width"
-                :height="patternRect.height"
-                :viewBox="patternRect.viewBox"
-                :patternTransform="patternRect.transform || null"
-              >
-                <template v-for="(shape, shapeIndex) in patternRect.shapes" :key="patternRect.id + '-shape-' + shapeIndex">
-                  <rect
-                    v-if="shape.kind === 'rect'"
-                    :x="shape.x"
-                    :y="shape.y"
-                    :width="shape.width"
-                    :height="shape.height"
-                    :fill="shape.fill === 'patternColor' ? hatchPatternColor : shape.fill"
-                    :opacity="shape.opacity ?? null"
-                  />
-                  <circle
-                    v-else-if="shape.kind === 'circle'"
-                    :cx="shape.cx"
-                    :cy="shape.cy"
-                    :r="shape.r"
-                    :fill="shape.fill === 'patternColor' ? hatchPatternColor : shape.fill"
-                    :opacity="shape.opacity ?? null"
-                  />
-                  <path
-                    v-else-if="shape.kind === 'path'"
-                    :d="shape.d"
-                    fill="none"
-                    :stroke="shape.stroke === 'patternColor' ? hatchPatternColor : shape.stroke"
-                    :stroke-width="shape.strokeWidth"
-                    :stroke-linecap="shape.linecap || 'square'"
-                    :stroke-linejoin="shape.linejoin || 'miter'"
-                    :opacity="shape.opacity ?? null"
-                  />
-                </template>
-              </pattern>
-            </defs>
-            <rect
-              v-for="(r, i) in wallRectsPatterned"
-              :key="'wall-pattern-' + r.type + '-' + i"
-              :x="r.x" :y="r.y" :width="r.w" :height="r.h"
-              :fill="`url(#${getWallPatternInstanceId(r, i)})`"
-              :opacity="0.98"
-            />
             <circle
               v-for="(dot, i) in wallDots"
               :key="'wall-dot-' + i"
@@ -1808,71 +1757,7 @@ export default {
       return rects
     })
 
-    const structurePatternBases = [
-      {
-        type: 'hatch',
-        id: 'structure-pattern-hatch',
-        width: 8,
-        height: 8,
-        viewBox: '0 0 8 8',
-        transform: 'rotate(45)',
-        shapes: [{ kind: 'rect', x: 0, y: 0, width: 4, height: 8, fill: 'patternColor' }],
-      },
-    ]
-    const structurePatternDefs = computed(() => {
-      const colorToken = 'patternColor'
-      return structurePatternBases.flatMap((pattern) => {
-        const horizontalTransform = [pattern.transform, 'rotate(90)'].filter(Boolean).join(' ')
-        const verticalTransform = pattern.transform || null
-        return [
-          {
-            ...pattern,
-            id: `${pattern.id}-horizontal`,
-            transform: horizontalTransform || null,
-            shapes: pattern.shapes.map(shape => ({
-              ...shape,
-              fill: shape.fill === 'patternColor' ? colorToken : shape.fill,
-              stroke: shape.stroke === 'patternColor' ? colorToken : shape.stroke,
-            })),
-          },
-          {
-            ...pattern,
-            id: `${pattern.id}-vertical`,
-            transform: verticalTransform,
-            shapes: pattern.shapes.map(shape => ({
-              ...shape,
-              fill: shape.fill === 'patternColor' ? colorToken : shape.fill,
-              stroke: shape.stroke === 'patternColor' ? colorToken : shape.stroke,
-            })),
-          },
-        ]
-      })
-    })
-    const structurePatternTypeSet = computed(() => new Set(structurePatternDefs.value.map(pattern => pattern.type)))
-    const getStructurePatternId = (rect) => {
-      const pattern = structurePatternBases.find(def => def.type === rect.type)
-      const orientation = rect.h > rect.w ? 'vertical' : 'horizontal'
-      return `${pattern?.id || 'structure-pattern-hatch'}-${orientation}`
-    }
-    const fullDotTypes = new Set(['hatch', 'hatchAlt9'])
-    const wallRectsPatterned = computed(() => wallRects.value.filter(r => structurePatternTypeSet.value.has(r.type) && !fullDotTypes.has(r.type)))
-    const wallDotRects = computed(() => wallRects.value.filter(r => fullDotTypes.has(r.type)))
-    const getWallPatternInstanceId = (rect, index) => `wall-pattern-instance-${rect.type}-${index}`
-    const wallPatternInstances = computed(() => wallRectsPatterned.value.map((rect, index) => {
-      const baseId = getStructurePatternId(rect)
-      const basePattern = structurePatternDefs.value.find(pattern => pattern.id === baseId)
-      const zoomScale = state.zoom || 1
-      return {
-        id: getWallPatternInstanceId(rect, index),
-        anchorX: rect.x,
-        anchorY: rect.y,
-        width: (basePattern?.width ?? 8) * zoomScale,
-        height: (basePattern?.height ?? 8) * zoomScale,
-        viewBox: basePattern?.viewBox ?? '0 0 8 8',
-        transform: basePattern?.transform ?? null,
-        shapes: basePattern?.shapes ?? [],
-      }
-    }))
+    const wallDotRects = computed(() => wallRects.value.filter(r => r.type === 'hatch'))
     const wallDots = computed(() => {
       const dots = []
       const seen = new Set()
@@ -2619,7 +2504,7 @@ export default {
       getTabColorClass, getApplianceBgStyle,
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave, onViewportTouchStart, onViewportTouchMove, onViewportTouchEnd,
       getApplianceIcon, isImageIcon, onApplianceImgError,
-      TELEPORTER_APPLIANCE_ID, wallRects, wallRectsPatterned, wallDots, wallRectsDoor, wallRectsWall, wallPatternInstances, getStructurePatternId, getWallPatternInstanceId, teleporterPairLines, labelAnchorLines, showTeleporterLinesAlways, labelDisplayMode,
+      TELEPORTER_APPLIANCE_ID, wallRects, wallDots, wallRectsDoor, wallRectsWall, teleporterPairLines, labelAnchorLines, showTeleporterLinesAlways, labelDisplayMode,
       wallColor, doorColor, hatchPatternColor,
       flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
       createLabel, handleLabelPointerDown, getLabelStyle, editLabel, labelDialogVisible, labelDialogInitial, labelDialogTitle, onLabelDialogConfirm, closeLabelDialog,
