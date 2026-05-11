@@ -250,7 +250,14 @@
         </div>
       </div>
     </div>
-    <RestaurantSizeModal v-if="showSizeModal" :dismissable="sizeModalDismissable" @choose="onSizeChosen" @cancel="onSizeCancelled" />
+    <RestaurantSizeModal
+      v-if="showSizeModal"
+      :dismissable="sizeModalDismissable"
+      :dark-mode="darkMode"
+      @choose="onSizeChosen"
+      @cancel="onSizeCancelled"
+      @toggle-dark-mode="toggleDarkMode"
+    />
     <transition name="toast">
       <div v-if="showCopiedToast" class="copied-toast">Link copied to clipboard</div>
     </transition>
