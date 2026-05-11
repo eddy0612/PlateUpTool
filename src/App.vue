@@ -994,14 +994,14 @@ html.dark .tutorial-nav-btn.secondary:hover { background: #2a3848; }
 /* ── Wall / hatch / door edge markers ── */
 html.dark .edge-marker.edge-type-wall  { background: #c8d4e8; }
 html.dark .edge-marker.edge-type-hatch {
-  background: repeating-linear-gradient(45deg, #a0b4cc 0px, #a0b4cc 3px, transparent 3px, transparent 7px);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='24' viewBox='0 0 12 24'%3E%3Ccircle cx='6' cy='6' r='5' fill='%23a0b4cc'/%3E%3Ccircle cx='6' cy='18' r='5' fill='%23a0b4cc'/%3E%3C/svg%3E") center/12px 24px repeat;
 }
 html.dark .edge-marker.edge-type-door  { background: #f0a830; }
 
 /* ── Structure palette swatches ── */
 html.dark .swatch-wall  { background: #c8d4e8; }
 html.dark .swatch-hatch {
-  background: repeating-linear-gradient(45deg, #a0b4cc 0px, #a0b4cc 4px, transparent 4px, transparent 8px);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='24' viewBox='0 0 12 24'%3E%3Ccircle cx='6' cy='6' r='5' fill='%23a0b4cc'/%3E%3Ccircle cx='6' cy='18' r='5' fill='%23a0b4cc'/%3E%3C/svg%3E") center/12px 24px repeat;
   border-color: #a0b4cc;
 }
 html.dark .swatch-door  { background: #f0a830; }

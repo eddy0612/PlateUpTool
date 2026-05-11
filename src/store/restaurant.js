@@ -26,8 +26,10 @@ const DEFAULT_STATE = {
 const URL_FIELDS = ['tabs', 'orientation', 'roomWidth', 'roomHeight', 'walls', 'gridCells', 'labels']
 
 // Wall type string ↔ compact integer code
-const WALL_TYPE_TO_CODE = { wall: 1, hatch: 2, door: 3 }
-const WALL_CODE_TO_TYPE = { 1: 'wall', 2: 'hatch', 3: 'door' }
+const HATCH_VARIANT_IDS = ['hatchAlt9']
+const WALL_TYPE_IDS = ['wall', 'hatch', 'door', ...HATCH_VARIANT_IDS]
+const WALL_TYPE_TO_CODE = Object.fromEntries(WALL_TYPE_IDS.map((type, index) => [type, index + 1]))
+const WALL_CODE_TO_TYPE = Object.fromEntries(WALL_TYPE_IDS.map((type, index) => [index + 1, type]))
 
 const state = reactive(JSON.parse(JSON.stringify(DEFAULT_STATE)))
 
@@ -95,7 +97,8 @@ class BitReader {
 //     [0]  roomWidth
 //     [1]  roomHeight
 //     [2]  orientation
-//     [3]  flags  (bit0=customTabs, bit1=legacy customActiveTab — consumed but ignored on load)
+//     [3]  flags  (bit0=customTabs, bit1=legacy customActiveTab — consumed but ignored on load,
+//                  bit2=extended wall codes use 4 bits instead of 2)
 //     [4]  defaultTabMask
 //     [5-6] numCells  (uint16 LE)
 //     [7-8] numWalls  (uint16 LE)
@@ -110,7 +113,7 @@ class BitReader {
 //     1 bit:     0=defaultTabMask, 1=custom (followed by 3-bit tabMask)
 //     1 bit:     0=rot/extra default, 1=custom (followed by 3-bit rot + 8-bit extra)
 //   Wall bit stream (per wall):
-//     xBits: x,  yBits: y,  1 bit orient (0=h,1=v),  2 bits typeCode
+//     xBits: x,  yBits: y,  1 bit orient (0=h,1=v),  2 or 4 bits typeCode
 
 function encodeState(stateObj) {
   const tabs = stateObj.tabs
@@ -133,7 +136,8 @@ function encodeState(stateObj) {
   }
 
   const customTabs = JSON.stringify(tabs) !== DEFAULT_TABS_JSON
-  const flags = (customTabs ? 1 : 0)
+  const usesExtendedWallCodes = wallEntries.some(([, type]) => (WALL_TYPE_TO_CODE[type] ?? 1) > 3)
+  const flags = (customTabs ? 1 : 0) | (usesExtendedWallCodes ? 4 : 0)
 
   const xyIdxBits = Math.max(1, Math.ceil(Math.log2(roomWidth * roomHeight + 1)))
   const xBits = Math.max(1, Math.ceil(Math.log2(roomWidth + 2)))
@@ -184,7 +188,7 @@ function encodeState(stateObj) {
     w.write(parseInt(x), xBits)
     w.write(parseInt(y), yBits)
     w.write(orient === 'v' ? 1 : 0, 1)
-    w.write(WALL_TYPE_TO_CODE[type] ?? 1, 2)
+    w.write(WALL_TYPE_TO_CODE[type] ?? 1, usesExtendedWallCodes ? 4 : 2)
   }
 
   // Labels (append as simple byte sequence: count, then entries of x,y,len,utf8...)
@@ -276,10 +280,11 @@ function decodeState(encoded) {
     }
 
     const walls = {}
+    const wallTypeBits = (flags & 4) ? 4 : 2
     for (let i = 0; i < numWalls; i++) {
       const x = r.read(xBits), y = r.read(yBits)
       const orient = r.read(1) ? 'v' : 'h'
-      walls[`${orient},${x},${y}`] = WALL_CODE_TO_TYPE[r.read(2)] ?? 'wall'
+      walls[`${orient},${x},${y}`] = WALL_CODE_TO_TYPE[r.read(wallTypeBits)] ?? 'wall'
     }
 
     // Optional labels appended after walls (backwards-compatible)

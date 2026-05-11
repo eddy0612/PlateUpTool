@@ -43,15 +43,63 @@
             xmlns="http://www.w3.org/2000/svg"
           >
             <defs>
-              <pattern id="hatchPattern" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
-                  <rect width="4" height="8" :fill="hatchPatternColor" />
+              <pattern
+                v-for="patternRect in wallPatternInstances"
+                :id="patternRect.id"
+                :key="patternRect.id"
+                patternUnits="userSpaceOnUse"
+                :x="patternRect.anchorX"
+                :y="patternRect.anchorY"
+                :width="patternRect.width"
+                :height="patternRect.height"
+                :viewBox="patternRect.viewBox"
+                :patternTransform="patternRect.transform || null"
+              >
+                <template v-for="(shape, shapeIndex) in patternRect.shapes" :key="patternRect.id + '-shape-' + shapeIndex">
+                  <rect
+                    v-if="shape.kind === 'rect'"
+                    :x="shape.x"
+                    :y="shape.y"
+                    :width="shape.width"
+                    :height="shape.height"
+                    :fill="shape.fill === 'patternColor' ? hatchPatternColor : shape.fill"
+                    :opacity="shape.opacity ?? null"
+                  />
+                  <circle
+                    v-else-if="shape.kind === 'circle'"
+                    :cx="shape.cx"
+                    :cy="shape.cy"
+                    :r="shape.r"
+                    :fill="shape.fill === 'patternColor' ? hatchPatternColor : shape.fill"
+                    :opacity="shape.opacity ?? null"
+                  />
+                  <path
+                    v-else-if="shape.kind === 'path'"
+                    :d="shape.d"
+                    fill="none"
+                    :stroke="shape.stroke === 'patternColor' ? hatchPatternColor : shape.stroke"
+                    :stroke-width="shape.strokeWidth"
+                    :stroke-linecap="shape.linecap || 'square'"
+                    :stroke-linejoin="shape.linejoin || 'miter'"
+                    :opacity="shape.opacity ?? null"
+                  />
+                </template>
               </pattern>
             </defs>
             <rect
-              v-for="(r, i) in wallRectsHatch"
-              :key="'wall-hatch-' + i"
+              v-for="(r, i) in wallRectsPatterned"
+              :key="'wall-pattern-' + r.type + '-' + i"
               :x="r.x" :y="r.y" :width="r.w" :height="r.h"
-              fill="url(#hatchPattern)"
+              :fill="`url(#${getWallPatternInstanceId(r, i)})`"
+              :opacity="0.98"
+            />
+            <circle
+              v-for="(dot, i) in wallDots"
+              :key="'wall-dot-' + i"
+              :cx="dot.cx"
+              :cy="dot.cy"
+              :r="dot.r"
+              :fill="hatchPatternColor"
               :opacity="0.98"
             />
             <rect
@@ -1683,13 +1731,29 @@ export default {
           const rowRef = rowRefForEdge(y)
           const startCell = cellRects[rowRef][start]
           const endCell = cellRects[rowRef][end]
+          const axisStart = start === 0
+            ? startCell.left
+            : (cellRects[rowRef][start - 1].right + startCell.left) / 2
+          const axisEnd = end === W - 1
+            ? endCell.right
+            : (endCell.right + cellRects[rowRef][end + 1].left) / 2
           let x_px = startCell.left - edgeOverlap
           let right_px = endCell.right + edgeOverlap
           if (start === 0) x_px = Math.min(x_px, edgeX(0))
           if (end === W - 1) right_px = Math.max(right_px, edgeX(W) + edgeThickness)
           const width_px = right_px - x_px
           const y_px = edgeY(y)
-          rects.push({ x: x_px, y: y_px, w: width_px, h: edgeThickness, type })
+          rects.push({
+            x: x_px,
+            y: y_px,
+            w: width_px,
+            h: edgeThickness,
+            type,
+            orientation: 'horizontal',
+            segmentCount: end - start + 1,
+            axisStart,
+            axisEnd,
+          })
           x = end + 1
         }
       }
@@ -1715,20 +1779,143 @@ export default {
           const colRef = colRefForEdge(x)
           const startCell = cellRects[start][colRef]
           const endCell = cellRects[end][colRef]
+          const axisStart = start === 0
+            ? startCell.top
+            : (cellRects[start - 1][colRef].bottom + startCell.top) / 2
+          const axisEnd = end === H - 1
+            ? endCell.bottom
+            : (endCell.bottom + cellRects[end + 1][colRef].top) / 2
           let y_px = startCell.top - edgeOverlap
           let bottom_px = endCell.bottom + edgeOverlap
           if (start === 0) y_px = Math.min(y_px, edgeY(0))
           if (end === H - 1) bottom_px = Math.max(bottom_px, edgeY(H) + edgeThickness)
           const height_px = bottom_px - y_px
           const x_px = edgeX(x)
-          rects.push({ x: x_px, y: y_px, w: edgeThickness, h: height_px, type })
+          rects.push({
+            x: x_px,
+            y: y_px,
+            w: edgeThickness,
+            h: height_px,
+            type,
+            orientation: 'vertical',
+            segmentCount: end - start + 1,
+            axisStart,
+            axisEnd,
+          })
           y = end + 1
         }
       }
       return rects
     })
 
-    const wallRectsHatch = computed(() => wallRects.value.filter(r => r.type === 'hatch'))
+    const structurePatternBases = [
+      {
+        type: 'hatch',
+        id: 'structure-pattern-hatch',
+        width: 8,
+        height: 8,
+        viewBox: '0 0 8 8',
+        transform: 'rotate(45)',
+        shapes: [{ kind: 'rect', x: 0, y: 0, width: 4, height: 8, fill: 'patternColor' }],
+      },
+    ]
+    const structurePatternDefs = computed(() => {
+      const colorToken = 'patternColor'
+      return structurePatternBases.flatMap((pattern) => {
+        const horizontalTransform = [pattern.transform, 'rotate(90)'].filter(Boolean).join(' ')
+        const verticalTransform = pattern.transform || null
+        return [
+          {
+            ...pattern,
+            id: `${pattern.id}-horizontal`,
+            transform: horizontalTransform || null,
+            shapes: pattern.shapes.map(shape => ({
+              ...shape,
+              fill: shape.fill === 'patternColor' ? colorToken : shape.fill,
+              stroke: shape.stroke === 'patternColor' ? colorToken : shape.stroke,
+            })),
+          },
+          {
+            ...pattern,
+            id: `${pattern.id}-vertical`,
+            transform: verticalTransform,
+            shapes: pattern.shapes.map(shape => ({
+              ...shape,
+              fill: shape.fill === 'patternColor' ? colorToken : shape.fill,
+              stroke: shape.stroke === 'patternColor' ? colorToken : shape.stroke,
+            })),
+          },
+        ]
+      })
+    })
+    const structurePatternTypeSet = computed(() => new Set(structurePatternDefs.value.map(pattern => pattern.type)))
+    const getStructurePatternId = (rect) => {
+      const pattern = structurePatternBases.find(def => def.type === rect.type)
+      const orientation = rect.h > rect.w ? 'vertical' : 'horizontal'
+      return `${pattern?.id || 'structure-pattern-hatch'}-${orientation}`
+    }
+    const fullDotTypes = new Set(['hatch', 'hatchAlt9'])
+    const wallRectsPatterned = computed(() => wallRects.value.filter(r => structurePatternTypeSet.value.has(r.type) && !fullDotTypes.has(r.type)))
+    const wallDotRects = computed(() => wallRects.value.filter(r => fullDotTypes.has(r.type)))
+    const getWallPatternInstanceId = (rect, index) => `wall-pattern-instance-${rect.type}-${index}`
+    const wallPatternInstances = computed(() => wallRectsPatterned.value.map((rect, index) => {
+      const baseId = getStructurePatternId(rect)
+      const basePattern = structurePatternDefs.value.find(pattern => pattern.id === baseId)
+      const zoomScale = state.zoom || 1
+      return {
+        id: getWallPatternInstanceId(rect, index),
+        anchorX: rect.x,
+        anchorY: rect.y,
+        width: (basePattern?.width ?? 8) * zoomScale,
+        height: (basePattern?.height ?? 8) * zoomScale,
+        viewBox: basePattern?.viewBox ?? '0 0 8 8',
+        transform: basePattern?.transform ?? null,
+        shapes: basePattern?.shapes ?? [],
+      }
+    }))
+    const wallDots = computed(() => {
+      const dots = []
+      const seen = new Set()
+      for (const rect of wallDotRects.value) {
+        const isVertical = rect.orientation === 'vertical'
+        const thickness = Math.max(isVertical ? rect.w : rect.h, 2)
+        const radius = Math.max((thickness / 2) - 1, 0.75)
+        const crossCenter = isVertical ? rect.x + (rect.w / 2) : rect.y + (rect.h / 2)
+        const segmentCount = Math.max(rect.segmentCount || 1, 1)
+        const localAxisStart = isVertical ? rect.axisStart - rect.y : rect.axisStart - rect.x
+        const localAxisEnd = isVertical ? rect.axisEnd - rect.y : rect.axisEnd - rect.x
+        const span = Math.max(localAxisEnd - localAxisStart, 0)
+        if (span <= 0.01) {
+          const key = isVertical
+            ? `${crossCenter.toFixed(3)},${(rect.y + (rect.h / 2)).toFixed(3)}`
+            : `${(rect.x + (rect.w / 2)).toFixed(3)},${crossCenter.toFixed(3)}`
+          if (!seen.has(key)) {
+            seen.add(key)
+            dots.push(isVertical
+              ? { cx: crossCenter, cy: rect.y + (rect.h / 2), r: radius }
+              : { cx: rect.x + (rect.w / 2), cy: crossCenter, r: radius })
+          }
+        } else {
+          const segmentSpan = span / segmentCount
+          const step = segmentSpan / 4
+          for (let segmentIndex = 0; segmentIndex < segmentCount; segmentIndex += 1) {
+            const segmentStart = localAxisStart + (segmentSpan * segmentIndex)
+            for (let pointIndex = 0; pointIndex <= 4; pointIndex += 1) {
+              const offset = segmentStart + (step * pointIndex)
+              const key = isVertical
+                ? `${crossCenter.toFixed(3)},${(rect.y + offset).toFixed(3)}`
+                : `${(rect.x + offset).toFixed(3)},${crossCenter.toFixed(3)}`
+              if (seen.has(key)) continue
+              seen.add(key)
+              dots.push(isVertical
+                ? { cx: crossCenter, cy: rect.y + offset, r: radius }
+                : { cx: rect.x + offset, cy: crossCenter, r: radius })
+            }
+          }
+        }
+      }
+      return dots
+    })
     const wallRectsDoor = computed(() => wallRects.value.filter(r => r.type === 'door'))
     const wallRectsWall = computed(() => wallRects.value.filter(r => r.type === 'wall'))
 
@@ -1736,7 +1923,7 @@ export default {
     // Even lighter dark-mode tones for better visibility on dark backgrounds
     const wallColor = computed(() => isDark.value ? '#d1d5db' : '#1a1a2e')
     const doorColor = computed(() => isDark.value ? '#ffbf66' : '#c8860a')
-    const hatchPatternColor = computed(() => isDark.value ? '#e6eef6' : '#777')
+    const hatchPatternColor = computed(() => isDark.value ? '#f3f7fb' : '#555')
 
     const teleporterPairLines = computed(() => {
       const lines = []
@@ -2432,7 +2619,7 @@ export default {
       getTabColorClass, getApplianceBgStyle,
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave, onViewportTouchStart, onViewportTouchMove, onViewportTouchEnd,
       getApplianceIcon, isImageIcon, onApplianceImgError,
-      TELEPORTER_APPLIANCE_ID, wallRects, wallRectsHatch, wallRectsDoor, wallRectsWall, teleporterPairLines, labelAnchorLines, showTeleporterLinesAlways, labelDisplayMode,
+      TELEPORTER_APPLIANCE_ID, wallRects, wallRectsPatterned, wallDots, wallRectsDoor, wallRectsWall, wallPatternInstances, getStructurePatternId, getWallPatternInstanceId, teleporterPairLines, labelAnchorLines, showTeleporterLinesAlways, labelDisplayMode,
       wallColor, doorColor, hatchPatternColor,
       flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
       createLabel, handleLabelPointerDown, getLabelStyle, editLabel, labelDialogVisible, labelDialogInitial, labelDialogTitle, onLabelDialogConfirm, closeLabelDialog,
@@ -2801,7 +2988,7 @@ export default {
 .edge-marker.edge-left   { left: calc(var(--edge-overlap) * -0.5); }
 .edge-marker.edge-right  { right: calc(var(--edge-overlap) * -0.5); }
 .edge-marker.edge-type-wall   { background: #1a1a2e }
-.edge-marker.edge-type-hatch  { background: repeating-linear-gradient(45deg, #555 0px, #555 3px, transparent 3px, transparent 7px); }
+.edge-marker.edge-type-hatch  { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='24' viewBox='0 0 12 24'%3E%3Ccircle cx='6' cy='6' r='5' fill='%23555'/%3E%3Ccircle cx='6' cy='18' r='5' fill='%23555'/%3E%3C/svg%3E") center/12px 24px repeat; }
 .edge-marker.edge-type-door   { background: #c8860a }
 
 /* Edge marker overlays */
@@ -2825,7 +3012,7 @@ export default {
 .edge-marker.edge-right  { right: -2px }
 .edge-marker.edge-type-wall   { background: #1a1a2e }
 .edge-marker.edge-type-hatch  {
-  background: repeating-linear-gradient(45deg, #555 0px, #555 3px, transparent 3px, transparent 7px);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='24' viewBox='0 0 12 24'%3E%3Ccircle cx='6' cy='6' r='5' fill='%23555'/%3E%3Ccircle cx='6' cy='18' r='5' fill='%23555'/%3E%3C/svg%3E") center/12px 24px repeat;
 }
 .edge-marker.edge-type-door   { background: #c8860a }
 
