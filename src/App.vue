@@ -2,10 +2,41 @@
   <div :class="['root', { dark: darkMode }]">
     <header class="top-bar">
       <div class="title-group">
-        <h1>PlateUp Tool</h1>
-        <span class="title-tagline">An online planner for your PlateUp! restaurant</span>
+        <div v-if="showCompactMenu" class="menu-root">
+          <button class="menu-button" @click.stop="toggleMainMenu" aria-haspopup="true" :aria-expanded="showMainMenu"> 
+            <svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><rect y="1" width="20" height="2" rx="1" fill="currentColor"/><rect y="6" width="20" height="2" rx="1" fill="currentColor"/><rect y="11" width="20" height="2" rx="1" fill="currentColor"/></svg>
+          </button>
+          <h1 class="compact-title">PlateUp Tool</h1>
+          <div v-if="showMainMenu" class="menu-dropdown" @click.stop>
+            <button class="menu-item" @click="startAgain">Restart</button>
+            <button class="menu-item" @click="openSaveLoadMenu($event)">Share / Import</button>
+            <button class="menu-item" @click="openChangeSizeModal">Change Dimensions</button>
+            <div class="menu-sep"></div>
+            <div class="menu-item has-sub">
+              <button @click="toggleSettingsSubmenu">Settings</button>
+              <div v-if="showSettingsSubmenu" class="submenu" @click.stop>
+                <button class="menu-item sub-item" @click="toggleDarkMode">Light / Dark mode</button>
+                <button class="menu-item sub-item" @click="toggleTeleporterLines">Show / Hide teleporter lines</button>
+                <button class="menu-item sub-item" @click="toggleLabelDisplayMode">Show labels (lines/text/none)</button>
+              </div>
+            </div>
+            <div class="menu-sep"></div>
+            <div class="menu-item has-sub">
+              <button @click="toggleHelpSubmenu">Help</button>
+              <div v-if="showHelpSubmenu" class="submenu" @click.stop>
+                <button class="menu-item sub-item" @click="showTutorial = true">Tutorial</button>
+                <button class="menu-item sub-item" @click="openFeedback">Feedback</button>
+                <button class="menu-item sub-item" @click="openDonate">Donate</button>
+                <button class="menu-item sub-item" @click="showCredits = true">Credits</button>
+                <button class="menu-item sub-item" @click="showHelp = true">Keyboard Shortcuts</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <h1 v-else>PlateUp Tool</h1>
+        <span v-if="!showCompactMenu" class="title-tagline">An online planner for your PlateUp! restaurant</span>
       </div>
-      <div class="header-right">
+      <div class="header-right" v-if="!showCompactMenu">
         <button class="reset-button" @click="startAgain" title="Clear the grid and start over">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
@@ -256,19 +287,22 @@
       :dark-mode="darkMode"
       @choose="onSizeChosen"
       @cancel="onSizeCancelled"
-      @toggle-dark-mode="toggleDarkMode"
-    />
-    <transition name="toast">
-      <div v-if="showCopiedToast" class="copied-toast">Link copied to clipboard</div>
-    </transition>
-    <div
-      v-if="paletteDragActive && paletteDragItem"
-      class="palette-drag-ghost"
-      :style="{ left: paletteDragPos.x + 'px', top: paletteDragPos.y + 'px', width: (cellSize * state.zoom) + 'px', height: (cellSize * state.zoom) + 'px' }"
-    >
-      <img v-if="isImageIcon(paletteDragItem.icon)" :src="get2DApplianceIcon(paletteDragItem.id)" />
-      <span v-else style="font-size:1.8em">{{ paletteDragItem.icon }}</span>
-    </div>
+        @toggle-dark-mode="toggleDarkMode"
+      />
+
+      <transition name="toast">
+        <div v-if="showCopiedToast" class="copied-toast">Link copied to clipboard</div>
+      </transition>
+      <div
+        v-if="paletteDragActive && paletteDragItem"
+        class="palette-drag-ghost"
+        :style="{ left: paletteDragPos.x + 'px', top: paletteDragPos.y + 'px', width: (cellSize * state.zoom) + 'px', height: (cellSize * state.zoom) + 'px' }"
+      >
+        <img v-if="isImageIcon(paletteDragItem.icon)" :src="get2DApplianceIcon(paletteDragItem.id)" />
+        <span v-else style="font-size:1.8em">{{ paletteDragItem.icon }}</span>
+      </div>
+
+    <!-- small-screen toolbox removed -->
     <div class="viewport-debug" aria-hidden="true">
       <div class="viewport-debug-row"><strong>{{ viewportWidth }}</strong> × <strong>{{ viewportHeight }}</strong></div>
       <div class="viewport-debug-row">{{ deviceLabel }}</div>
@@ -306,6 +340,11 @@ export default {
     const viewportHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 0)
     const showViewportDebug = ref(true)
     const showTutorial = ref(false)
+    const showMainMenu = ref(false)
+    const showSettingsSubmenu = ref(false)
+    const showHelpSubmenu = ref(false)
+    const showCompactMenu = computed(() => viewportWidth.value <= 1023)
+    
     const showSizeModal = ref(false)
     const sizeModalDismissable = ref(false)
     const showCopiedToast = ref(false)
@@ -462,6 +501,16 @@ export default {
         viewportHeight.value = window.innerHeight
       }
       window.addEventListener('resize', onResize)
+      const onDocClick = (e) => {
+        // close menus when clicking outside
+        if (showMainMenu.value) {
+          showMainMenu.value = false
+          showSettingsSubmenu.value = false
+          showHelpSubmenu.value = false
+        }
+      
+      }
+      document.addEventListener('click', onDocClick)
       // Ctrl+Z undo handler
       const onKey = (e) => {
         const key = (e.key || '').toLowerCase()
@@ -486,8 +535,28 @@ export default {
         window.removeEventListener('plateup-undo', undo)
         window.removeEventListener('contextmenu', onContextMenu)
         window.removeEventListener('resize', onResize)
+        document.removeEventListener('click', onDocClick)
       })
     })
+
+    function toggleMainMenu() {
+      const next = !showMainMenu.value
+      showMainMenu.value = next
+      if (!next) {
+        showSettingsSubmenu.value = false
+        showHelpSubmenu.value = false
+      }
+    }
+    function toggleSettingsSubmenu() {
+      showHelpSubmenu.value = false
+      showSettingsSubmenu.value = !showSettingsSubmenu.value
+    }
+    function toggleHelpSubmenu() {
+      showSettingsSubmenu.value = false
+      showHelpSubmenu.value = !showHelpSubmenu.value
+    }
+
+    
 
     async function startAgain() {
       // If there are any modifications (appliances/walls), confirm before discarding them
@@ -587,7 +656,19 @@ export default {
       return 'Laptop'
     })
 
-    return { startAgain, showHelp, showCredits, showTutorial, showSizeModal, sizeModalDismissable, showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord, showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, openChangeSizeModal, toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, state, onSizeChosen, onSizeCancelled, undo, showTouchDebug, toggleTouchDebug, viewportWidth, viewportHeight, deviceLabel, showViewportDebug }
+    return {
+      startAgain, showHelp, showCredits, showTutorial, showSizeModal, sizeModalDismissable,
+      showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord,
+      showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, openChangeSizeModal,
+      toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode,
+      paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon,
+      cellSize, state, onSizeChosen, onSizeCancelled, undo, showTouchDebug, toggleTouchDebug,
+      viewportWidth, viewportHeight, deviceLabel, showViewportDebug,
+      /* menu controls */ showMainMenu, showSettingsSubmenu, showHelpSubmenu, showCompactMenu,
+      toggleMainMenu, toggleSettingsSubmenu, toggleHelpSubmenu,
+      
+      
+    }
   }
 }
 </script>
@@ -613,8 +694,10 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 .root { padding: 10px; display: flex; flex-direction: column; min-height: 100vh }
 .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px }
 .title-group { display: flex; align-items: baseline; gap: 10px }
+.menu-root { display: flex; align-items: center; gap: 8px }
 .top-bar h1 { margin: 0 }
 .title-tagline { font-size: 1.1rem; color: #aaa; font-style: italic; white-space: nowrap }
+.compact-title { margin: 0; font-size: 1.05rem; font-weight: 700; align-self: center; margin-left: 8px }
 .header-right { display: flex; align-items: center; gap: 6px; margin-right: 8px }
 .tutorial-button {
   border: none; background: #e07b20; color: white; padding: 0.4rem 0.8rem;
@@ -908,8 +991,33 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 }
 .viewport-debug-row { margin: 2px 0 }
 
-</style>
+/* Hide the tagline slightly earlier at 1300px to avoid overlap */
+@media (max-width: 1300px) {
+  .title-tagline { display: none !important }
+}
 
+
+
+/* Compact responsive rules: hide palette toolbox and adjust header */
+@media (max-width: 1023px) {
+  .palette-toolbox-box { display: none }
+  .menu-root { position: relative }
+  .menu-button {
+    background: none; border: none; padding: 8px; border-radius: 6px; cursor: pointer; color: inherit; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .menu-dropdown {
+    position: absolute; left: 0; top: 42px; min-width: 220px; background: #fff; color: #111; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.18); padding: 8px; z-index: 20001;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  html.dark .menu-dropdown { background: #12141c; color: #d0daea; border: 1px solid rgba(255,255,255,0.03) }
+  .menu-item { background: transparent; border: none; text-align: left; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-weight: 600 }
+  .menu-item:hover { background: rgba(0,0,0,0.06) }
+  .submenu { margin-top: 6px; margin-left: 6px; display: flex; flex-direction: column; gap: 4px }
+  .sub-item { font-weight: 500; padding-left: 6px }
+  .menu-sep { height: 1px; background: rgba(0,0,0,0.06); margin: 6px 0; border-radius: 1px }
+  html.dark .menu-item:hover { background: rgba(255,255,255,0.03) }
+}
+</style>
 <style>
 /* ─── Dark Mode Overrides ──────────────────────────────────────────────────
    html.dark .classname specificity (0,2,1) beats Vue scoped (0,2,0)
