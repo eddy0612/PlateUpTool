@@ -2128,6 +2128,30 @@ export default {
       const labelHandler = (ev) => { try { labelDisplayMode.value = Number(ev.detail) } catch (e) {} }
       window.addEventListener('label-display-mode-changed', labelHandler)
       window.__labelHandlerGridView = labelHandler
+      // Global invoke handlers so App can trigger toolbox actions
+      const invokeMap = {
+        'plateup-invoke-undo': () => doUndo(),
+        'plateup-invoke-cut': () => cutToClipboard(),
+        'plateup-invoke-copy': () => copyToClipboard(),
+        'plateup-invoke-paste': () => startPaste(),
+        'plateup-invoke-duplicate': () => startDuplicate(),
+        'plateup-invoke-box-select': () => armBoxSelect(),
+        'plateup-invoke-select-all': () => selectAll(),
+        'plateup-invoke-invert': () => invertSelection(),
+        'plateup-invoke-rotate-left': () => rotateSelectionLeft(),
+        'plateup-invoke-rotate-right': () => rotateSelectionRight(),
+        'plateup-invoke-flip-h': () => flipSelectionHorizontal(),
+        'plateup-invoke-flip-v': () => flipSelectionVertical(),
+        'plateup-invoke-label': () => createLabel(),
+        'plateup-invoke-delete': () => removeSelected(),
+        'plateup-invoke-help': () => toggleHelp()
+      }
+      for (const [evName, fn] of Object.entries(invokeMap)) {
+        const h = () => { try { fn() } catch (e) {} }
+        window.addEventListener(evName, h)
+        // store for removal
+        window[`__${evName}_handler`] = h
+      }
     })
 
     onUnmounted(() => {
@@ -2153,6 +2177,16 @@ export default {
       if (window.__teleHandlerGridView) { window.removeEventListener('teleporter-lines-changed', window.__teleHandlerGridView); delete window.__teleHandlerGridView }
       // remove palette label-display handler
       if (window.__labelHandlerGridView) { window.removeEventListener('label-display-mode-changed', window.__labelHandlerGridView); delete window.__labelHandlerGridView }
+      // remove invoke handlers
+      const invokeNames = [
+        'plateup-invoke-undo','plateup-invoke-cut','plateup-invoke-copy','plateup-invoke-paste','plateup-invoke-duplicate',
+        'plateup-invoke-box-select','plateup-invoke-select-all','plateup-invoke-invert','plateup-invoke-rotate-left','plateup-invoke-rotate-right',
+        'plateup-invoke-flip-h','plateup-invoke-flip-v','plateup-invoke-label','plateup-invoke-delete','plateup-invoke-help'
+      ]
+      for (const evName of invokeNames) {
+        const h = window[`__${evName}_handler`]
+        if (h) { window.removeEventListener(evName, h); delete window[`__${evName}_handler`] }
+      }
       // help overlay listeners removed (no-op positioning for modal)
       cancelMoveDrag()
       cancelPaste()
@@ -2973,6 +3007,11 @@ export default {
 .toolbox-char { font-size: 22px; line-height: 1; display: inline-block; transform: translateY(-1px) }
 .toolbox-button[aria-pressed="true"] { background: #e8f9ee; border-color: #6fd08a; color: #0a4f24 }
 .toolbox-button:hover { transform: translateY(-1px) }
+
+/* Hide the main toolbox on small screens (replace with popup at <=840px) */
+@media (max-width: 840px) {
+  .toolbox-box { display: none }
+}
 
 /* Dark mode: keep button visible */
 .dark .toolbox-button {
