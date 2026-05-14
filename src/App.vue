@@ -3,7 +3,7 @@
     <header class="top-bar">
       <div class="title-group">
         <div v-if="showCompactMenu" class="menu-root">
-          <button class="menu-button" @click.stop="toggleMainMenu" aria-haspopup="true" :aria-expanded="showMainMenu"> 
+          <button class="menu-button" @click.stop="toggleMainMenu" aria-haspopup="true" :aria-expanded="showMainMenu">
             <svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><rect y="1" width="20" height="2" rx="1" fill="currentColor"/><rect y="6" width="20" height="2" rx="1" fill="currentColor"/><rect y="11" width="20" height="2" rx="1" fill="currentColor"/></svg>
           </button>
           <h1 class="compact-title">PlateUp Tool</h1>
@@ -302,7 +302,46 @@
         <span v-else style="font-size:1.8em">{{ paletteDragItem.icon }}</span>
       </div>
 
-    <!-- small-screen toolbox removed -->
+    <!-- small-screen toolbox: bottom-left toolbox icon + vertical popup -->
+    <div v-if="smallToolbox" class="tool-toggle-root">
+      <button class="tool-toggle-button" @click.stop="toggleToolboxPopup" :aria-expanded="showToolboxPopup" aria-label="Open toolbox">
+        <!-- toolbox icon -->
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 7v13a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7H3zm17 2H4v10h16V9zM9 3h6v3H9V3z"/></svg>
+      </button>
+      <div v-if="showToolboxPopup" class="tool-popup" @click.stop>
+        <button class="tool-popup-button" @click="undo(); closeToolboxPopup()" title="Undo (Ctrl+Z)"><span class="toolbox-char">↶</span></button>
+        <button class="tool-popup-button" @click="cutToClipboard(); closeToolboxPopup()" title="Cut (Ctrl+X)"><span class="toolbox-char">✂</span></button>
+        <button class="tool-popup-button" @click="copyToClipboard(); closeToolboxPopup()" title="Copy (Ctrl+C)"><span class="toolbox-char">📋</span></button>
+        <button class="tool-popup-button" @click="startPaste(); closeToolboxPopup()" title="Paste (Ctrl+V)"><span class="toolbox-char">📥</span></button>
+        <button class="tool-popup-button" @click="startDuplicate(); closeToolboxPopup()" title="Duplicate (Ctrl+D)"><span class="toolbox-char">⎘</span></button>
+        <button class="tool-popup-button" @click="invokeAndClose('plateup-invoke-box-select')" title="Box Select">
+          <svg class="toolbox-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+            <rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <button class="tool-popup-button" @click="invokeAndClose('plateup-invoke-select-all')" title="Select All"><span class="toolbox-char">▣</span></button>
+        <button class="tool-popup-button" @click="invokeAndClose('plateup-invoke-invert')" title="Invert Selection">
+          <svg class="hp-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="2.5" y="2.5" width="19" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2" />
+            <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            <polyline points="9,9 6,12 9,15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            <polyline points="15,9 18,12 15,15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <button class="tool-popup-button" @click="invokeAndClose('plateup-invoke-rotate-left')" title="Rotate Left"><span class="toolbox-char">⟲</span></button>
+        <button class="tool-popup-button" @click="invokeAndClose('plateup-invoke-rotate-right')" title="Rotate Right"><span class="toolbox-char">⟳</span></button>
+        <button class="tool-popup-button" @click="invokeAndClose('plateup-invoke-flip-h')" title="Flip Horizontal"><span class="toolbox-char rotate-90">⇋</span></button>
+        <button class="tool-popup-button" @click="invokeAndClose('plateup-invoke-flip-v')" title="Flip Vertical"><span class="toolbox-char">⇋</span></button>
+        <button class="tool-popup-button" @click="invokeAndClose('plateup-invoke-label')" title="Add Label">
+          <svg class="toolbox-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+            <rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <line x1="7.5" y1="9.5" x2="7.5" y2="14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+        </button>
+        <button class="tool-popup-button" @click="deleteAndClose" title="Delete"><span class="toolbox-char">🗑</span></button>
+        <button class="tool-popup-button" @click="invokeAndClose('plateup-invoke-help')" title="Help"><span class="toolbox-char">?</span></button>
+      </div>
+    </div>
     <div class="viewport-debug" aria-hidden="true">
       <div class="viewport-debug-row"><strong>{{ viewportWidth }}</strong> × <strong>{{ viewportHeight }}</strong></div>
       <div class="viewport-debug-row">{{ deviceLabel }}</div>
@@ -331,25 +370,29 @@ export default {
   setup() {
     const { state, loadFromHash, syncToHash } = useRestaurantStore()
     const _encodeState = encodeStateFn
-    const { loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, selectedCells, selectedLabelIds } = useGrid()
-    const { showTouchDebug, toggleTouchDebug } = useTouchDebug()
+    const { loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, selectedCells, selectedLabelIds,
+      copyToClipboard, cutToClipboard, startPaste, startDuplicate, removeSelected } = useGrid()
 
     const showHelp = ref(false)
     const showCredits = ref(false)
-    const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 0)
-    const viewportHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 0)
+
     const showViewportDebug = ref(true)
     const showTutorial = ref(false)
     const showMainMenu = ref(false)
     const showSettingsSubmenu = ref(false)
     const showHelpSubmenu = ref(false)
     const showCompactMenu = computed(() => viewportWidth.value <= 1023)
-    
+    const showToolboxPopup = ref(false)
+    const smallToolbox = computed(() => viewportWidth.value <= 840)
+
     const showSizeModal = ref(false)
     const sizeModalDismissable = ref(false)
     const showCopiedToast = ref(false)
     const showFeedbackModal = ref(false)
     const darkMode = ref(localStorage.getItem('darkMode') === 'true')
+    const viewportWidth = ref(window.innerWidth)
+    const viewportHeight = ref(window.innerHeight)
+    const { showTouchDebug, toggleTouchDebug } = useTouchDebug()
     // Ensure teleporterLines defaults to visible (true) when not set
     let _teleporterLines = localStorage.getItem('teleporterLines')
     if (_teleporterLines === null) { try { localStorage.setItem('teleporterLines', '1') } catch (e) {} _teleporterLines = '1' }
@@ -508,7 +551,11 @@ export default {
           showSettingsSubmenu.value = false
           showHelpSubmenu.value = false
         }
-      
+        try {
+          if (showToolboxPopup.value && !e.target.closest('.tool-toggle-root')) {
+            showToolboxPopup.value = false
+          }
+        } catch (err) {}
       }
       document.addEventListener('click', onDocClick)
       // Ctrl+Z undo handler
@@ -556,7 +603,25 @@ export default {
       showHelpSubmenu.value = !showHelpSubmenu.value
     }
 
-    
+    function toggleToolboxPopup() {
+      showToolboxPopup.value = !showToolboxPopup.value
+    }
+
+    function closeToolboxPopup() {
+      showToolboxPopup.value = false
+    }
+
+    function invokeAndClose(name) {
+      try { if (typeof window !== 'undefined' && window && window.dispatchEvent) { window.dispatchEvent(new Event(name)) } } catch (e) {}
+      closeToolboxPopup()
+    }
+
+    function deleteAndClose() {
+      try { removeSelected() } catch (e) {}
+      closeToolboxPopup()
+    }
+
+
 
     async function startAgain() {
       // If there are any modifications (appliances/walls), confirm before discarding them
@@ -666,8 +731,9 @@ export default {
       viewportWidth, viewportHeight, deviceLabel, showViewportDebug,
       /* menu controls */ showMainMenu, showSettingsSubmenu, showHelpSubmenu, showCompactMenu,
       toggleMainMenu, toggleSettingsSubmenu, toggleHelpSubmenu,
-      
-      
+      /* small-screen toolbox */ showToolboxPopup, toggleToolboxPopup, closeToolboxPopup, smallToolbox,
+      invokeAndClose, deleteAndClose,
+      /* grid clipboard actions */ copyToClipboard, cutToClipboard, startPaste, startDuplicate, removeSelected,
     }
   }
 }
@@ -999,8 +1065,7 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 
 
 /* Compact responsive rules: hide palette toolbox and adjust header */
-@media (max-width: 1023px) {
-  .palette-toolbox-box { display: none }
+  @media (max-width: 1023px) {
   .menu-root { position: relative }
   .menu-button {
     background: none; border: none; padding: 8px; border-radius: 6px; cursor: pointer; color: inherit; display: inline-flex; align-items: center; justify-content: center;
@@ -1016,6 +1081,29 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
   .sub-item { font-weight: 500; padding-left: 6px }
   .menu-sep { height: 1px; background: rgba(0,0,0,0.06); margin: 6px 0; border-radius: 1px }
   html.dark .menu-item:hover { background: rgba(255,255,255,0.03) }
+}
+
+/* When compact (burger) menu appears, hide palette toolbox at <=1024px */
+@media (max-width: 1024px) {
+  .palette-toolbox-box { display: none }
+}
+
+/* Bottom-left small toolbox toggle and popup */
+.tool-toggle-root { position: fixed; left: 12px; bottom: 12px; z-index: 20010; display: flex; flex-direction: column-reverse; align-items: flex-start }
+.tool-toggle-button { background: #1f79ff; color: #fff; border: none; width: 44px; height: 44px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer }
+.tool-toggle-button:hover { filter: brightness(0.95) }
+.tool-popup { margin-bottom: 6px; margin-left: 0; display: flex; flex-direction: column; gap: 1px; background: rgba(255,255,255,0.98); border-radius: 8px; padding: 0; box-shadow: 0 8px 30px rgba(0,0,0,0.18) }
+.dark .tool-popup { background: #11151b; color: #d0daea }
+/* scaled down ~15% from previous 56/56 and 44/44 sizes */
+.tool-popup-button { background: transparent; border: none; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; padding: 0; font-size: 24px; line-height: 1 }
+.tool-popup-button svg { width: 32px; height: 32px }
+.tool-popup-button:hover { background: rgba(0,0,0,0.06) }
+.dark .tool-popup-button:hover { background: rgba(255,255,255,0.03) }
+/* Ensure character icons inside popup buttons are large and vertically centered */
+.tool-popup-button .toolbox-char { font-size: 24px; line-height: 1; display: inline-block; transform: translateY(-1px) }
+
+@media (max-width: 420px) {
+  .tool-popup { transform: translateY(-4px); }
 }
 </style>
 <style>
