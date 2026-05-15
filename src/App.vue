@@ -1,5 +1,5 @@
 ﻿<template>
-  <div :class="['root', { dark: darkMode }]">
+  <div :class="['root', { dark: darkMode, 'tabs-hidden': smallToolbox }]">
     <header class="top-bar">
       <div class="title-group">
         <div v-if="showCompactMenu" class="menu-root">
@@ -85,6 +85,18 @@
         </button>
 
         <button class="help-button" @click="showHelp = true" title="Keyboard shortcuts &amp; controls">?</button>
+      </div>
+      <!-- small-screen tab dropdown (appears when main toolbox is hidden) -->
+      <div v-if="smallToolbox" class="tab-dropdown-root">
+        <button class="tab-dropdown-button" @click.stop="toggleTabsDropdown" aria-haspopup="true" :aria-expanded="showTabsDropdown" :style="currentTabStyle">{{ currentTabLabel }} ▾</button>
+        <div v-if="showTabsDropdown" class="tab-dropdown-menu" @click.stop>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button v-for="tab in state.tabs" :key="tab.id" class="tab-dropdown-item" @click="setActiveTab(tab.id)" :style="tabStyleMap[tab.id]">{{ tab.label }}</button>
+            <div v-if="state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure').length < 10">
+              <button class="tab-dropdown-item" @click="addNewTab">+ New tab</button>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -381,17 +393,100 @@ export default {
     const showMainMenu = ref(false)
     const showSettingsSubmenu = ref(false)
     const showHelpSubmenu = ref(false)
+    const viewportWidth = ref(window.innerWidth)
+    const viewportHeight = ref(window.innerHeight)
     const showCompactMenu = computed(() => viewportWidth.value <= 1023)
     const showToolboxPopup = ref(false)
     const smallToolbox = computed(() => viewportWidth.value <= 840)
+    // Broadcast tabs-hidden state so GridView can hide its tabs when needed
+    watch(smallToolbox, (v) => { try { window.dispatchEvent(new CustomEvent('plateup-tabs-hidden', { detail: v })) } catch (e) {} }, { immediate: true })
+    const showTabsDropdown = ref(false)
+    const toggleTabsDropdown = () => { showTabsDropdown.value = !showTabsDropdown.value }
+    const closeTabsDropdown = () => { showTabsDropdown.value = false }
+    const currentTabLabel = computed(() => {
+      const t = (state.tabs || []).find(x => x.id === state.activeTabId)
+      return t ? t.label : 'Tab'
+    })
+    // Tab colours (duplicate of GridView's palette) so dropdown items match tab colours
+    const TAB_COLORS = [
+      { bg: '#f3f4f6', border: '#d0d0d0' },
+      { bg: '#aad6ff', border: '#5090d0' },
+      { bg: '#a0f0b8', border: '#48c870' },
+      { bg: '#ffb0d0', border: '#d87098' },
+      { bg: '#d8b0ff', border: '#9060d0' },
+      { bg: '#ffd898', border: '#d09048' },
+      { bg: '#80ffe0', border: '#28c090' },
+      { bg: '#ffb0a8', border: '#d06858' },
+      { bg: '#b0e8ff', border: '#58a8d8' },
+      { bg: '#ccffb0', border: '#80c048' },
+    ]
+    const TAB_COLORS_DARK = [
+      { bg: '#2e3340', border: '#5a6070' },
+      { bg: '#183560', border: '#3a68a8' },
+      { bg: '#163a22', border: '#348a50' },
+      { bg: '#3a1630', border: '#884060' },
+      { bg: '#2a1448', border: '#6840a0' },
+      { bg: '#3a2408', border: '#906020' },
+      { bg: '#103834', border: '#308878' },
+      { bg: '#3c1818', border: '#904040' },
+      { bg: '#103248', border: '#3078a0' },
+      { bg: '#1e3810', border: '#508828' },
+    ]
+    const darkMode = ref(localStorage.getItem('darkMode') === 'true')
+    const userTabColorMap = computed(() => {
+      const map = {}
+      (state.tabs || [])
+        .filter(t => t.id !== 'complete' && t.id !== 'structure')
+        .forEach((tab, idx) => { map[tab.id] = idx % TAB_COLORS.length })
+      return map
+    })
+    // getTabDropdownStyle left intentionally for backward-compat but not used by tabStyleMap
+    function getTabDropdownStyle(tab) {
+      return {}
+    }
+    const tabStyleMap = computed(() => {
+      const m = {}
+      try {
+        const userTabs = (state.tabs || []).filter(t => t.id !== 'complete' && t.id !== 'structure')
+        for (const t of (state.tabs || [])) {
+          if (t.id === 'complete' || t.id === 'structure') { m[t.id] = {} ; continue }
+          const idx = Math.max(0, userTabs.findIndex(u => u.id === t.id)) % TAB_COLORS.length
+          const col = darkMode.value ? TAB_COLORS_DARK[idx] : TAB_COLORS[idx]
+          const hex = (col.bg || '#ffffff').replace('#','')
+          const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16)
+          const lum = 0.2126*r + 0.7152*g + 0.0722*b
+          const textColor = lum > 180 ? '#111' : '#fff'
+          m[t.id] = { ['--tab-bg']: col.bg, ['--tab-border']: col.border, ['--tab-color']: textColor, background: col.bg, borderColor: col.border, color: textColor }
+        }
+        // debug logs removed
+      } catch (e) {}
+      return m
+    })
+    const currentTabStyle = computed(() => {
+      try { return tabStyleMap.value[state.activeTabId] || {} } catch (e) { return {} }
+    })
+    function setActiveTab(id) {
+      try { state.activeTabId = id } catch (e) {}
+      closeTabsDropdown()
+    }
+    function addNewTab() {
+      try {
+        const userTabs = state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure')
+        if (userTabs.length >= 10) return
+        const existingLabels = new Set(userTabs.map(t => t.label))
+        let n = userTabs.length + 1
+        while (existingLabels.has(`Tab ${n}`)) n++
+        const nextId = `tab-${Date.now()}`
+        state.tabs.push({ id: nextId, label: `Tab ${n}` })
+        state.activeTabId = nextId
+      } catch (e) {}
+      closeTabsDropdown()
+    }
 
     const showSizeModal = ref(false)
     const sizeModalDismissable = ref(false)
     const showCopiedToast = ref(false)
     const showFeedbackModal = ref(false)
-    const darkMode = ref(localStorage.getItem('darkMode') === 'true')
-    const viewportWidth = ref(window.innerWidth)
-    const viewportHeight = ref(window.innerHeight)
     const { showTouchDebug, toggleTouchDebug } = useTouchDebug()
     // Ensure teleporterLines defaults to visible (true) when not set
     let _teleporterLines = localStorage.getItem('teleporterLines')
@@ -554,6 +649,9 @@ export default {
         try {
           if (showToolboxPopup.value && !e.target.closest('.tool-toggle-root')) {
             showToolboxPopup.value = false
+          }
+          if (showTabsDropdown.value && !e.target.closest('.tab-dropdown-root')) {
+            showTabsDropdown.value = false
           }
         } catch (err) {}
       }
@@ -733,6 +831,7 @@ export default {
       toggleMainMenu, toggleSettingsSubmenu, toggleHelpSubmenu,
       /* small-screen toolbox */ showToolboxPopup, toggleToolboxPopup, closeToolboxPopup, smallToolbox,
       invokeAndClose, deleteAndClose,
+      /* tabs dropdown */ showTabsDropdown, toggleTabsDropdown, closeTabsDropdown, currentTabLabel, setActiveTab, addNewTab, getTabDropdownStyle, tabStyleMap, currentTabStyle,
       /* grid clipboard actions */ copyToClipboard, cutToClipboard, startPaste, startDuplicate, removeSelected,
     }
   }
@@ -759,6 +858,7 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 <style scoped>
 .root { padding: 10px; display: flex; flex-direction: column; min-height: 100vh }
 .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px }
+.top-bar { position: relative }
 .title-group { display: flex; align-items: baseline; gap: 10px }
 .menu-root { display: flex; align-items: center; gap: 8px }
 .top-bar h1 { margin: 0 }
@@ -1015,6 +1115,10 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
   align-items: flex-start;
 }
 
+.tabs-hidden .main-grid {
+  padding-left: 0;
+}
+
 .palette-column { display:flex; flex-direction:column; gap:8px; align-items:stretch }
 .palette-toolbox-box { display:flex; align-items:center; padding:5px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9; width: 100%; box-sizing: border-box }
 .dark .palette-toolbox-box { background: #1e2629; border-color: #33393d }
@@ -1087,6 +1191,24 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 @media (max-width: 1024px) {
   .palette-toolbox-box { display: none }
 }
+
+/* Hide the tab strip when main toolbox is collapsed for small screens */
+@media (max-width: 840px) {
+  .tabs { display: none !important }
+}
+
+/* Also hide tabs when `tabs-hidden` root class is present (strong override) */
+.tabs-hidden .tabs { display: none !important }
+
+/* Tab dropdown in header for small screens */
+.tab-dropdown-root { position: absolute; right: 12px; top: 8px; z-index: 20002 }
+.tab-dropdown-button { background: #fff; border: 1px solid #c8d6e8; padding: 6px 10px; border-radius: 6px; cursor: pointer }
+.dark .tab-dropdown-button { background: #1c2030; border-color: #2e3a52; color: #d0daea }
+.tab-dropdown-menu { position: absolute; right: 0; top: 40px; min-width: 160px; background: #fff; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.18); padding: 6px; display:flex; flex-direction: column; gap:6px }
+.dark .tab-dropdown-menu { background: #12141c; color: #d0daea }
+.tab-dropdown-item { background: var(--tab-bg, transparent); border: 1px solid var(--tab-border, transparent); color: var(--tab-color, inherit); text-align: left; padding: 8px 10px; border-radius: 6px; cursor: pointer }
+.tab-dropdown-item:hover { filter: brightness(0.95) }
+
 
 /* Bottom-left small toolbox toggle and popup */
 .tool-toggle-root { position: fixed; left: 12px; bottom: 12px; z-index: 20010; display: flex; flex-direction: column-reverse; align-items: flex-start }

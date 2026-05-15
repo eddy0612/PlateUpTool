@@ -136,7 +136,7 @@
         <div v-for="entry in touchDebugLog" :key="entry.id" class="touch-debug-line">{{ entry.text }}</div>
       </div>
 
-      <div class="tabs">
+      <div class="tabs" v-show="!tabsHidden">
         <div
           v-for="tab in state.tabs"
           :key="tab.id"
@@ -2075,6 +2075,8 @@ export default {
 
     // --- File drag-and-drop import ---
     const fileDragOver = ref(false)
+    // Hide tabs when viewport is small; initialize from current window size
+    const tabsHidden = ref(typeof window !== 'undefined' ? (window.innerWidth <= 840) : false)
 
     function onFileDragOver(e) {
       if (e.dataTransfer?.types?.includes('Files')) fileDragOver.value = true
@@ -2123,6 +2125,14 @@ export default {
       const teleHandler = (ev) => { try { showTeleporterLinesAlways.value = !!ev.detail } catch (e) {} }
       window.addEventListener('teleporter-lines-changed', teleHandler)
       window.__teleHandlerGridView = teleHandler
+      // Listen for tabs-hidden events so we can hide our tab strip when App requests it
+      const tabsHandler = (ev) => { try { tabsHidden.value = !!ev.detail } catch (e) {} }
+      window.addEventListener('plateup-tabs-hidden', tabsHandler)
+      window.__tabsHandlerGridView = tabsHandler
+      // Also update tabsHidden on window resize to cover mount-order race conditions
+      const tabsResizeHandler = () => { try { tabsHidden.value = window.innerWidth <= 840 } catch (e) {} }
+      window.addEventListener('resize', tabsResizeHandler)
+      window.__tabsResizeHandlerGridView = tabsResizeHandler
       // Initialize label display mode from localStorage and listen for changes
       try { labelDisplayMode.value = Number(localStorage.getItem('labelDisplayMode') || '0') } catch (e) {}
       const labelHandler = (ev) => { try { labelDisplayMode.value = Number(ev.detail) } catch (e) {} }
@@ -2144,7 +2154,8 @@ export default {
         'plateup-invoke-flip-v': () => flipSelectionVertical(),
         'plateup-invoke-label': () => createLabel(),
         'plateup-invoke-delete': () => removeSelected(),
-        'plateup-invoke-help': () => toggleHelp()
+        'plateup-invoke-help': () => toggleHelp(),
+        'plateup-add-tab': () => addTab()
       }
       for (const [evName, fn] of Object.entries(invokeMap)) {
         const h = () => { try { fn() } catch (e) {} }
@@ -2177,12 +2188,15 @@ export default {
       if (window.__teleHandlerGridView) { window.removeEventListener('teleporter-lines-changed', window.__teleHandlerGridView); delete window.__teleHandlerGridView }
       // remove palette label-display handler
       if (window.__labelHandlerGridView) { window.removeEventListener('label-display-mode-changed', window.__labelHandlerGridView); delete window.__labelHandlerGridView }
+      if (window.__tabsHandlerGridView) { window.removeEventListener('plateup-tabs-hidden', window.__tabsHandlerGridView); delete window.__tabsHandlerGridView }
+      if (window.__tabsResizeHandlerGridView) { window.removeEventListener('resize', window.__tabsResizeHandlerGridView); delete window.__tabsResizeHandlerGridView }
       // remove invoke handlers
       const invokeNames = [
         'plateup-invoke-undo','plateup-invoke-cut','plateup-invoke-copy','plateup-invoke-paste','plateup-invoke-duplicate',
         'plateup-invoke-box-select','plateup-invoke-select-all','plateup-invoke-invert','plateup-invoke-rotate-left','plateup-invoke-rotate-right',
         'plateup-invoke-flip-h','plateup-invoke-flip-v','plateup-invoke-label','plateup-invoke-delete','plateup-invoke-help'
       ]
+      invokeNames.push('plateup-add-tab')
       for (const evName of invokeNames) {
         const h = window[`__${evName}_handler`]
         if (h) { window.removeEventListener(evName, h); delete window[`__${evName}_handler`] }
@@ -2534,6 +2548,7 @@ export default {
       selectedLabelIds,
       gridEl, viewportEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
       showTouchDebug, touchDebugLog, pendingMoveCellDebug, isMoveDraggingDebug, activeGridPointerDebug, dragStartDebug, dragEndDebug, clearTouchDebugLog, copyTouchDebug,
+      tabsHidden,
       handleCellClick, handleCellContextMenu, onGridPointerDown, onGridTouchStart, cellClasses, getDisplayCell,
       editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename,
       contextMenuVisible, contextMenuPos, closeContextMenu, doMoveToThisLevel, doShowInBothLevels,
