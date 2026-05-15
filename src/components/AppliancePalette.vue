@@ -11,7 +11,8 @@
       <div class="preview-wrapper" :style="{ height: viewportBoxHeight + 'px' }">
         <div class="preview-info-banner">
           <span class="preview-info-icon">👁</span>
-          <span>Preview mode — to make changes, select a coloured tab on the left.</span>
+            <span v-if="!tabsHidden">Preview mode — to make changes, select a coloured tab on the left.</span>
+            <span v-else>Preview mode — to make changes, select a tab from the dropdown at the top.</span>
         </div>
         <div class="inventory-panel">
         <div class="inventory-header">
@@ -478,9 +479,11 @@ export default {
     }
 
     const windowWidth = ref(getViewportWidth())
+    const tabsHidden = ref(getViewportWidth() <= 840)
 
     function onWindowResize() {
       windowWidth.value = getViewportWidth()
+      try { tabsHidden.value = getViewportWidth() <= 840 } catch (e) {}
     }
 
     onMounted(() => {
@@ -488,12 +491,17 @@ export default {
       window.visualViewport?.addEventListener?.('resize', onWindowResize)
       window.visualViewport?.addEventListener?.('scroll', onWindowResize)
       onWindowResize()
+      // Listen for App requesting tabs hidden (small toolbox)
+      const tabsHandler = (ev) => { try { tabsHidden.value = !!ev.detail } catch (e) {} }
+      window.addEventListener('plateup-tabs-hidden', tabsHandler)
+      window.__tabsHandlerAppPalette = tabsHandler
     })
 
     onUnmounted(() => {
       window.removeEventListener('resize', onWindowResize)
       window.visualViewport?.removeEventListener?.('resize', onWindowResize)
       window.visualViewport?.removeEventListener?.('scroll', onWindowResize)
+      if (window.__tabsHandlerAppPalette) { window.removeEventListener('plateup-tabs-hidden', window.__tabsHandlerAppPalette); delete window.__tabsHandlerAppPalette }
     })
 
     function handleGlobalSaveLoadMenu(e) { showExportMenu(e.detail) }
@@ -2501,6 +2509,7 @@ export default {
     }
 
     return { state, filteredPalette, addToGrid, hoverLabel, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemPointerDown, rightPanelStyle, paletteGridStyle,
+      tabsHidden,
       // blueprints
       paletteTab, blueprintFilter, filteredBlueprints, createBlueprint, applyBlueprint, deleteBlueprint, onBlueprintPointerDown,
       blueprintDialogVisible, blueprintDialogInitial, onBlueprintDialogConfirm, closeBlueprintDialog,
