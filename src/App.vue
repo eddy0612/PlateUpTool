@@ -6,7 +6,19 @@
           <button class="menu-button" @click.stop="toggleMainMenu" aria-haspopup="true" :aria-expanded="showMainMenu">
             <svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><rect y="1" width="20" height="2" rx="1" fill="currentColor"/><rect y="6" width="20" height="2" rx="1" fill="currentColor"/><rect y="11" width="20" height="2" rx="1" fill="currentColor"/></svg>
           </button>
+
           <h1 class="compact-title">PlateUp Tool</h1>
+          <div v-if="smallToolbox" class="tab-dropdown-root">
+            <button class="tab-dropdown-button" @click.stop="toggleTabsDropdown" aria-haspopup="true" :aria-expanded="showTabsDropdown" :style="currentTabStyle">{{ currentTabLabel }} ▾</button>
+            <div v-if="showTabsDropdown" class="tab-dropdown-menu" @click.stop>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <button v-for="tab in state.tabs" :key="tab.id" class="tab-dropdown-item" @click="setActiveTab(tab.id)" :style="tabStyleMap[tab.id]">{{ tab.label }}</button>
+                <div v-if="state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure').length < 10">
+                  <button class="tab-dropdown-item" @click="addNewTab">+ New tab</button>
+                </div>
+              </div>
+            </div>
+          </div>
           <div v-if="showMainMenu" class="menu-dropdown" @click.stop>
             <button class="menu-item" @click="startAgain">Restart</button>
             <button class="menu-item" @click="openSaveLoadMenu($event)">Share / Import</button>
@@ -86,18 +98,18 @@
 
         <button class="help-button" @click="showHelp = true" title="Keyboard shortcuts &amp; controls">?</button>
       </div>
-      <!-- small-screen tab dropdown (appears when main toolbox is hidden) -->
-      <div v-if="smallToolbox" class="tab-dropdown-root">
-        <button class="tab-dropdown-button" @click.stop="toggleTabsDropdown" aria-haspopup="true" :aria-expanded="showTabsDropdown" :style="currentTabStyle">{{ currentTabLabel }} ▾</button>
-        <div v-if="showTabsDropdown" class="tab-dropdown-menu" @click.stop>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <button v-for="tab in state.tabs" :key="tab.id" class="tab-dropdown-item" @click="setActiveTab(tab.id)" :style="tabStyleMap[tab.id]">{{ tab.label }}</button>
-            <div v-if="state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure').length < 10">
-              <button class="tab-dropdown-item" @click="addNewTab">+ New tab</button>
-            </div>
-          </div>
-        </div>
+
+      <!-- Top zoom row for very small screens (moves slider next to tab dropdown) -->
+      <div v-if="smallTopZoom" class="top-zoom-row">
+        <span class="palette-zoom-icon" role="button" tabindex="0" title="Reset zoom to 100%" @click="resetZoom" @keydown.enter="resetZoom" @keydown.space.prevent="resetZoom">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" stroke="#3a5070" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 21l-4.3-4.3" stroke="#3a5070" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <input class="palette-zoom" type="range" min="0.3" max="2.5" step="0.05" v-model.number="state.zoom" :title="`Zoom ${Math.round(state.zoom * 100)}%`" :aria-valuetext="`${Math.round(state.zoom * 100)}%`" />
       </div>
+
     </header>
 
     <TutorialModal v-if="showTutorial" @close="showTutorial = false" />
@@ -398,6 +410,7 @@ export default {
     const showCompactMenu = computed(() => viewportWidth.value <= 1023)
     const showToolboxPopup = ref(false)
     const smallToolbox = computed(() => viewportWidth.value <= 840)
+    const smallTopZoom = computed(() => viewportWidth.value <= 640)
     // Broadcast tabs-hidden state so GridView can hide its tabs when needed
     watch(smallToolbox, (v) => { try { window.dispatchEvent(new CustomEvent('plateup-tabs-hidden', { detail: v })) } catch (e) {} }, { immediate: true })
     const showTabsDropdown = ref(false)
@@ -705,6 +718,10 @@ export default {
       showToolboxPopup.value = !showToolboxPopup.value
     }
 
+    function resetZoom() {
+      try { state.zoom = 1 } catch (e) {}
+    }
+
     function closeToolboxPopup() {
       showToolboxPopup.value = false
     }
@@ -830,6 +847,7 @@ export default {
       /* menu controls */ showMainMenu, showSettingsSubmenu, showHelpSubmenu, showCompactMenu,
       toggleMainMenu, toggleSettingsSubmenu, toggleHelpSubmenu,
       /* small-screen toolbox */ showToolboxPopup, toggleToolboxPopup, closeToolboxPopup, smallToolbox,
+      smallTopZoom, resetZoom,
       invokeAndClose, deleteAndClose,
       /* tabs dropdown */ showTabsDropdown, toggleTabsDropdown, closeTabsDropdown, currentTabLabel, setActiveTab, addNewTab, getTabDropdownStyle, tabStyleMap, currentTabStyle,
       /* grid clipboard actions */ copyToClipboard, cutToClipboard, startPaste, startDuplicate, removeSelected,
@@ -865,6 +883,13 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 .title-tagline { font-size: 1.1rem; color: #aaa; font-style: italic; white-space: nowrap }
 .compact-title { margin: 0; font-size: 1.05rem; font-weight: 700; align-self: center; margin-left: 8px }
 .header-right { display: flex; align-items: center; gap: 6px; margin-right: 8px }
+/* Top zoom row (for very small screens). Positioned between the title area
+   and the tab dropdown; it grows to fill available horizontal space. */
+.top-zoom-row {
+  display: flex; align-items: center; gap: 8px; z-index: 20; flex: 1 1 auto; min-width: 140px; margin-left: 12px;
+}
+.top-zoom-row .palette-zoom { width: 100%; }
+.top-zoom-row .palette-zoom-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; cursor: pointer }
 .tutorial-button {
   border: none; background: #e07b20; color: white; padding: 0.4rem 0.8rem;
   border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center;
@@ -1187,21 +1212,21 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
   html.dark .menu-item:hover { background: rgba(255,255,255,0.03) }
 }
 
-/* When compact (burger) menu appears, hide palette toolbox at <=1024px */
-@media (max-width: 1024px) {
+/* When compact (burger) menu appears, hide palette toolbox at <=840px to
+   match the smallToolbox breakpoint in JavaScript (viewportWidth <= 840). */
+@media (max-width: 840px) {
   .palette-toolbox-box { display: none }
 }
 
-/* Hide the tab strip when main toolbox is collapsed for small screens */
-@media (max-width: 840px) {
-  .tabs { display: none !important }
-}
-
-/* Also hide tabs when `tabs-hidden` root class is present (strong override) */
+/* Tabs visibility is controlled via the `tabs-hidden` root class, which is
+   toggled from JavaScript at the single 840px breakpoint. This avoids
+   scrollbar/rounding mismatches between CSS media queries and JS checks. */
 .tabs-hidden .tabs { display: none !important }
 
 /* Tab dropdown in header for small screens */
 .tab-dropdown-root { position: absolute; right: 12px; top: 8px; z-index: 20002 }
+.menu-root .tab-dropdown-root { position: relative; right: auto; top: auto; margin-left: auto }
+.menu-root .tab-dropdown-root .tab-dropdown-menu { left: auto; right: 0; top: 36px }
 .tab-dropdown-button { background: #fff; border: 1px solid #c8d6e8; padding: 6px 10px; border-radius: 6px; cursor: pointer }
 .dark .tab-dropdown-button { background: #1c2030; border-color: #2e3a52; color: #d0daea }
 .tab-dropdown-menu { position: absolute; right: 0; top: 40px; min-width: 160px; background: #fff; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.18); padding: 6px; display:flex; flex-direction: column; gap:6px }

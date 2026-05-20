@@ -3134,3 +3134,10 @@ export default {
 .dark .seed-suggestion:hover { background: #0b2a46 }
 .dark .seed-suggestion.active { background: #123a6b; outline-color: rgba(90,140,255,0.18) }
 </style>
+
+<style>
+@media (max-width: 640px) {
+  .palette-zoom-row { display: none !important }
+  .palette-status-bar { display: none !important }
+}
+</style>
