@@ -410,7 +410,7 @@ export default {
     const showCompactMenu = computed(() => viewportWidth.value <= 1023)
     const showToolboxPopup = ref(false)
     const smallToolbox = computed(() => viewportWidth.value <= 840)
-    const smallTopZoom = computed(() => viewportWidth.value <= 640)
+    const smallTopZoom = computed(() => viewportWidth.value < 640)
     // Broadcast tabs-hidden state so GridView can hide its tabs when needed
     watch(smallToolbox, (v) => { try { window.dispatchEvent(new CustomEvent('plateup-tabs-hidden', { detail: v })) } catch (e) {} }, { immediate: true })
     const showTabsDropdown = ref(false)
