@@ -21,6 +21,11 @@ window.addEventListener('resize', () => {
   windowHeight.value = window.innerHeight
 })
 
+// Set to true by App.vue when viewport < 640px (bottom-bar palette mode).
+// Adjusts cellSize and viewportBoxHeight to leave room for the bottom bar
+// and to use the full screen width instead of subtracting the right panel.
+export const smallScreenMode = ref(false)
+
 // Shared hover status (written by GridView, read by AppliancePalette)
 const hoverLabel = ref('')
 
@@ -70,15 +75,32 @@ const flatGrid = computed(() => {
 const H_OVERHEAD = 130
 const W_OVERHEAD = 420
 
+// Bottom-bar height reserved at < 640px
+const BB_H = 110
+// Horizontal overhead when there is no right panel (small-screen bottom-bar mode)
+const W_OVERHEAD_SMALL = 30
+// Vertical overhead at < 640px: root-padding(10) + header(~44) + gap(~10) = ~64px.
+// Using 65 to leave a safe gap above the fixed bottom bar on all devices/browsers.
+// (The normal H_OVERHEAD=130 includes palette controls that disappear at < 640px)
+const H_OVERHEAD_SMALL = 65
+
 const cellSize = computed(() => {
-  const availableH = windowHeight.value - H_OVERHEAD
-  const availableW = windowWidth.value - W_OVERHEAD
+  const wOh = smallScreenMode.value ? W_OVERHEAD_SMALL : W_OVERHEAD
+  const hOhBase = smallScreenMode.value ? H_OVERHEAD_SMALL : H_OVERHEAD
+  const availableH = windowHeight.value - hOhBase - (smallScreenMode.value ? BB_H : 0)
+  const availableW = windowWidth.value - wOh
   return Math.max(16, Math.floor(Math.min(availableH / state.roomHeight, availableW / state.roomWidth) * 0.95))
 })
 
-// Height of the .viewport-box element: based on available vertical space so it stays
-// consistent when only roomWidth changes (which affects cellSize but not vertical space).
-const viewportBoxHeight = computed(() => Math.floor((windowHeight.value - H_OVERHEAD) * 0.95) + 18)
+// Height of the .viewport-box element.
+const viewportBoxHeight = computed(() => {
+  if (smallScreenMode.value) {
+    // At < 640px the bottom bar is fixed; all overhead is precisely known.
+    // Use a flat 8px gap instead of the 0.95 safety multiplier.
+    return windowHeight.value - H_OVERHEAD_SMALL - BB_H - 8
+  }
+  return Math.floor((windowHeight.value - H_OVERHEAD) * 0.95) + 18
+})
 
 const gridStyleDynamic = computed(() => ({
   gridTemplateColumns: `repeat(${state.roomWidth}, 1fr)`,

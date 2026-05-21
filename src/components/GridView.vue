@@ -3028,6 +3028,12 @@ export default {
   .toolbox-box { display: none }
 }
 
+/* In bottom-bar mode the controls row is empty; hide it so its flex gap
+   doesn't push the viewport-box behind the fixed bottom bar. */
+@media (max-width: 639px) {
+  .controls-with-status { display: none }
+}
+
 /* Dark mode: keep button visible */
 .dark .toolbox-button {
   background: #2b3338;

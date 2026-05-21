@@ -1,10 +1,88 @@
 
 <template>
-  <aside class="right-panel" :style="rightPanelStyle" @contextmenu.prevent>
+  <aside :class="['right-panel', { 'bottom-bar-mode': bottomBarMode }]" :style="rightPanelStyle" @contextmenu.prevent>
 
     <!-- Hidden file inputs for PNG import -->
     <input ref="blueprintImportInput" type="file" accept="image/png" style="display:none" @change="handleBlueprintImport" />
     <input ref="unifiedImportInput" type="file" accept="image/png" style="display:none" @change="handleUnifiedImport" />
+
+    <!-- Bottom-bar mode: horizontal palette strip (< 640 px) -->
+    <template v-if="bottomBarMode">
+      <div class="bb-wrap">
+        <!-- Tab row: Appliances / Blueprints / mode label -->
+        <div class="bb-tabs">
+          <template v-if="isStructureMode">
+            <span class="bb-tab-label">Draw mode</span>
+          </template>
+          <template v-else-if="isPreviewTab">
+            <span class="bb-tab-label">Preview</span>
+          </template>
+          <template v-else>
+            <button :class="['bb-tab', { 'bb-tab-active': paletteTab === 'appliances' }]" @click="paletteTab = 'appliances'">Appliances</button>
+            <button :class="['bb-tab', { 'bb-tab-active': paletteTab === 'blueprints' }]" @click="paletteTab = 'blueprints'">Blueprints</button>
+          </template>
+        </div>
+        <!-- Scrollable items row with left/right chevrons -->
+        <div class="bb-scroll-wrap">
+          <button v-if="canScrollLeft" class="bb-chevron bb-chevron-left" @click="scrollPalette(-200)" aria-label="Scroll left">&#8249;</button>
+          <div class="bb-scroll" ref="bbScrollEl" @scroll="updateScrollChevrons">
+            <template v-if="isPreviewTab">
+              <div class="bb-preview-msg">Preview — switch to a coloured tab on the left to place items</div>
+            </template>
+            <template v-else-if="isStructureMode">
+              <div
+                v-for="tool in structureTools"
+                :key="tool.id"
+                :class="['bb-item', { 'bb-item-active': selectedStructureTool === tool.id }]"
+                @click="setStructureTool(tool.id)"
+              >
+                <div :class="['bb-swatch', 'swatch-' + tool.id]"></div>
+                <div class="bb-label">{{ tool.label }}</div>
+              </div>
+            </template>
+            <template v-else-if="paletteTab === 'appliances'">
+              <div
+                v-for="item in filteredPalette"
+                :key="item.id"
+                class="bb-item"
+                @click="onPaletteItemClick(item)"
+                @pointerdown="onPaletteItemPointerDown(item, $event)"
+              >
+                <div class="bb-icon">
+                  <canvas :data-icon="item.icon" class="bb-canvas"></canvas>
+                </div>
+                <div class="bb-label">{{ item.label }}</div>
+              </div>
+            </template>
+            <template v-else>
+              <div class="bb-item bb-item-add" title="Create blueprint from current selection" @click="createBlueprint">
+                <div class="bb-icon bb-icon-add"><span>+</span></div>
+                <div class="bb-label">New</div>
+              </div>
+              <div
+                v-for="bp in filteredBlueprints"
+                :key="bp.id"
+                class="bb-item"
+                :title="bp.name"
+                @click="applyBlueprint(bp)"
+                @pointerdown="onBlueprintPointerDown(bp, $event)"
+                @contextmenu.prevent="deleteBlueprint(bp)"
+              >
+                <div class="bb-icon">
+                  <img v-if="bp.preview" :src="bp.preview" :alt="bp.name" class="bb-bp-img" />
+                  <span v-else class="bb-icon-placeholder">📋</span>
+                </div>
+                <div class="bb-label">{{ bp.name }}</div>
+              </div>
+            </template>
+          </div>
+          <button v-if="canScrollRight" class="bb-chevron bb-chevron-right" @click="scrollPalette(200)" aria-label="Scroll right">&#8250;</button>
+        </div>
+      </div>
+    </template>
+
+    <!-- Normal vertical panel mode -->
+    <template v-else>
 
     <!-- Inventory panel shown when Preview tab is active -->
     <template v-if="isPreviewTab">
@@ -186,6 +264,7 @@
         <!-- Palette toolbox moved to App layout (below the palette) -->
       </div>
     </template>
+    </template><!-- end normal panel mode -->
 
     <teleport to="body">
       <template v-if="exportMenuVisible">
@@ -254,7 +333,11 @@ function loadBlueprintsFromStorage() {
 export default {
   name: 'AppliancePalette',
   components: { AddLabelDialog },
-  setup() {
+  props: {
+    bottomBarMode: { type: Boolean, default: false }
+  },
+  setup(props) {
+    const bottomBarMode = props.bottomBarMode
     const { state } = useRestaurantStore()
     const { palette, loading } = useAppliancePalette()
     const { logTouchDebug } = useTouchDebug()
@@ -448,7 +531,7 @@ export default {
 
     async function redrawPaletteCanvases() {
       await nextTick()
-      document.querySelectorAll('.palette-item canvas').forEach(canvas => {
+      document.querySelectorAll('.palette-item canvas, .bb-item canvas').forEach(canvas => {
         cropAndDrawImage(canvas, canvas.dataset.icon)
       })
     }
@@ -457,10 +540,12 @@ export default {
 
     watch(isStructureMode, (val) => {
       if (!val) redrawPaletteCanvases()
+      nextTick(updateScrollChevrons)
     })
 
     watch(isPreviewTab, (val) => {
       if (!val) redrawPaletteCanvases()
+      nextTick(updateScrollChevrons)
     })
 
     function addAllToGrid() {
@@ -518,6 +603,7 @@ export default {
     })
 
     const rightPanelStyle = computed(() => {
+      if (bottomBarMode) return {}
       const cols = paletteColumns.value
       const w = cols * ICON_SIZE + (cols - 1) * ICON_GAP + SIDE_BOX_INSET
       return { flex: `0 0 ${w}px`, width: `${w}px`, maxWidth: 'none', minWidth: '0' }
@@ -677,7 +763,24 @@ export default {
 
     // ── Blueprints ───────────────────────────────────────────────────────────
     const paletteTab = ref('appliances')
-    watch(paletteTab, (val) => { if (val === 'appliances') redrawPaletteCanvases() })
+    const bbScrollEl = ref(null)
+    const canScrollLeft = ref(false)
+    const canScrollRight = ref(false)
+    function updateScrollChevrons() {
+      const el = bbScrollEl.value
+      if (!el) return
+      canScrollLeft.value = el.scrollLeft > 2
+      canScrollRight.value = el.scrollLeft < el.scrollWidth - el.clientWidth - 2
+    }
+    function scrollPalette(delta) {
+      const el = bbScrollEl.value
+      if (!el) return
+      el.scrollBy({ left: delta, behavior: 'smooth' })
+    }
+    watch(paletteTab, (val) => {
+      if (val === 'appliances') redrawPaletteCanvases()
+      nextTick(updateScrollChevrons)
+    })
     const blueprintFilter = ref('')
     const blueprints = ref(loadBlueprintsFromStorage())
 
@@ -703,6 +806,7 @@ export default {
           bp.preview = await generateBlueprintPreview(bp.cells || [], 40, bp.labels || [])
         } catch (e) {}
       }
+      nextTick(updateScrollChevrons)
     })
 
     const filteredBlueprints = computed(() => {
@@ -2527,6 +2631,10 @@ export default {
       selectedSuggestionIndex, onSeedKeydown, onSeedBlur, openSeedSuggestions, seedSuggestionStyle,
       // zoom helper
       resetZoom,
+      // bottom-bar mode flag
+      bottomBarMode,
+      // bottom-bar scroll chevrons
+      bbScrollEl, canScrollLeft, canScrollRight, updateScrollChevrons, scrollPalette,
       // palette toolbox state removed (handled in App)
     }
   }
@@ -3133,6 +3241,96 @@ export default {
 .dark .seed-suggestion { color: #dbe9ff }
 .dark .seed-suggestion:hover { background: #0b2a46 }
 .dark .seed-suggestion.active { background: #123a6b; outline-color: rgba(90,140,255,0.18) }
+
+/* ── Bottom-bar mode (< 640 px) ─────────────────────────────────────────── */
+.right-panel.bottom-bar-mode {
+  /* Positioning is handled by .bottom-bar-wrapper in App.vue */
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  border-top: 2px solid #c8d6e8;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.1);
+}
+.bb-wrap { display: flex; flex-direction: column; width: 100%; height: 100%; }
+.bb-tabs {
+  display: flex; flex-direction: row; align-items: stretch;
+  height: 26px; flex-shrink: 0;
+  border-bottom: 1px solid #e0e8f0;
+}
+.bb-tab {
+  flex: 1; max-width: 130px;
+  background: transparent; border: none; cursor: pointer;
+  font-size: 11px; font-weight: 700; color: #6b7a8d;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color 0.1s;
+}
+.bb-tab.bb-tab-active { color: #1f79ff; border-bottom-color: #1f79ff; }
+.bb-tab:not(.bb-tab-active):hover { color: #3a5070; }
+.bb-tab-label {
+  display: flex; align-items: center; padding: 0 10px;
+  font-size: 11px; font-weight: 700; color: #6b7a8d;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.bb-scroll-wrap {
+  flex: 1; min-height: 0;
+  position: relative;
+  display: flex; flex-direction: row; align-items: stretch;
+  overflow: hidden;
+}
+.bb-scroll {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center; overflow-x: auto; overflow-y: hidden;
+  gap: 3px; padding: 4px 6px;
+  scrollbar-width: none;
+}
+.bb-scroll::-webkit-scrollbar { display: none }
+.bb-chevron {
+  position: absolute; top: 0; bottom: 0; width: 32px; z-index: 2;
+  border: none; cursor: pointer;
+  display: flex; align-items: center;
+  font-size: 22px; color: #3a5a80; line-height: 1; padding: 0;
+}
+.bb-chevron-left { left: 0; justify-content: flex-start; padding-left: 6px; background: linear-gradient(to right, rgba(255,255,255,0.95) 60%, transparent); }
+.bb-chevron-right { right: 0; justify-content: flex-end; padding-right: 6px; background: linear-gradient(to left, rgba(255,255,255,0.95) 60%, transparent); }
+.bb-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 58px; flex-shrink: 0; height: 74px; cursor: pointer; border-radius: 6px;
+  padding: 4px 2px; border: 1px solid transparent;
+  transition: background 0.1s, border-color 0.1s;
+  user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+.bb-item:hover, .bb-item.bb-item-active { background: #eef4ff; border-color: #b0ccee; }
+.bb-item-add { border: 1px dashed #9ab0cc; background: #f5f8ff; }
+.bb-item-add:hover { background: #e8f0ff; border-color: #1f79ff; }
+.bb-icon {
+  width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
+}
+.bb-icon img, .bb-bp-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.bb-icon-add { background: transparent; }
+.bb-icon-add span { font-size: 32px; font-weight: 300; color: #6b9fd4; line-height: 1; }
+.bb-icon-placeholder { font-size: 24px; }
+.bb-canvas { width: 44px; height: 44px; display: block; }
+.bb-label {
+  font-size: 9px; text-align: center; width: 56px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; color: #3a5070; line-height: 1.2; margin-top: 2px;
+}
+.bb-swatch { width: 28px; height: 28px; border-radius: 4px; flex-shrink: 0; margin-bottom: 4px; }
+.bb-preview-msg {
+  display: flex; align-items: center; justify-content: center; flex: 1;
+  font-size: 11px; color: #6b7a8d; font-style: italic; padding: 0 12px;
+  white-space: normal; text-align: center;
+}
 </style>
 
 <style>
@@ -3140,4 +3338,18 @@ export default {
   .palette-zoom-row { display: none !important }
   .palette-status-bar { display: none !important }
 }
+
+/* ── Bottom-bar dark-mode overrides (global, since .right-panel is scoped) ── */
+html.dark .right-panel.bottom-bar-mode { background: #1c2030; border-top-color: #2e3a52; box-shadow: 0 -2px 12px rgba(0,0,0,0.3); }
+html.dark .bb-tabs { border-bottom-color: #2e3a52; }
+html.dark .bb-tab, html.dark .bb-tab-label { color: #6a7a94; }
+html.dark .bb-tab.bb-tab-active { color: #5a9aff; border-bottom-color: #5a9aff; }
+html.dark .bb-tab:not(.bb-tab-active):hover { color: #9aaabe; }
+html.dark .bb-chevron-left { background: linear-gradient(to right, rgba(28,32,48,0.95) 60%, transparent); color: #5a9aff; }
+html.dark .bb-chevron-right { background: linear-gradient(to left, rgba(28,32,48,0.95) 60%, transparent); color: #5a9aff; }
+html.dark .bb-item:hover, html.dark .bb-item.bb-item-active { background: #1a2840; border-color: #3a5a88; }
+html.dark .bb-item-add { background: #141926; border-color: #2a3a54; }
+html.dark .bb-item-add:hover { background: #1a2840; border-color: #3a5a88; }
+html.dark .bb-label { color: #7a9ab0; }
+html.dark .bb-preview-msg { color: #6a8aaa; }
 </style>
