@@ -248,7 +248,7 @@
 
     <div class="main-grid">
       <GridView />
-      <div class="palette-column">
+      <div v-if="!smallTopZoom" class="palette-column">
         <AppliancePalette />
         <div class="palette-toolbox-box" title="Palette toolbox (controls) - Undo - Ctrl + Z">
           <div class="palette-toolbox" role="toolbar" aria-label="Palette toolbox">
@@ -304,6 +304,10 @@
           </div>
         </div>
       </div>
+    </div>
+    <!-- Bottom palette bar replaces the right panel at < 640 px -->
+    <div v-if="smallTopZoom" class="bottom-bar-wrapper">
+      <AppliancePalette :bottom-bar-mode="true" />
     </div>
     <RestaurantSizeModal
       v-if="showSizeModal"
@@ -376,7 +380,7 @@
 <script>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRestaurantStore, encodeState as encodeStateFn } from './store/restaurant'
-import { useGrid } from './composables/useGrid'
+import { useGrid, smallScreenMode } from './composables/useGrid'
 import GridView from './components/GridView.vue'
 import AppliancePalette from './components/AppliancePalette.vue'
 import creditsRaw from './CREDITS.md?raw'
@@ -411,6 +415,8 @@ export default {
     const showToolboxPopup = ref(false)
     const smallToolbox = computed(() => viewportWidth.value <= 840)
     const smallTopZoom = computed(() => viewportWidth.value < 640)
+    // Sync bottom-bar mode with useGrid so cellSize/viewportBoxHeight adapt
+    watch(smallTopZoom, v => { smallScreenMode.value = v }, { immediate: true })
     // Broadcast tabs-hidden state so GridView can hide its tabs when needed
     watch(smallToolbox, (v) => { try { window.dispatchEvent(new CustomEvent('plateup-tabs-hidden', { detail: v })) } catch (e) {} }, { immediate: true })
     const showTabsDropdown = ref(false)
@@ -881,12 +887,12 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 .menu-root { display: flex; align-items: center; gap: 8px }
 .top-bar h1 { margin: 0 }
 .title-tagline { font-size: 1.1rem; color: #aaa; font-style: italic; white-space: nowrap }
-.compact-title { margin: 0; font-size: 1.05rem; font-weight: 700; align-self: center; margin-left: 8px }
+.compact-title { margin: 0; font-size: 1.05rem; font-weight: 700; align-self: center; margin-left: 8px; white-space: nowrap }
 .header-right { display: flex; align-items: center; gap: 6px; margin-right: 8px }
 /* Top zoom row (for very small screens). Positioned between the title area
    and the tab dropdown; it grows to fill available horizontal space. */
 .top-zoom-row {
-  display: flex; align-items: center; gap: 8px; z-index: 20; flex: 1 1 auto; min-width: 140px; margin-left: 12px;
+  display: flex; align-items: center; gap: 8px; z-index: 20; flex: 1 1 auto; min-width: 60px; margin-left: 12px;
 }
 .top-zoom-row .palette-zoom { width: 100%; }
 .top-zoom-row .palette-zoom-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; cursor: pointer }
@@ -1145,6 +1151,15 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 }
 
 .palette-column { display:flex; flex-direction:column; gap:8px; align-items:stretch }
+.bottom-bar-wrapper {
+  position: fixed;
+  bottom: 0;
+  left: 68px;
+  right: 10px;
+  height: 110px;
+  z-index: 9900;
+  overflow: hidden;
+}
 .palette-toolbox-box { display:flex; align-items:center; padding:5px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9; width: 100%; box-sizing: border-box }
 .dark .palette-toolbox-box { background: #1e2629; border-color: #33393d }
 .palette-toolbox { display:flex; gap:8px; align-items:center; justify-content: space-between; flex: 1 }
@@ -1172,7 +1187,7 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 .viewport-debug {
   position: fixed;
   right: 10px;
-  bottom: 10px;
+  top: 10px;
   background: rgba(0,0,0,0.6);
   color: #fff;
   padding: 6px 10px;
@@ -1227,7 +1242,7 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 .tab-dropdown-root { position: absolute; right: 12px; top: 8px; z-index: 20002 }
 .menu-root .tab-dropdown-root { position: relative; right: auto; top: auto; margin-left: auto }
 .menu-root .tab-dropdown-root .tab-dropdown-menu { left: auto; right: 0; top: 36px }
-.tab-dropdown-button { background: #fff; border: 1px solid #c8d6e8; padding: 6px 10px; border-radius: 6px; cursor: pointer }
+.tab-dropdown-button { background: #fff; border: 1px solid #c8d6e8; padding: 6px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap }
 .dark .tab-dropdown-button { background: #1c2030; border-color: #2e3a52; color: #d0daea }
 .tab-dropdown-menu { position: absolute; right: 0; top: 40px; min-width: 160px; background: #fff; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.18); padding: 6px; display:flex; flex-direction: column; gap:6px }
 .dark .tab-dropdown-menu { background: #12141c; color: #d0daea }
