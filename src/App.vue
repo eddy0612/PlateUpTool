@@ -1209,22 +1209,64 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 
 
 /* Compact responsive rules: hide palette toolbox and adjust header */
-  @media (max-width: 1023px) {
+@media (max-width: 1023px) {
   .menu-root { position: relative }
+
   .menu-button {
-    background: none; border: none; padding: 8px; border-radius: 6px; cursor: pointer; color: inherit; display: inline-flex; align-items: center; justify-content: center;
+    background: none; border: none; padding: 8px; border-radius: 6px; cursor: pointer;
+    color: inherit; display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
   }
+  .menu-button:hover { background: rgba(255,255,255,0.14) }
+
   .menu-dropdown {
-    position: absolute; left: 0; top: 42px; min-width: 220px; background: #fff; color: #111; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.18); padding: 8px; z-index: 20001;
-    display: flex; flex-direction: column; gap: 6px;
+    position: absolute; left: 0; top: 46px; min-width: 248px;
+    background: #fff; color: #1a2030;
+    border-radius: 10px;
+    box-shadow: 0 10px 36px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 6px; z-index: 20001;
+    display: flex; flex-direction: column; gap: 2px;
   }
-  html.dark .menu-dropdown { background: #12141c; color: #d0daea; border: 1px solid rgba(255,255,255,0.03) }
-  .menu-item { background: transparent; border: none; text-align: left; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-weight: 600 }
-  .menu-item:hover { background: rgba(0,0,0,0.06) }
-  .submenu { margin-top: 6px; margin-left: 6px; display: flex; flex-direction: column; gap: 4px }
-  .sub-item { font-weight: 500; padding-left: 6px }
-  .menu-sep { height: 1px; background: rgba(0,0,0,0.06); margin: 6px 0; border-radius: 1px }
-  html.dark .menu-item:hover { background: rgba(255,255,255,0.03) }
+  html.dark .menu-dropdown {
+    background: #1a1f2e; color: #d0daea;
+    border-color: rgba(255,255,255,0.08);
+    box-shadow: 0 10px 36px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.25);
+  }
+
+  .menu-item {
+    background: transparent; border: none; text-align: left;
+    padding: 9px 12px; border-radius: 7px; cursor: pointer;
+    font-weight: 600; font-size: 0.9rem; color: inherit; width: 100%;
+    transition: background 0.12s;
+  }
+  .menu-item:hover { background: rgba(30,126,148,0.1) }
+  html.dark .menu-item:hover { background: rgba(30,126,148,0.2) }
+
+  /* Expandable (Settings / Help) rows */
+  .menu-item.has-sub { padding: 0; display: flex; flex-direction: column }
+  .menu-item.has-sub > button {
+    background: transparent; border: none; text-align: left;
+    padding: 9px 12px; border-radius: 7px; cursor: pointer;
+    font-weight: 600; font-size: 0.9rem; color: inherit;
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    transition: background 0.12s;
+  }
+  .menu-item.has-sub > button::after { content: '›'; font-size: 1.1rem; opacity: 0.5; transition: transform 0.18s }
+  .menu-item.has-sub > button:hover { background: rgba(30,126,148,0.1) }
+  html.dark .menu-item.has-sub > button:hover { background: rgba(30,126,148,0.2) }
+
+  .submenu {
+    margin: 2px 0 4px 8px; padding: 3px 0 3px 10px;
+    border-left: 2px solid rgba(30,126,148,0.28);
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  html.dark .submenu { border-left-color: rgba(30,126,148,0.45) }
+
+  .sub-item { font-weight: 500; font-size: 0.875rem; padding: 7px 10px }
+
+  .menu-sep { height: 1px; background: rgba(0,0,0,0.07); margin: 4px 6px; border-radius: 1px }
+  html.dark .menu-sep { background: rgba(255,255,255,0.08) }
 }
 
 /* Tabs visibility is controlled via the `tabs-hidden` root class, which is
