@@ -250,7 +250,7 @@
       <GridView />
       <div v-if="!smallTopZoom" class="palette-column">
         <AppliancePalette />
-        <div class="palette-toolbox-box" title="Palette toolbox (controls) - Undo - Ctrl + Z">
+        <div v-show="!showCompactMenu" class="palette-toolbox-box" title="Palette toolbox (controls) - Undo - Ctrl + Z">
           <div class="palette-toolbox" role="toolbar" aria-label="Palette toolbox">
             <button class="toolbox-button toolbox-button--size" @click="openChangeSizeModal" title="Change room size">
               <svg class="toolbox-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -932,7 +932,7 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 .saveload-button {
   border: none; background: #1e7e94; color: white; padding: 0.4rem 0.8rem;
   border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center;
-  gap: 5px; font-size: 0.875rem; font-weight: 600;
+  gap: 5px; font-size: 0.875rem; font-weight: 600; white-space: nowrap;
 }
 .saveload-button:hover { background: #186a7d }
 
@@ -1225,12 +1225,6 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
   .sub-item { font-weight: 500; padding-left: 6px }
   .menu-sep { height: 1px; background: rgba(0,0,0,0.06); margin: 6px 0; border-radius: 1px }
   html.dark .menu-item:hover { background: rgba(255,255,255,0.03) }
-}
-
-/* When compact (burger) menu appears, hide palette toolbox at <=840px to
-   match the smallToolbox breakpoint in JavaScript (viewportWidth <= 840). */
-@media (max-width: 840px) {
-  .palette-toolbox-box { display: none }
 }
 
 /* Tabs visibility is controlled via the `tabs-hidden` root class, which is
