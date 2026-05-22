@@ -34,6 +34,25 @@ jobs:
         working-directory: src
         run: npm run build
 
+      - name: Build `dev` branch if it exists
+        run: |
+          if git ls-remote --heads origin dev | grep -q refs/heads/dev; then
+            echo "dev branch found — building into src/dist/dev"
+            git fetch origin dev
+            if git show-ref --verify --quiet refs/heads/dev; then
+              git checkout dev
+            else
+              git checkout -b dev origin/dev
+            fi
+            cd src
+            npm install
+            npm run build -- --outDir dist/dev --base /PlateUpTool/dev/
+            cd -
+            git checkout -
+          else
+            echo "dev branch not found; skipping dev build"
+          fi
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: src/dist
