@@ -21,7 +21,30 @@
           </div>
           <div v-if="showMainMenu" class="menu-dropdown" @click.stop>
             <button class="menu-item" @click="startAgain">Restart</button>
-            <button class="menu-item" @click="openSaveLoadMenu($event)">Share / Import</button>
+            <div class="menu-item has-sub">
+              <button @click="toggleShareSubmenu">Share / Import</button>
+              <div v-if="showShareSubmenu" class="submenu" @click.stop>
+                <div class="menu-item has-sub">
+                  <button class="sub-item" @click="toggleShareSubClipboard">📋 Share to Clipboard</button>
+                  <div v-if="showShareSubClipboard" class="submenu" @click.stop>
+                    <button class="menu-item sub-item" @click="compactShareClipboard('tab')">{{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</button>
+                    <button class="menu-item sub-item" @click="compactShareClipboard('all-tabs')">All appliance tabs</button>
+                    <button class="menu-item sub-item" @click="compactShareClipboard('complete')">Complete</button>
+                    <button class="menu-item sub-item" @click="compactCopyLink">🔗 Copy URL</button>
+                  </div>
+                </div>
+                <div class="menu-item has-sub">
+                  <button class="sub-item" @click="toggleShareSubFile">💾 Share to File</button>
+                  <div v-if="showShareSubFile" class="submenu" @click.stop>
+                    <button class="menu-item sub-item" @click="compactExportFile('tab')">{{ state.activeTabId === 'structure' ? 'Structure only' : 'Current tab' }}</button>
+                    <button class="menu-item sub-item" @click="compactExportFile('all-tabs')">All appliance tabs</button>
+                    <button class="menu-item sub-item" @click="compactExportFile('complete')">Complete</button>
+                  </div>
+                </div>
+                <button class="menu-item sub-item" @click="compactImportFile">📂 Load from File</button>
+                <button class="menu-item sub-item" @click="compactImportClipboard">📋 Load from Clipboard</button>
+              </div>
+            </div>
             <button class="menu-item" @click="openChangeSizeModal">Change Dimensions</button>
             <div class="menu-sep"></div>
             <div class="menu-item has-sub">
@@ -409,6 +432,9 @@ export default {
     const showMainMenu = ref(false)
     const showSettingsSubmenu = ref(false)
     const showHelpSubmenu = ref(false)
+    const showShareSubmenu = ref(false)
+    const showShareSubClipboard = ref(false)
+    const showShareSubFile = ref(false)
     const viewportWidth = ref(window.innerWidth)
     const viewportHeight = ref(window.innerHeight)
     const showCompactMenu = computed(() => viewportWidth.value <= 1023)
@@ -664,6 +690,9 @@ export default {
           showMainMenu.value = false
           showSettingsSubmenu.value = false
           showHelpSubmenu.value = false
+          showShareSubmenu.value = false
+          showShareSubClipboard.value = false
+          showShareSubFile.value = false
         }
         try {
           if (showToolboxPopup.value && !e.target.closest('.tool-toggle-root')) {
@@ -709,15 +738,58 @@ export default {
       if (!next) {
         showSettingsSubmenu.value = false
         showHelpSubmenu.value = false
+        showShareSubmenu.value = false
+        showShareSubClipboard.value = false
+        showShareSubFile.value = false
       }
     }
     function toggleSettingsSubmenu() {
       showHelpSubmenu.value = false
+      showShareSubmenu.value = false
       showSettingsSubmenu.value = !showSettingsSubmenu.value
     }
     function toggleHelpSubmenu() {
       showSettingsSubmenu.value = false
+      showShareSubmenu.value = false
       showHelpSubmenu.value = !showHelpSubmenu.value
+    }
+    function toggleShareSubmenu() {
+      showSettingsSubmenu.value = false
+      showHelpSubmenu.value = false
+      const next = !showShareSubmenu.value
+      showShareSubmenu.value = next
+      if (!next) {
+        showShareSubClipboard.value = false
+        showShareSubFile.value = false
+      }
+    }
+    function toggleShareSubClipboard() {
+      showShareSubFile.value = false
+      showShareSubClipboard.value = !showShareSubClipboard.value
+    }
+    function toggleShareSubFile() {
+      showShareSubClipboard.value = false
+      showShareSubFile.value = !showShareSubFile.value
+    }
+    function compactShareClipboard(type) {
+      window.dispatchEvent(new CustomEvent('plateup-compact-share-clipboard', { detail: { type } }))
+      showMainMenu.value = false
+    }
+    function compactCopyLink() {
+      copyUrl()
+      showMainMenu.value = false
+    }
+    function compactExportFile(type) {
+      window.dispatchEvent(new CustomEvent('plateup-compact-export-file', { detail: { type } }))
+      showMainMenu.value = false
+    }
+    function compactImportFile() {
+      window.dispatchEvent(new CustomEvent('plateup-compact-import-file'))
+      showMainMenu.value = false
+    }
+    function compactImportClipboard() {
+      window.dispatchEvent(new CustomEvent('plateup-compact-import-clipboard'))
+      showMainMenu.value = false
     }
 
     function toggleToolboxPopup() {
@@ -850,8 +922,9 @@ export default {
       paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon,
       cellSize, state, onSizeChosen, onSizeCancelled, undo, showTouchDebug, toggleTouchDebug,
       viewportWidth, viewportHeight, deviceLabel, showViewportDebug,
-      /* menu controls */ showMainMenu, showSettingsSubmenu, showHelpSubmenu, showCompactMenu,
-      toggleMainMenu, toggleSettingsSubmenu, toggleHelpSubmenu,
+      /* menu controls */ showMainMenu, showSettingsSubmenu, showHelpSubmenu, showShareSubmenu, showShareSubClipboard, showShareSubFile, showCompactMenu,
+      toggleMainMenu, toggleSettingsSubmenu, toggleHelpSubmenu, toggleShareSubmenu, toggleShareSubClipboard, toggleShareSubFile,
+      compactShareClipboard, compactCopyLink, compactExportFile, compactImportFile, compactImportClipboard,
       /* small-screen toolbox */ showToolboxPopup, toggleToolboxPopup, closeToolboxPopup, smallToolbox,
       smallTopZoom, resetZoom,
       invokeAndClose, deleteAndClose,

@@ -597,6 +597,22 @@ export default {
     onMounted(() => window.addEventListener('plateup-import-bytes', handleGlobalImportBytes))
     onUnmounted(() => window.removeEventListener('plateup-import-bytes', handleGlobalImportBytes))
 
+    function handleCompactShareClipboard(e) { doExportClipboard(e.detail.type) }
+    onMounted(() => window.addEventListener('plateup-compact-share-clipboard', handleCompactShareClipboard))
+    onUnmounted(() => window.removeEventListener('plateup-compact-share-clipboard', handleCompactShareClipboard))
+
+    function handleCompactExportFile(e) { doExport(e.detail.type) }
+    onMounted(() => window.addEventListener('plateup-compact-export-file', handleCompactExportFile))
+    onUnmounted(() => window.removeEventListener('plateup-compact-export-file', handleCompactExportFile))
+
+    function handleCompactImportFile() { loadFromMenu() }
+    onMounted(() => window.addEventListener('plateup-compact-import-file', handleCompactImportFile))
+    onUnmounted(() => window.removeEventListener('plateup-compact-import-file', handleCompactImportFile))
+
+    async function handleCompactImportClipboard() { await importFromClipboard() }
+    onMounted(() => window.addEventListener('plateup-compact-import-clipboard', handleCompactImportClipboard))
+    onUnmounted(() => window.removeEventListener('plateup-compact-import-clipboard', handleCompactImportClipboard))
+
     const paletteColumns = computed(() => {
       const available = windowWidth.value * 0.20
       return Math.max(1, Math.min(3, Math.floor(available / (ICON_SIZE + ICON_GAP))))
