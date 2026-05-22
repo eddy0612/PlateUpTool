@@ -45,14 +45,29 @@
                 <button class="menu-item sub-item" @click="compactImportClipboard">📋 Load from Clipboard</button>
               </div>
             </div>
-            <button class="menu-item" @click="openChangeSizeModal">Change Dimensions</button>
+            <button class="menu-item" @click="openChangeSizeModal">
+              <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h13A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 12.5v-9zM1.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z"/><path d="M3 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1H4v4.5a.5.5 0 0 1-1 0v-5zm9-3a.5.5 0 0 1-.5.5H7v-5a.5.5 0 0 1 1 0V6h3.5a.5.5 0 0 1 .5.5z"/></svg>
+              Change Dimensions
+            </button>
             <div class="menu-sep"></div>
             <div class="menu-item has-sub">
               <button @click="toggleSettingsSubmenu">Settings</button>
               <div v-if="showSettingsSubmenu" class="submenu" @click.stop>
-                <button class="menu-item sub-item" @click="toggleDarkMode">Light / Dark mode</button>
-                <button class="menu-item sub-item" @click="toggleTeleporterLines">Show / Hide teleporter lines</button>
-                <button class="menu-item sub-item" @click="toggleLabelDisplayMode">Show labels (lines/text/none)</button>
+                <button class="menu-item sub-item" @click="toggleDarkMode">
+                  <svg v-if="!darkMode" class="menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg>
+                  <svg v-else class="menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zM8 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zM16 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 16 8zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zM12.657 2.343a.5.5 0 0 1 0 .707l-1.414 1.414a.5.5 0 1 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zM4.464 11.536a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zM12.657 13.657a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/></svg>
+                  Light / Dark mode
+                </button>
+                <button :class="['menu-item', 'sub-item', { 'menu-item--active': teleporterLines }]" @click="toggleTeleporterLines">
+                  <svg class="menu-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2" stroke-linecap="round"/><circle cx="2" cy="2" r="2" fill="currentColor"/><circle cx="14" cy="14" r="2" fill="currentColor"/></svg>
+                  Show / Hide teleporter lines
+                </button>
+                <button class="menu-item sub-item" @click="toggleLabelDisplayMode">
+                  <svg v-if="labelDisplayMode === 0" class="menu-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="9" y1="9" x2="16" y2="16" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2" stroke-linecap="round"/><circle cx="3.5" cy="3.5" r="1" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1" fill="currentColor"/></svg>
+                  <svg v-else-if="labelDisplayMode === 1" class="menu-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="5" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <svg v-else class="menu-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="3" y1="5" x2="15" y2="11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                  Show labels (lines/text/none)
+                </button>
               </div>
             </div>
             <div class="menu-sep"></div>
@@ -403,7 +418,7 @@
 <script>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRestaurantStore, encodeState as encodeStateFn } from './store/restaurant'
-import { useGrid, smallScreenMode } from './composables/useGrid'
+import { useGrid, smallScreenMode, compactMenuMode } from './composables/useGrid'
 import GridView from './components/GridView.vue'
 import AppliancePalette from './components/AppliancePalette.vue'
 import creditsRaw from './CREDITS.md?raw'
@@ -443,6 +458,7 @@ export default {
     const smallTopZoom = computed(() => viewportWidth.value < 640)
     // Sync bottom-bar mode with useGrid so cellSize/viewportBoxHeight adapt
     watch(smallTopZoom, v => { smallScreenMode.value = v }, { immediate: true })
+    watch(showCompactMenu, v => { compactMenuMode.value = v }, { immediate: true })
     // Broadcast tabs-hidden state so GridView can hide its tabs when needed
     watch(smallToolbox, (v) => { try { window.dispatchEvent(new CustomEvent('plateup-tabs-hidden', { detail: v })) } catch (e) {} }, { immediate: true })
     const showTabsDropdown = ref(false)
@@ -1312,7 +1328,14 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
     padding: 9px 12px; border-radius: 7px; cursor: pointer;
     font-weight: 600; font-size: 0.9rem; color: inherit; width: 100%;
     transition: background 0.12s;
+    display: flex; align-items: center; gap: 8px;
   }
+  .menu-item--active { background: #1f79ff !important; color: #fff !important }
+  .menu-item--active:hover { background: #1766d6 !important }
+  html.dark .menu-item--active { background: #1a5fe0 !important; color: #fff !important }
+  html.dark .menu-item--active:hover { background: #1450c0 !important }
+
+  .menu-icon { width: 16px; height: 16px; flex-shrink: 0; display: block; overflow: visible }
   .menu-item:hover { background: rgba(30,126,148,0.1) }
   html.dark .menu-item:hover { background: rgba(30,126,148,0.2) }
 

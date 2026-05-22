@@ -26,6 +26,10 @@ window.addEventListener('resize', () => {
 // and to use the full screen width instead of subtracting the right panel.
 export const smallScreenMode = ref(false)
 
+// Set to true by App.vue when viewport <= 1023px (compact hamburger-menu mode).
+// Used by GridView to hide palette-toolbox items from the help overlay.
+export const compactMenuMode = ref(false)
+
 // Shared hover status (written by GridView, read by AppliancePalette)
 const hoverLabel = ref('')
 

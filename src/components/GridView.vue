@@ -321,7 +321,7 @@
 <script>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
-import { useGrid, TELEPORTER_APPLIANCE_ID } from '../composables/useGrid'
+import { useGrid, TELEPORTER_APPLIANCE_ID, compactMenuMode } from '../composables/useGrid'
 import { useTouchDebug } from '../composables/useTouchDebug'
 import { readPngText, readStegoFromBytes, readFileAsBytes } from '../composables/usePngMetadata'
 import AddLabelDialog from './AddLabelDialog.vue'
@@ -1356,7 +1356,7 @@ export default {
     // --- Inline help overlay for toolbox ---
     const helpActive = ref(false)
     // overlaySize unused with single-modal help
-    const helpItems = [
+    const allHelpItems = [
     { id: 'undo', title: 'Undo', desc: 'Revert previous change.' },
       { id: 'cut', title: 'Cut', desc: 'Remove selection and copy to clipboard.' },
       { id: 'copy', title: 'Copy', desc: 'Copy selection to clipboard.' },
@@ -1378,6 +1378,11 @@ export default {
       { id: 'teleporter-lines', title: 'Teleporter lines', desc: 'Show or hide teleporter connector lines (T).' },
       { id: 'label-display', title: 'Label display', desc: 'Cycle label display: lines+text / text only / hidden' }
     ]
+    const helpItems = computed(() =>
+      compactMenuMode.value
+        ? allHelpItems.filter(item => !item.divider && item.id !== 'size' && item.id !== 'dark-mode' && item.id !== 'teleporter-lines' && item.id !== 'label-display')
+        : allHelpItems
+    )
 
     // Single-modal help UI — no per-popup positions required
     // Track current dark-mode state by observing <html> class so help can show the
