@@ -1,7 +1,7 @@
 <template>
   <teleport to="body">
     <div class="size-modal-backdrop" role="dialog" aria-modal="true" @click.self="onBackdropClick">
-      <div class="size-modal">
+      <div :class="['size-modal', { 'size-modal--dark': darkMode }]">
         <div class="size-modal-header">
           <h2>Select Restaurant Size</h2>
         </div>
@@ -9,26 +9,26 @@
           <div class="size-grid">
             <button class="size-card" v-for="opt in options" :key="opt.label" @click="choose(opt)">
               <div class="floor-preview-wrap">
-                <div class="floor-preview-wrap">
-                  <img
-                    v-if="!fallbackMap[getPreviewKey(opt)]"
-                    :src="getPreviewSrc(opt)"
-                    class="floor-preview"
-                    @error="() => setFallback(opt)"
-                    aria-hidden="true"
-                    alt="preview"
-                  />
+                <img
+                  v-if="!fallbackMap[getPreviewKey(opt)]"
+                  :src="getPreviewSrc(opt)"
+                  class="floor-preview"
+                  @error="() => setFallback(opt)"
+                  aria-hidden="true"
+                  alt="preview"
+                />
 
-                  <!-- SVG fallback if the pre-generated PNG is missing -->
-                  <svg v-else class="floor-preview" :viewBox="`0 0 ${opt.w} ${opt.h}`" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <rect x="0" y="0" :width="opt.w" :height="opt.h" class="outer" fill="#f9fbff" />
-                    <g class="grid-lines">
-                      <rect v-for="i in range(opt.w - 1)" :key="`v${i}`" :x="(i+1) - 0.25" y="0" :width="0.5" :height="opt.h" />
-                      <rect v-for="j in range(opt.h - 1)" :key="`h${j}`" x="0" :y="(j+1) - 0.25" :width="opt.w" :height="0.5" />
-                    </g>
-                  </svg>
-                </div>
+                <!-- SVG fallback if the pre-generated PNG is missing -->
+                <svg v-else class="floor-preview" :viewBox="`0 0 ${opt.w} ${opt.h}`" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                  <rect x="0" y="0" :width="opt.w" :height="opt.h" class="outer" fill="#f9fbff" />
+                  <g class="grid-lines">
+                    <rect v-for="i in range(opt.w - 1)" :key="`v${i}`" :x="(i+1) - 0.25" y="0" :width="0.5" :height="opt.h" />
+                    <rect v-for="j in range(opt.h - 1)" :key="`h${j}`" x="0" :y="(j+1) - 0.25" :width="opt.w" :height="0.5" />
+                  </g>
+                </svg>
               </div>
+              <!-- Compact aspect-ratio tile, shown instead of full preview on small screens -->
+              <div class="size-aspect-vis" :style="`aspect-ratio: ${opt.w}/${opt.h}`" aria-hidden="true"></div>
               <div class="size-label">{{ opt.label }}</div>
               <div class="size-dim">{{ opt.dim }}</div>
             </button>
@@ -198,9 +198,73 @@ export default {
 .custom-inputs input { width:86px; padding:7px 10px; border-radius:6px; border:1px solid #ddd; color: #0b1220; background: #fff }
 .custom-confirm { margin-left:14px; padding:9px 14px; border-radius:8px; border:none; background:#1f6feb; color:white; cursor:pointer }
 .custom-confirm:disabled { opacity:0.5; cursor:not-allowed }
+
+/* Aspect-ratio tile — hidden on desktop, visible on mobile */
+.size-aspect-vis { display: none; }
+.floor-preview-wrap { width: 144px; height: 101px; display:flex; align-items:center; justify-content:center }
+
+/* ── Dark mode ── */
+.size-modal--dark { background: #111827; color: #e2e8f0; }
+.size-modal--dark .size-modal-header h2 { color: #e2e8f0; }
+.size-modal--dark .size-card { background: #1a2740; border-color: rgba(99,155,255,0.22); }
+.size-modal--dark .size-label { color: #e2e8f0; }
+.size-modal--dark .size-dim { color: #94a3b8; }
+.size-modal--dark .size-card--custom { background: #1a2740; border-color: rgba(99,155,255,0.22); color: #e2e8f0; }
+.size-modal--dark .custom-inputs input { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+.size-modal--dark .theme-toggle { background: #1a2740; border-color: rgba(99,155,255,0.22); color: #e2e8f0; }
+.size-modal--dark .size-aspect-vis {
+  background:
+    repeating-linear-gradient(to right,  rgba(99,155,255,0.11) 0, rgba(99,155,255,0.11) 1px, transparent 1px, transparent 8px),
+    repeating-linear-gradient(to bottom, rgba(99,155,255,0.11) 0, rgba(99,155,255,0.11) 1px, transparent 1px, transparent 8px),
+    linear-gradient(135deg, #1e3a5f, #0f2440);
+  border-color: rgba(99,155,255,0.3);
+}
+
+/* ── Compact: ≤ 767px — 2-column grid, no full previews ── */
+@media (max-width: 767px) {
+  .size-modal {
+    padding: 18px 14px;
+    max-width: calc(100vw - 20px);
+    border-radius: 14px;
+  }
+  .size-modal-header h2 { font-size: 1.05rem; margin-bottom: 2px; }
+  .size-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+  /* Hide the full-size preview on mobile */
+  .floor-preview-wrap { display: none; }
+
+  /* Show the compact aspect-ratio tile */
+  .size-aspect-vis {
+    display: block;
+    height: 32px;
+    max-width: 80%;
+    background:
+      repeating-linear-gradient(to right,  rgba(31,111,235,0.09) 0, rgba(31,111,235,0.09) 1px, transparent 1px, transparent 8px),
+      repeating-linear-gradient(to bottom, rgba(31,111,235,0.09) 0, rgba(31,111,235,0.09) 1px, transparent 1px, transparent 8px),
+      linear-gradient(135deg, #dbeafe, #eff6ff);
+    border: 1.5px solid rgba(31,111,235,0.25);
+    border-radius: 4px;
+  }
+
+  /* Compact size cards */
+  .size-card { padding: 12px 8px; min-height: 0; gap: 6px; }
+
+  /* Custom card: stack vertically, full width */
+  .size-card--custom {
+    grid-column: span 2;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 12px;
+  }
+  .custom-inputs input { width: 70px; padding: 7px 8px; }
+  .custom-confirm { width: 100%; margin-left: 0; padding: 11px 14px; }
+
+  .theme-toggle { min-height: 50px; padding: 11px 14px; font-size: 0.9rem; }
+}
 .by { font-weight:700; color:#333 }
 
-.floor-preview-wrap { width: 144px; height: 101px; display:flex; align-items:center; justify-content:center }
 .floor-preview { width: 100%; height: auto; display:block }
 .floor-preview .outer { stroke: #1158d6; stroke-width: 0.7; rx: 0.18; fill: #f9fbff }
 .floor-preview .grid-lines line {
@@ -252,5 +316,12 @@ html.dark .floor-preview .grid-lines * {
   stroke-opacity: 0.85 !important;
   fill: #9aa7b8 !important;
   fill-opacity: 0.85 !important;
+}
+html.dark .size-aspect-vis {
+  background:
+    repeating-linear-gradient(to right,  rgba(99,155,255,0.11) 0, rgba(99,155,255,0.11) 1px, transparent 1px, transparent 8px),
+    repeating-linear-gradient(to bottom, rgba(99,155,255,0.11) 0, rgba(99,155,255,0.11) 1px, transparent 1px, transparent 8px),
+    linear-gradient(135deg, #1e3a5f, #0f2440);
+  border-color: rgba(99,155,255,0.3);
 }
 </style>
