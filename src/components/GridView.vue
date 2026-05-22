@@ -2860,6 +2860,7 @@ export default {
   outline: none;
   font: inherit;
   font-weight: inherit;
+  font-size: max(16px, 1em); /* prevent iOS Safari auto-zoom on focus */
   color: inherit;
   padding: 0;
   display: block;

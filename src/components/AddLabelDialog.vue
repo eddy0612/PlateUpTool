@@ -57,7 +57,7 @@ export default {
 .dialog { background: #fff; border-radius:8px; padding: 14px; width: 320px; box-shadow: 0 12px 30px rgba(0,0,0,0.35) }
 .dialog-title { font-weight:700; margin-bottom:8px }
 .dialog-body { display:block }
-.dialog-body input { display:block; width:100%; padding:8px 10px; border-radius:6px; border:1px solid #c8d6e8; outline:none }
+.dialog-body input { display:block; width:100%; padding:8px 10px; border-radius:6px; border:1px solid #c8d6e8; outline:none; font-size: 16px }
 .dialog-meta { display:flex; justify-content:space-between; align-items:center; margin-top:8px }
 .dialog-hint { font-size:12px; color:#586b7a }
 .char-count { font-size:12px; color:#586b7a }
