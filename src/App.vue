@@ -1242,7 +1242,7 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 .main-grid {
   display: flex;
   gap: 10px;
-  padding-left: 90px;
+  padding-left: 60px;
   overflow: visible;
   align-items: flex-start;
 }
