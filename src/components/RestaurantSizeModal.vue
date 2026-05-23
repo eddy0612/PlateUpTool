@@ -35,9 +35,13 @@
             <div class="size-card size-card--custom">
               <div class="size-label">Custom</div>
               <div class="custom-inputs">
-                <input type="number" v-model.number="customW" :min="MIN_W" :max="MAX_W" aria-label="Width" />
+                <select v-model.number="customW" aria-label="Width">
+                  <option v-for="n in wOptions" :key="n" :value="n">{{ n }}</option>
+                </select>
                 <span class="by">×</span>
-                <input type="number" v-model.number="customH" :min="MIN_H" :max="MAX_H" aria-label="Height" />
+                <select v-model.number="customH" aria-label="Height">
+                  <option v-for="n in hOptions" :key="n" :value="n">{{ n }}</option>
+                </select>
               </div>
               <button class="custom-confirm" @click="chooseCustom" :disabled="!validCustom">Choose</button>
             </div>
@@ -107,6 +111,9 @@ export default {
     const MIN_W = 10, MAX_W = 50
     const MIN_H = 6,  MAX_H = 50
 
+    const wOptions = Array.from({ length: MAX_W - MIN_W + 1 }, (_, i) => MIN_W + i)
+    const hOptions = Array.from({ length: MAX_H - MIN_H + 1 }, (_, i) => MIN_H + i)
+
     const validCustom = computed(() => {
       const w = Number(customW.value)
       const h = Number(customH.value)
@@ -147,7 +154,7 @@ export default {
     onMounted(() => window.addEventListener('keydown', onKey, true))
     onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 
-    return { options, customW, customH, choose, chooseCustom, validCustom, range, MIN_W, MAX_W, MIN_H, MAX_H, fallbackMap, getPreviewSrc, setFallback, getPreviewKey, isDark, onBackdropClick, toggleTheme }
+    return { options, customW, customH, choose, chooseCustom, validCustom, range, MIN_W, MAX_W, MIN_H, MAX_H, fallbackMap, getPreviewSrc, setFallback, getPreviewKey, isDark, onBackdropClick, toggleTheme, wOptions, hOptions }
   }
 }
 </script>
@@ -195,7 +202,7 @@ export default {
 .size-dim { color:#475569 }
 .size-card--custom { grid-column: span 2; display:flex; align-items:center; justify-content:space-between }
 .custom-inputs { display:flex; align-items:center; gap:8px }
-.custom-inputs input { width:86px; padding:7px 10px; border-radius:6px; border:1px solid #ddd; color: #0b1220; background: #fff }
+.custom-inputs select { width:72px; padding:7px 6px; border-radius:6px; border:1px solid #ddd; color: #0b1220; background: #fff; font-size: 1rem; cursor: pointer }
 .custom-confirm { margin-left:14px; padding:9px 14px; border-radius:8px; border:none; background:#1f6feb; color:white; cursor:pointer }
 .custom-confirm:disabled { opacity:0.5; cursor:not-allowed }
 
@@ -210,7 +217,8 @@ export default {
 .size-modal--dark .size-label { color: #e2e8f0; }
 .size-modal--dark .size-dim { color: #94a3b8; }
 .size-modal--dark .size-card--custom { background: #1a2740; border-color: rgba(99,155,255,0.22); color: #e2e8f0; }
-.size-modal--dark .custom-inputs input { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+.size-modal--dark .custom-inputs input,
+.size-modal--dark .custom-inputs select { background: #0f172a; border-color: #334155; color: #e2e8f0; }
 .size-modal--dark .theme-toggle { background: #1a2740; border-color: rgba(99,155,255,0.22); color: #e2e8f0; }
 .size-modal--dark .size-aspect-vis {
   background:
