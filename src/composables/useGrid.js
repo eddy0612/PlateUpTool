@@ -79,8 +79,9 @@ const flatGrid = computed(() => {
 const H_OVERHEAD = 130
 const W_OVERHEAD = 420
 
-// Bottom-bar height reserved at < 640px
-const BB_H = 110
+// Bottom-bar height reserved in small-screen mode. Updated reactively by App.vue
+// when the viewport is wide enough for the large-icon bottom bar (≥520 px → 182 px).
+export const bottomBarHeight = ref(110)
 // Horizontal overhead when there is no right panel (small-screen bottom-bar mode)
 const W_OVERHEAD_SMALL = 30
 // Vertical overhead at < 640px: root-padding(10) + header(~44) + gap(~10) = ~64px.
@@ -91,7 +92,7 @@ const H_OVERHEAD_SMALL = 65
 const cellSize = computed(() => {
   const wOh = smallScreenMode.value ? W_OVERHEAD_SMALL : W_OVERHEAD
   const hOhBase = smallScreenMode.value ? H_OVERHEAD_SMALL : H_OVERHEAD
-  const availableH = windowHeight.value - hOhBase - (smallScreenMode.value ? BB_H : 0)
+  const availableH = windowHeight.value - hOhBase - (smallScreenMode.value ? bottomBarHeight.value : 0)
   const availableW = windowWidth.value - wOh
   return Math.max(16, Math.floor(Math.min(availableH / state.roomHeight, availableW / state.roomWidth) * 0.95))
 })
@@ -101,7 +102,7 @@ const viewportBoxHeight = computed(() => {
   if (smallScreenMode.value) {
     // At < 640px the bottom bar is fixed; all overhead is precisely known.
     // Use a flat 8px gap instead of the 0.95 safety multiplier.
-    return windowHeight.value - H_OVERHEAD_SMALL - BB_H - 8
+    return windowHeight.value - H_OVERHEAD_SMALL - bottomBarHeight.value - 8
   }
   return Math.floor((windowHeight.value - H_OVERHEAD) * 0.95) + 18
 })

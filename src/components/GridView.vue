@@ -2112,8 +2112,8 @@ export default {
 
     // --- File drag-and-drop import ---
     const fileDragOver = ref(false)
-    // Hide tabs when viewport is small; initialize from current window size
-    const tabsHidden = ref(typeof window !== 'undefined' ? (window.innerWidth <= 840) : false)
+    // Tabs are always visible regardless of viewport size
+    const tabsHidden = ref(false)
 
     function onFileDragOver(e) {
       if (e.dataTransfer?.types?.includes('Files')) fileDragOver.value = true
@@ -2162,14 +2162,11 @@ export default {
       const teleHandler = (ev) => { try { showTeleporterLinesAlways.value = !!ev.detail } catch (e) {} }
       window.addEventListener('teleporter-lines-changed', teleHandler)
       window.__teleHandlerGridView = teleHandler
-      // Listen for tabs-hidden events so we can hide our tab strip when App requests it
-      const tabsHandler = (ev) => { try { tabsHidden.value = !!ev.detail } catch (e) {} }
+      // Listen for tabs-hidden events (ignored — tabs are always visible)
+      const tabsHandler = (ev) => {}
       window.addEventListener('plateup-tabs-hidden', tabsHandler)
       window.__tabsHandlerGridView = tabsHandler
-      // Also update tabsHidden on window resize to cover mount-order race conditions
-      const tabsResizeHandler = () => { try { tabsHidden.value = window.innerWidth <= 840 } catch (e) {} }
-      window.addEventListener('resize', tabsResizeHandler)
-      window.__tabsResizeHandlerGridView = tabsResizeHandler
+      // (no resize handler needed for tabsHidden)
       // Initialize label display mode from localStorage and listen for changes
       try { labelDisplayMode.value = Number(localStorage.getItem('labelDisplayMode') || '0') } catch (e) {}
       const labelHandler = (ev) => { try { labelDisplayMode.value = Number(ev.detail) } catch (e) {} }
@@ -3062,14 +3059,14 @@ export default {
 .toolbox-button[aria-pressed="true"] { background: #e8f9ee; border-color: #6fd08a; color: #0a4f24 }
 .toolbox-button:hover { transform: translateY(-1px) }
 
-/* Hide the main toolbox on small screens (replace with popup at <=840px) */
-@media (max-width: 840px) {
+/* Hide the main toolbox on small screens (replace with popup at <=1100px) */
+@media (max-width: 1100px) {
   .toolbox-box { display: none }
 }
 
 /* In bottom-bar mode the controls row is empty; hide it so its flex gap
    doesn't push the viewport-box behind the fixed bottom bar. */
-@media (max-width: 639px) {
+@media (max-width: 1100px) {
   .controls-with-status { display: none }
 }
 
