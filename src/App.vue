@@ -813,7 +813,17 @@ export default {
     }
 
     function resetZoom() {
-      try { state.zoom = 1 } catch (e) {}
+      try {
+        const vb = typeof document !== 'undefined' ? document.querySelector('.viewport-box') : null
+        if (vb && cellSize.value > 0 && state.roomWidth > 0 && state.roomHeight > 0) {
+          const innerW = vb.clientWidth - 16  // 8px padding each side
+          const innerH = vb.clientHeight - 16
+          const fz = Math.min(innerW / (state.roomWidth * cellSize.value), innerH / (state.roomHeight * cellSize.value))
+          state.zoom = Math.max(0.25, parseFloat(fz.toFixed(2)))
+        } else {
+          state.zoom = 1
+        }
+      } catch (e) {}
     }
 
     function closeToolboxPopup() {
@@ -911,6 +921,7 @@ export default {
       loadGridFromState()
       showSizeModal.value = false
       sizeModalDismissable.value = false
+      resetZoom()
     }
 
     function onSizeCancelled() {
