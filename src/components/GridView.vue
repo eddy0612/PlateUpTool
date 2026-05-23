@@ -259,8 +259,12 @@
     <!-- Help modal: single centered list of toolbar items (outside controls-with-status so it renders in all screen sizes) -->
     <div v-if="helpActive" class="help-backdrop" @click="hideHelp">
       <div class="help-modal" @click.stop>
-        <ul class="help-list">
-          <li v-for="(item, idx) in helpItems" :key="item.id || ('div-' + idx)" :class="item.divider ? 'help-list-divider-li' : 'help-list-item'">
+        <div class="help-list-scroll-wrap">
+          <button v-if="helpCanScrollUp" class="help-scroll-btn help-scroll-up" @click.stop="scrollHelpList(-160)" aria-label="Scroll up">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 15 12 9 18 15"/></svg>
+          </button>
+          <ul class="help-list" ref="helpListEl" @scroll="updateHelpChevrons">
+            <li v-for="(item, idx) in helpItems" :key="item.id || ('div-' + idx)" :class="item.divider ? 'help-list-divider-li' : 'help-list-item'">
             <template v-if="item.divider">
               <div class="help-list-divider" />
             </template>
@@ -273,6 +277,10 @@
             </template>
           </li>
         </ul>
+          <button v-if="helpCanScrollDown" class="help-scroll-btn help-scroll-down" @click.stop="scrollHelpList(160)" aria-label="Scroll down">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
         <div class="help-modal-actions"><button @click="hideHelp">Close</button></div>
       </div>
     </div>
@@ -1451,6 +1459,30 @@ export default {
     function toggleHelp() { helpActive.value ? hideHelp() : showHelp() }
     // no dynamic repositioning required for modal help
 
+    // --- Help list scroll chevrons ---
+    const helpListEl = ref(null)
+    const helpCanScrollUp = ref(false)
+    const helpCanScrollDown = ref(false)
+    function updateHelpChevrons() {
+      const el = helpListEl.value
+      if (!el) return
+      helpCanScrollUp.value = el.scrollTop > 2
+      helpCanScrollDown.value = el.scrollTop + el.clientHeight < el.scrollHeight - 2
+    }
+    function scrollHelpList(delta) {
+      const el = helpListEl.value
+      if (el) { el.scrollBy({ top: delta, behavior: 'smooth' }) }
+    }
+    watch(helpActive, async (v) => {
+      if (v) {
+        await nextTick()
+        updateHelpChevrons()
+      } else {
+        helpCanScrollUp.value = false
+        helpCanScrollDown.value = false
+      }
+    })
+
     onUnmounted(() => {
       try { if (__darkModeObserver) __darkModeObserver.disconnect() } catch (e) {}
     })
@@ -2572,6 +2604,7 @@ export default {
       boxSelectArmed, armBoxSelect,
       // Help overlay API
       helpActive, toggleHelp, hideHelp, helpItems, helpIcon, isDark,
+      helpListEl, helpCanScrollUp, helpCanScrollDown, updateHelpChevrons, scrollHelpList,
       doUndo,
       fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
     }
@@ -3153,4 +3186,16 @@ export default {
 }
 .help-modal-actions { text-align: right }
 .help-modal-actions button { padding: 8px 12px; border-radius: 6px; border: 1px solid #cbdffb; background: #f6fbff }
+.help-list-scroll-wrap { position: relative }
+.help-scroll-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 28px;
+  background: none; border: none; cursor: pointer;
+  color: #5080b0; opacity: 0.75;
+  transition: opacity 0.15s;
+  padding: 0;
+}
+.help-scroll-btn:hover { opacity: 1; color: #1f79ff }
+.dark .help-scroll-btn { color: #7aaad0 }
+.dark .help-scroll-btn:hover { color: #6bbdff }
 </style>
