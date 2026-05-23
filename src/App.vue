@@ -445,17 +445,20 @@ export default {
     // point as CSS media queries, avoiding subpixel rounding discrepancies.
     const _mqSmall = window.matchMedia('(max-width: 1100px)')
     const _mqBbLarge = window.matchMedia('(min-width: 520px)')
+    const _mqBbTallEnough = window.matchMedia('(min-height: 400px)')
     const _mqSmallVal = ref(_mqSmall.matches)
     const _mqBbLargeVal = ref(_mqBbLarge.matches)
+    const _mqBbTallEnoughVal = ref(_mqBbTallEnough.matches)
     _mqSmall.addEventListener('change', e => { _mqSmallVal.value = e.matches })
     _mqBbLarge.addEventListener('change', e => { _mqBbLargeVal.value = e.matches })
+    _mqBbTallEnough.addEventListener('change', e => { _mqBbTallEnoughVal.value = e.matches })
     const showCompactMenu = computed(() => _mqSmallVal.value)
     const showToolboxPopup = ref(false)
     const smallToolbox = computed(() => _mqSmallVal.value)
     const smallTopZoom = computed(() => _mqSmallVal.value)
     // When in bottom-bar mode AND the viewport is wide enough to show ≥8 small
-    // items (≥520px), switch to the large-icon bar (doubled item dimensions).
-    const bbLargeMode = computed(() => _mqSmallVal.value && _mqBbLargeVal.value)
+    // items (≥520px) AND tall enough (≥400px), switch to the large-icon bar.
+    const bbLargeMode = computed(() => _mqSmallVal.value && _mqBbLargeVal.value && _mqBbTallEnoughVal.value)
     // Sync bottom-bar mode with useGrid so cellSize/viewportBoxHeight adapt
     watch(smallTopZoom, v => { smallScreenMode.value = v }, { immediate: true })
     watch(bbLargeMode, v => { bottomBarHeight.value = v ? 182 : 110 }, { immediate: true })
