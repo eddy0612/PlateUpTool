@@ -445,7 +445,7 @@ export default {
     // point as CSS media queries, avoiding subpixel rounding discrepancies.
     const _mqSmall = window.matchMedia('(max-width: 1100px)')
     const _mqBbLarge = window.matchMedia('(min-width: 520px)')
-    const _mqBbTallEnough = window.matchMedia('(min-height: 400px)')
+    const _mqBbTallEnough = window.matchMedia('(min-height: 700px)')
     const _mqSmallVal = ref(_mqSmall.matches)
     const _mqBbLargeVal = ref(_mqBbLarge.matches)
     const _mqBbTallEnoughVal = ref(_mqBbTallEnough.matches)
