@@ -3,7 +3,7 @@
     <div style="position:relative; width:100%;">
 
       <div class="viewport-box" ref="viewportEl" :style="{ height: viewportBoxHeight + 'px' }" :class="{ 'file-drag-over': fileDragOver }" @mousemove="onViewportMouseMove" @mouseleave="onViewportMouseLeave" @touchstart="onViewportTouchStart" @touchmove="onViewportTouchMove" @touchend="onViewportTouchEnd" @touchcancel="onViewportTouchEnd" @dragover.prevent="onFileDragOver" @dragleave="onFileDragLeave" @drop.prevent="onFileDrop" @contextmenu.prevent>
-        <div class="grid-centering-wrapper">
+        <div class="grid-centering-wrapper" :style="gridCenteringStyle">
         <div class="grid" ref="gridEl" :style="gridStyleDynamic" :class="{ 'move-dragging': moveDragActive, 'paste-pending': pastePending, 'structure-mode': isStructureMode, 'touch-drag-enabled': isStructureMode || pastePending || boxSelectArmed || selectedCells.size > 0 }" @pointerdown="onGridPointerDown" @touchstart="onGridTouchStart" @dragstart.prevent @contextmenu.prevent>
           <div
             v-for="cellInfo in flatGrid"
@@ -1996,6 +1996,11 @@ export default {
       return Math.min(2.5, Math.max(0.3, Math.round(nextZoom * 100) / 100))
     }
 
+    // Add 80px scroll padding around the grid only when zoomed in, so the
+    // default zoom fills the viewport without wasted space.
+    const gridCenteringStyle = computed(() =>
+      state.zoom > 1 ? { padding: '80px' } : {}
+    )
     function getTouchDistance(firstTouch, secondTouch) {
       const dx = secondTouch.clientX - firstTouch.clientX
       const dy = secondTouch.clientY - firstTouch.clientY
@@ -2627,7 +2632,8 @@ export default {
       helpActive, toggleHelp, hideHelp, helpItems, helpIcon, isDark,
       helpListEl, helpCanScrollUp, helpCanScrollDown, updateHelpChevrons, scrollHelpList,
       doUndo,
-      fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop
+      fileDragOver, onFileDragOver, onFileDragLeave, onFileDrop,
+      gridCenteringStyle
     }
   }
 }
