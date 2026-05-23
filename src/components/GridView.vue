@@ -142,9 +142,11 @@
           :key="tab.id"
           :class="['tab-postit', getTabColorClass(tab), { active: state.activeTabId === tab.id }]"
           @click="selectTab(tab)"
-          @mousedown="onTabMouseDown(tab, $event)"
-          @mouseup="cancelTabRenameTimer"
-          @mouseleave="cancelTabRenameTimer"
+          @pointerdown="onTabPointerDown(tab, $event)"
+          @pointerup="onTabPointerUp(tab)"
+          @pointermove="onTabPointerMove($event)"
+          @pointercancel="cancelTabRenameTimer"
+          @pointerleave="cancelTabRenameTimer"
           @contextmenu.prevent="onTabContextMenu(tab, $event)"
         >
           <input
@@ -437,17 +439,39 @@ export default {
     const editingTabId = ref(null)
     const editingTabLabel = ref('')
     let tabRenameTimer = null
+    let tabPointerStartPos = null
+    let tabLongPressTriggered = false
 
-    function onTabMouseDown(tab, e) {
+    function onTabPointerDown(tab, e) {
       if (tab.id === 'complete' || tab.id === 'structure') return
       if (e.button !== 0) return
-      // Start a press-and-hold timer to show the tab context menu instead of
-      // immediately entering rename mode.
+      tabPointerStartPos = { x: e.clientX, y: e.clientY }
+      tabLongPressTriggered = false
+      const clientX = e.clientX
+      const clientY = e.clientY
       tabRenameTimer = setTimeout(() => {
         tabRenameTimer = null
-        // Use the same handler as right-click context menu so options match.
-        onTabContextMenu(tab, e)
+        tabLongPressTriggered = true
+        onTabContextMenu(tab, { clientX, clientY })
       }, 500)
+    }
+
+    function onTabPointerMove(e) {
+      if (!tabRenameTimer || !tabPointerStartPos) return
+      const dx = e.clientX - tabPointerStartPos.x
+      const dy = e.clientY - tabPointerStartPos.y
+      if (dx * dx + dy * dy > 100) {
+        cancelTabRenameTimer()
+        tabPointerStartPos = null
+      }
+    }
+
+    function onTabPointerUp(tab) {
+      if (tabLongPressTriggered) { tabLongPressTriggered = false; return }
+      if (tabRenameTimer) {
+        cancelTabRenameTimer()
+        selectTab(tab)
+      }
     }
 
     function cancelTabRenameTimer() {
@@ -2584,7 +2608,7 @@ export default {
       showTouchDebug, touchDebugLog, pendingMoveCellDebug, isMoveDraggingDebug, activeGridPointerDebug, dragStartDebug, dragEndDebug, clearTouchDebugLog, copyTouchDebug,
       tabsHidden,
       handleCellClick, handleCellContextMenu, onGridPointerDown, onGridTouchStart, cellClasses, getDisplayCell,
-      editingTabId, editingTabLabel, onTabMouseDown, cancelTabRenameTimer, commitTabRename, cancelTabRename,
+      editingTabId, editingTabLabel, onTabPointerDown, onTabPointerMove, onTabPointerUp, cancelTabRenameTimer, commitTabRename, cancelTabRename,
       contextMenuVisible, contextMenuPos, closeContextMenu, doMoveToThisLevel, doShowInBothLevels,
       tabContextMenuVisible, tabContextMenuPos, tabDeleteConfirmVisible,
       onTabContextMenu, closeTabContextMenu, doTabContextRename, doTabContextDelete,
@@ -2838,6 +2862,10 @@ export default {
   transform-origin: left top;
   transition: transform 0.2s, background 0.2s, border-color 0.2s;
   transform: translateX(-3px) rotate(0deg);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
 }
 .tab-postit.active { margin-left: 10px; z-index: 20; font-weight: 700 }
 .tab-postit.tab-color-structure { background: #e8e8e8; border-color: #b8b8b8; }
