@@ -341,7 +341,7 @@ export default {
     const { state } = useRestaurantStore()
     const { palette, loading } = useAppliancePalette()
     const { logTouchDebug } = useTouchDebug()
-    const { addToGrid, hoverLabel, viewportBoxHeight, removeSelected, selectedCells, selectedLabelIds, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState, getTeleporterPairPos } = useGrid()
+    const { addToGrid, hoverLabel, viewportBoxHeight, removeSelected, selectedCells, selectedLabelIds, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState, getTeleporterPairPos, cellSize } = useGrid()
 
     const structureTools = [
       { id: 'wall', label: 'Wall', description: 'Full-height wall' },
@@ -353,7 +353,17 @@ export default {
     const isPreviewTab = computed(() => state.activeTabId === 'complete')
 
     function resetZoom() {
-      try { state.zoom = 1.0 } catch (e) { /* ignore */ }
+      try {
+        const vb = typeof document !== 'undefined' ? document.querySelector('.viewport-box') : null
+        if (vb && cellSize.value > 0 && state.roomWidth > 0 && state.roomHeight > 0) {
+          const innerW = vb.clientWidth - 16  // 8px padding each side
+          const innerH = vb.clientHeight - 16
+          const fz = Math.min(innerW / (state.roomWidth * cellSize.value), innerH / (state.roomHeight * cellSize.value))
+          state.zoom = Math.max(0.25, parseFloat(fz.toFixed(2)))
+        } else {
+          state.zoom = 1.0
+        }
+      } catch (e) { /* ignore */ }
     }
 
     const filteredPalette = computed(() => {
