@@ -3418,14 +3418,24 @@ html.dark .bb-tool-char { color: #9aaabe; }
    Inside scoped block so specificity matches the base bb-* rules above.
    Toolbox items (bb-tool-btn) stay at the original small size. ── */
 @media (min-width: 520px) and (min-height: 700px) {
-  /* Appliances: 2-row grid instead of larger icons */
+  /* Appliances: 2-row grid with larger icons, no vertical padding */
   .bb-scroll-appliances {
     display: grid;
-    grid-template-rows: repeat(2, 74px);
+    grid-template-rows: repeat(2, 78px);
     grid-auto-flow: column;
     grid-auto-columns: max-content;
     align-items: center;
+    padding-top: 0;
+    padding-bottom: 0;
   }
+  .bb-item-appliance {
+    width: 74px;
+    height: 78px;
+    padding: 0 2px;
+  }
+  .bb-item-appliance .bb-icon { width: 64px; height: 64px; }
+  .bb-item-appliance .bb-canvas { width: 64px; height: 64px; }
+  .bb-item-appliance .bb-label { font-size: 10px; width: 72px; }
   /* Blueprints (non-appliance, non-tool items) keep larger icons */
   .bb-item:not(.bb-tool-btn):not(.bb-item-appliance) {
     width: 116px;
