@@ -333,7 +333,7 @@
       </div>
     </div>
     <!-- Bottom palette bar replaces the right panel at < 640 px -->
-    <div v-if="smallTopZoom" class="bottom-bar-wrapper" :style="{ height: bbLargeMode ? '182px' : '110px' }">
+    <div v-if="smallTopZoom" class="bottom-bar-wrapper" :style="{ height: bbLargeMode ? '186px' : '110px' }">
       <AppliancePalette :bottom-bar-mode="true" />
     </div>
     <RestaurantSizeModal
@@ -461,7 +461,7 @@ export default {
     const bbLargeMode = computed(() => _mqSmallVal.value && _mqBbLargeVal.value && _mqBbTallEnoughVal.value)
     // Sync bottom-bar mode with useGrid so cellSize/viewportBoxHeight adapt
     watch(smallTopZoom, v => { smallScreenMode.value = v }, { immediate: true })
-    watch(bbLargeMode, v => { bottomBarHeight.value = v ? 182 : 110 }, { immediate: true })
+    watch(bbLargeMode, v => { bottomBarHeight.value = v ? 186 : 110 }, { immediate: true })
     watch(showCompactMenu, v => { compactMenuMode.value = v }, { immediate: true })
     // Broadcast tabs-hidden state so GridView can hide its tabs when needed
     watch(smallToolbox, (v) => { try { window.dispatchEvent(new CustomEvent('plateup-tabs-hidden', { detail: false })) } catch (e) {} }, { immediate: true })

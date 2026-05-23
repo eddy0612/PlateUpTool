@@ -26,7 +26,7 @@
         <!-- Scrollable items row with left/right chevrons -->
         <div class="bb-scroll-wrap">
           <button v-if="canScrollLeft" class="bb-chevron bb-chevron-left" @click="scrollPalette(-200)" aria-label="Scroll left">&#8249;</button>
-          <div class="bb-scroll" ref="bbScrollEl" @scroll="updateScrollChevrons">
+          <div :class="['bb-scroll', { 'bb-scroll-appliances': paletteTab === 'appliances' }]" ref="bbScrollEl" @scroll="updateScrollChevrons">
             <template v-if="isPreviewTab">
               <div class="bb-preview-msg">Preview — switch to a coloured tab on the left to place items</div>
             </template>
@@ -45,7 +45,7 @@
               <div
                 v-for="item in filteredPalette"
                 :key="item.id"
-                class="bb-item"
+                class="bb-item bb-item-appliance"
                 @click="onPaletteItemClick(item)"
                 @pointerdown="onPaletteItemPointerDown(item, $event)"
               >
@@ -3418,16 +3418,25 @@ html.dark .bb-tool-char { color: #9aaabe; }
    Inside scoped block so specificity matches the base bb-* rules above.
    Toolbox items (bb-tool-btn) stay at the original small size. ── */
 @media (min-width: 520px) and (min-height: 700px) {
-  .bb-item:not(.bb-tool-btn) {
+  /* Appliances: 2-row grid instead of larger icons */
+  .bb-scroll-appliances {
+    display: grid;
+    grid-template-rows: repeat(2, 74px);
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    align-items: center;
+  }
+  /* Blueprints (non-appliance, non-tool items) keep larger icons */
+  .bb-item:not(.bb-tool-btn):not(.bb-item-appliance) {
     width: 116px;
     height: 148px;
   }
-  .bb-item:not(.bb-tool-btn) .bb-icon {
+  .bb-item:not(.bb-tool-btn):not(.bb-item-appliance) .bb-icon {
     width: 108px;
     height: 108px;
   }
-  .bb-item:not(.bb-tool-btn) .bb-canvas { width: 108px; height: 108px; }
-  .bb-item:not(.bb-tool-btn) .bb-label {
+  .bb-item:not(.bb-tool-btn):not(.bb-item-appliance) .bb-canvas { width: 108px; height: 108px; }
+  .bb-item:not(.bb-tool-btn):not(.bb-item-appliance) .bb-label {
     font-size: 18px;
     width: 112px;
   }
