@@ -3366,6 +3366,7 @@ export default {
   border: none; cursor: pointer;
   display: flex; align-items: center;
   font-size: 22px; color: #3a5a80; line-height: 1; padding: 0;
+  touch-action: manipulation;
 }
 .bb-chevron-left { left: 0; justify-content: flex-start; padding-left: 6px; background: linear-gradient(to right, rgba(255,255,255,0.95) 60%, transparent); }
 .bb-chevron-right { right: 0; justify-content: flex-end; padding-right: 6px; background: linear-gradient(to left, rgba(255,255,255,0.95) 60%, transparent); }

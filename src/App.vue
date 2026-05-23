@@ -7,7 +7,7 @@
             <svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><rect y="1" width="20" height="2" rx="1" fill="currentColor"/><rect y="6" width="20" height="2" rx="1" fill="currentColor"/><rect y="11" width="20" height="2" rx="1" fill="currentColor"/></svg>
           </button>
 
-          <h1 class="compact-title">PlateUp Tool</h1>
+          <h1 class="compact-title" @touchend.prevent>PlateUp Tool</h1>
           <div v-if="showMainMenu" class="menu-dropdown" @click.stop>
             <button class="menu-item" @click="startAgain">Restart</button>
             <div class="menu-item has-sub">
@@ -72,7 +72,7 @@
             </div>
           </div>
         </div>
-        <h1 v-else>PlateUp Tool</h1>
+        <h1 v-else @touchend.prevent>PlateUp Tool</h1>
         <span v-if="!showCompactMenu" class="title-tagline">An online planner for your PlateUp! restaurant</span>
       </div>
       <div class="header-right" v-if="!showCompactMenu">
@@ -985,13 +985,13 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 
 <style scoped>
 .root { padding: calc(10px + env(safe-area-inset-top, 0px)) calc(10px + env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) calc(10px + env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; min-height: 100vh }
-.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px }
+.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; touch-action: manipulation; }
 .top-bar { position: relative }
 .title-group { display: flex; align-items: baseline; gap: 10px }
 .menu-root { display: flex; align-items: center; gap: 8px }
-.top-bar h1 { margin: 0; white-space: nowrap }
+.top-bar h1 { margin: 0; white-space: nowrap; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 .title-tagline { font-size: 1.1rem; color: #aaa; font-style: italic; white-space: nowrap }
-.compact-title { margin: 0; font-size: 1.05rem; font-weight: 700; align-self: center; margin-left: 8px; white-space: nowrap }
+.compact-title { margin: 0; font-size: 1.05rem; font-weight: 700; align-self: center; margin-left: 8px; white-space: nowrap; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 .header-right { display: flex; align-items: center; gap: 6px; margin-right: 8px }
 /* Top zoom row (for very small screens). Positioned between the title area
    and the tab dropdown; it grows to fill available horizontal space. */
