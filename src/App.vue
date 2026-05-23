@@ -368,8 +368,8 @@
         <span v-else style="font-size:1.8em">{{ paletteDragItem.icon }}</span>
       </div>
 
-    <!-- small-screen toolbox: bottom-left toolbox icon + vertical popup -->
-    <div v-if="smallToolbox" class="tool-toggle-root">
+    <!-- small-screen toolbox: bottom-left toolbox icon + vertical popup (hidden in bottom-bar mode where tools move into the palette) -->
+    <div v-if="smallToolbox && !smallTopZoom" class="tool-toggle-root">
       <button class="tool-toggle-button" @click.stop="toggleToolboxPopup" :aria-expanded="showToolboxPopup" aria-label="Open toolbox">
         <!-- toolbox icon -->
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 7v13a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7H3zm17 2H4v10h16V9zM9 3h6v3H9V3z"/></svg>
@@ -1254,7 +1254,7 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 .bottom-bar-wrapper {
   position: fixed;
   bottom: 0;
-  left: 68px;
+  left: 10px;
   right: 10px;
   height: 110px;
   z-index: 9900;

@@ -254,26 +254,26 @@
           <!-- teleporter toggle moved to palette area; GridView listens for changes -->
         </div>
       </div>
+    </div>
 
-      <!-- Help modal: single centered list of toolbar items -->
-      <div v-if="helpActive" class="help-backdrop" @click="hideHelp">
-        <div class="help-modal" @click.stop>
-          <ul class="help-list">
-            <li v-for="(item, idx) in helpItems" :key="item.id || ('div-' + idx)" :class="item.divider ? 'help-list-divider-li' : 'help-list-item'">
-              <template v-if="item.divider">
-                <div class="help-list-divider" />
-              </template>
-              <template v-else>
-                <HelpIcon :id="item.id" :is-dark="isDark" :label-display-mode="labelDisplayMode" />
-                <div class="help-list-text">
-                  <div class="help-popup-title">{{ item.id === 'dark-mode' ? (isDark ? 'Light Mode' : 'Dark Mode') : item.title }}</div>
-                  <div class="help-popup-desc">{{ item.id === 'dark-mode' ? (isDark ? 'Switch to light theme.' : 'Toggle the UI dark theme.') : item.desc }}</div>
-                </div>
-              </template>
-            </li>
-          </ul>
-          <div class="help-modal-actions"><button @click="hideHelp">Close</button></div>
-        </div>
+    <!-- Help modal: single centered list of toolbar items (outside controls-with-status so it renders in all screen sizes) -->
+    <div v-if="helpActive" class="help-backdrop" @click="hideHelp">
+      <div class="help-modal" @click.stop>
+        <ul class="help-list">
+          <li v-for="(item, idx) in helpItems" :key="item.id || ('div-' + idx)" :class="item.divider ? 'help-list-divider-li' : 'help-list-item'">
+            <template v-if="item.divider">
+              <div class="help-list-divider" />
+            </template>
+            <template v-else>
+              <HelpIcon :id="item.id" :is-dark="isDark" :label-display-mode="labelDisplayMode" />
+              <div class="help-list-text">
+                <div class="help-popup-title">{{ item.id === 'dark-mode' ? (isDark ? 'Light Mode' : 'Dark Mode') : item.title }}</div>
+                <div class="help-popup-desc">{{ item.id === 'dark-mode' ? (isDark ? 'Switch to light theme.' : 'Toggle the UI dark theme.') : item.desc }}</div>
+              </div>
+            </template>
+          </li>
+        </ul>
+        <div class="help-modal-actions"><button @click="hideHelp">Close</button></div>
       </div>
     </div>
 

@@ -20,6 +20,7 @@
           <template v-else>
             <button :class="['bb-tab', { 'bb-tab-active': paletteTab === 'appliances' }]" @click="paletteTab = 'appliances'">Appliances</button>
             <button :class="['bb-tab', { 'bb-tab-active': paletteTab === 'blueprints' }]" @click="paletteTab = 'blueprints'">Blueprints</button>
+            <button :class="['bb-tab', { 'bb-tab-active': paletteTab === 'toolbox' }]" @click="paletteTab = 'toolbox'">Toolbox</button>
           </template>
         </div>
         <!-- Scrollable items row with left/right chevrons -->
@@ -53,6 +54,32 @@
                 </div>
                 <div class="bb-label">{{ item.label }}</div>
               </div>
+            </template>
+            <template v-else-if="paletteTab === 'toolbox'">
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-undo')" title="Undo (Ctrl+Z)"><div class="bb-icon"><span class="bb-tool-char">↶</span></div><div class="bb-label">Undo</div></button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-cut')" title="Cut (Ctrl+X)"><div class="bb-icon"><span class="bb-tool-char">✂</span></div><div class="bb-label">Cut</div></button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-copy')" title="Copy (Ctrl+C)"><div class="bb-icon"><span class="bb-tool-char">📋</span></div><div class="bb-label">Copy</div></button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-paste')" title="Paste (Ctrl+V)"><div class="bb-icon"><span class="bb-tool-char">📥</span></div><div class="bb-label">Paste</div></button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-duplicate')" title="Duplicate (Ctrl+D)"><div class="bb-icon"><span class="bb-tool-char">⎘</span></div><div class="bb-label">Duplicate</div></button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-box-select')" title="Box Select">
+                <div class="bb-icon"><svg class="bb-tool-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="bb-label">Box Sel</div>
+              </button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-select-all')" title="Select All"><div class="bb-icon"><span class="bb-tool-char">▣</span></div><div class="bb-label">Sel All</div></button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-invert')" title="Invert Selection">
+                <div class="bb-icon"><svg class="bb-tool-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/><line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><polyline points="9,9 6,12 9,15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><polyline points="15,9 18,12 15,15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="bb-label">Invert</div>
+              </button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-rotate-left')" title="Rotate Left"><div class="bb-icon"><span class="bb-tool-char">⟲</span></div><div class="bb-label">Rot L</div></button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-rotate-right')" title="Rotate Right"><div class="bb-icon"><span class="bb-tool-char">⟳</span></div><div class="bb-label">Rot R</div></button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-flip-h')" title="Flip Horizontal"><div class="bb-icon"><span class="bb-tool-char" style="display:inline-block;transform:rotate(90deg)">⇋</span></div><div class="bb-label">Flip H</div></button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-flip-v')" title="Flip Vertical"><div class="bb-icon"><span class="bb-tool-char">⇋</span></div><div class="bb-label">Flip V</div></button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-label')" title="Add Label">
+                <div class="bb-icon"><svg class="bb-tool-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="7.5" y1="9.5" x2="7.5" y2="14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+                <div class="bb-label">Label</div>
+              </button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-delete')" title="Delete"><div class="bb-icon"><span class="bb-tool-char">🗑</span></div><div class="bb-label">Delete</div></button>
+              <button class="bb-item bb-tool-btn" @click="bbInvoke('plateup-invoke-help')" title="Help"><div class="bb-icon"><span class="bb-tool-char">?</span></div><div class="bb-label">Help</div></button>
             </template>
             <template v-else>
               <div class="bb-item bb-item-add" title="Create blueprint from current selection" @click="createBlueprint">
@@ -364,6 +391,10 @@ export default {
           state.zoom = 1.0
         }
       } catch (e) { /* ignore */ }
+    }
+
+    function bbInvoke(eventName) {
+      try { window.dispatchEvent(new Event(eventName)) } catch (e) { /* ignore */ }
     }
 
     const filteredPalette = computed(() => {
@@ -2657,11 +2688,14 @@ export default {
       selectedSuggestionIndex, onSeedKeydown, onSeedBlur, openSeedSuggestions, seedSuggestionStyle,
       // zoom helper
       resetZoom,
+      // bottom-bar toolbox invoke
+      bbInvoke,
       // bottom-bar mode flag
       bottomBarMode,
       // bottom-bar scroll chevrons
       bbScrollEl, canScrollLeft, canScrollRight, updateScrollChevrons, scrollPalette,
       // palette toolbox state removed (handled in App)
+      bbInvoke,
     }
   }
 }
@@ -3357,6 +3391,19 @@ export default {
   font-size: 11px; color: #6b7a8d; font-style: italic; padding: 0 12px;
   white-space: normal; text-align: center;
 }
+.bb-tool-btn {
+  background: none;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.bb-tool-char {
+  font-size: 26px; line-height: 1;
+}
+.bb-tool-svg {
+  width: 28px; height: 28px; display: block; color: #3a5070;
+}
+html.dark .bb-tool-svg { color: #9aaabe; }
+html.dark .bb-tool-char { color: #9aaabe; }
 </style>
 
 <style>
