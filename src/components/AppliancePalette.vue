@@ -3414,22 +3414,22 @@ html.dark .bb-tool-char { color: #9aaabe; }
 /* ── Bottom-bar large-icon mode (≥520px viewport)
    Inside scoped block so specificity matches the base bb-* rules above.
    Toolbox items (bb-tool-btn) stay at the original small size. ── */
-@media (min-width: 520px) {
+@media (min-width: 520px) and (min-height: 400px) {
   .bb-item:not(.bb-tool-btn) {
     width: 116px;
     height: 148px;
   }
   .bb-item:not(.bb-tool-btn) .bb-icon {
-    width: 88px;
-    height: 88px;
+    width: 108px;
+    height: 108px;
   }
-  .bb-item:not(.bb-tool-btn) .bb-canvas { width: 88px; height: 88px; }
+  .bb-item:not(.bb-tool-btn) .bb-canvas { width: 108px; height: 108px; }
   .bb-item:not(.bb-tool-btn) .bb-label {
     font-size: 18px;
     width: 112px;
   }
-  .bb-icon-add span { font-size: 64px; }
-  .bb-icon-placeholder { font-size: 48px; }
+  .bb-icon-add span { font-size: 78px; }
+  .bb-icon-placeholder { font-size: 58px; }
 }
 </style>
 
