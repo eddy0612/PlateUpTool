@@ -605,11 +605,16 @@ export default {
     }
 
     const windowWidth = ref(getViewportWidth())
-    const tabsHidden = ref(getViewportWidth() <= 840)
+    const tabsHidden = ref(getViewportWidth() <= 1100)
+
+    // Redraw bb-item canvases when the large-icon threshold (520px) is crossed so
+    // cropAndDrawImage picks up the new CSS-driven canvas dimensions.
+    const bbLargeItems = computed(() => bottomBarMode && windowWidth.value >= 520)
+    watch(bbLargeItems, redrawPaletteCanvases)
 
     function onWindowResize() {
       windowWidth.value = getViewportWidth()
-      try { tabsHidden.value = getViewportWidth() <= 840 } catch (e) {}
+      try { tabsHidden.value = getViewportWidth() <= 1100 } catch (e) {}
     }
 
     onMounted(() => {
@@ -3330,6 +3335,7 @@ export default {
   text-transform: uppercase; letter-spacing: 0.04em;
   border-bottom: 2px solid transparent; margin-bottom: -1px;
   transition: color 0.1s;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
 }
 .bb-tab.bb-tab-active { color: #1f79ff; border-bottom-color: #1f79ff; }
 .bb-tab:not(.bb-tab-active):hover { color: #3a5070; }
@@ -3404,10 +3410,31 @@ export default {
 }
 html.dark .bb-tool-svg { color: #9aaabe; }
 html.dark .bb-tool-char { color: #9aaabe; }
+
+/* ── Bottom-bar large-icon mode (≥520px viewport)
+   Inside scoped block so specificity matches the base bb-* rules above.
+   Toolbox items (bb-tool-btn) stay at the original small size. ── */
+@media (min-width: 520px) {
+  .bb-item:not(.bb-tool-btn) {
+    width: 116px;
+    height: 148px;
+  }
+  .bb-item:not(.bb-tool-btn) .bb-icon {
+    width: 88px;
+    height: 88px;
+  }
+  .bb-item:not(.bb-tool-btn) .bb-canvas { width: 88px; height: 88px; }
+  .bb-item:not(.bb-tool-btn) .bb-label {
+    font-size: 18px;
+    width: 112px;
+  }
+  .bb-icon-add span { font-size: 64px; }
+  .bb-icon-placeholder { font-size: 48px; }
+}
 </style>
 
 <style>
-@media (max-width: 640px) {
+@media (max-width: 1100px) {
   .palette-zoom-row { display: none !important }
   .palette-status-bar { display: none !important }
 }

@@ -1,5 +1,5 @@
 ﻿<template>
-  <div :class="['root', { dark: darkMode, 'tabs-hidden': smallToolbox }]">
+  <div :class="['root', { dark: darkMode }]">
     <header class="top-bar">
       <div class="title-group">
         <div v-if="showCompactMenu" class="menu-root">
@@ -8,17 +8,6 @@
           </button>
 
           <h1 class="compact-title">PlateUp Tool</h1>
-          <div v-if="smallToolbox" class="tab-dropdown-root">
-            <button class="tab-dropdown-button" @click.stop="toggleTabsDropdown" aria-haspopup="true" :aria-expanded="showTabsDropdown" :style="currentTabStyle">{{ currentTabLabel }} ▾</button>
-            <div v-if="showTabsDropdown" class="tab-dropdown-menu" @click.stop>
-              <div style="display:flex;flex-direction:column;gap:6px">
-                <button v-for="tab in state.tabs" :key="tab.id" class="tab-dropdown-item" @click="setActiveTab(tab.id)" :style="tabStyleMap[tab.id]">{{ tab.label }}</button>
-                <div v-if="state.tabs.filter(t => t.id !== 'complete' && t.id !== 'structure').length < 10">
-                  <button class="tab-dropdown-item" @click="addNewTab">+ New tab</button>
-                </div>
-              </div>
-            </div>
-          </div>
           <div v-if="showMainMenu" class="menu-dropdown" @click.stop>
             <button class="menu-item" @click="startAgain">Restart</button>
             <div class="menu-item has-sub">
@@ -344,7 +333,7 @@
       </div>
     </div>
     <!-- Bottom palette bar replaces the right panel at < 640 px -->
-    <div v-if="smallTopZoom" class="bottom-bar-wrapper">
+    <div v-if="smallTopZoom" class="bottom-bar-wrapper" :style="{ height: bbLargeMode ? '182px' : '110px' }">
       <AppliancePalette :bottom-bar-mode="true" />
     </div>
     <RestaurantSizeModal
@@ -418,7 +407,7 @@
 <script>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRestaurantStore, encodeState as encodeStateFn } from './store/restaurant'
-import { useGrid, smallScreenMode, compactMenuMode } from './composables/useGrid'
+import { useGrid, smallScreenMode, compactMenuMode, bottomBarHeight } from './composables/useGrid'
 import GridView from './components/GridView.vue'
 import AppliancePalette from './components/AppliancePalette.vue'
 import creditsRaw from './CREDITS.md?raw'
@@ -452,15 +441,27 @@ export default {
     const showShareSubFile = ref(false)
     const viewportWidth = ref(window.innerWidth)
     const viewportHeight = ref(window.innerHeight)
-    const showCompactMenu = computed(() => viewportWidth.value <= 1023)
+    // Use matchMedia for breakpoint booleans so JS fires at exactly the same
+    // point as CSS media queries, avoiding subpixel rounding discrepancies.
+    const _mqSmall = window.matchMedia('(max-width: 1100px)')
+    const _mqBbLarge = window.matchMedia('(min-width: 520px)')
+    const _mqSmallVal = ref(_mqSmall.matches)
+    const _mqBbLargeVal = ref(_mqBbLarge.matches)
+    _mqSmall.addEventListener('change', e => { _mqSmallVal.value = e.matches })
+    _mqBbLarge.addEventListener('change', e => { _mqBbLargeVal.value = e.matches })
+    const showCompactMenu = computed(() => _mqSmallVal.value)
     const showToolboxPopup = ref(false)
-    const smallToolbox = computed(() => viewportWidth.value <= 840)
-    const smallTopZoom = computed(() => viewportWidth.value < 640)
+    const smallToolbox = computed(() => _mqSmallVal.value)
+    const smallTopZoom = computed(() => _mqSmallVal.value)
+    // When in bottom-bar mode AND the viewport is wide enough to show ≥8 small
+    // items (≥520px), switch to the large-icon bar (doubled item dimensions).
+    const bbLargeMode = computed(() => _mqSmallVal.value && _mqBbLargeVal.value)
     // Sync bottom-bar mode with useGrid so cellSize/viewportBoxHeight adapt
     watch(smallTopZoom, v => { smallScreenMode.value = v }, { immediate: true })
+    watch(bbLargeMode, v => { bottomBarHeight.value = v ? 182 : 110 }, { immediate: true })
     watch(showCompactMenu, v => { compactMenuMode.value = v }, { immediate: true })
     // Broadcast tabs-hidden state so GridView can hide its tabs when needed
-    watch(smallToolbox, (v) => { try { window.dispatchEvent(new CustomEvent('plateup-tabs-hidden', { detail: v })) } catch (e) {} }, { immediate: true })
+    watch(smallToolbox, (v) => { try { window.dispatchEvent(new CustomEvent('plateup-tabs-hidden', { detail: false })) } catch (e) {} }, { immediate: true })
     const showTabsDropdown = ref(false)
     const toggleTabsDropdown = () => { showTabsDropdown.value = !showTabsDropdown.value }
     const closeTabsDropdown = () => { showTabsDropdown.value = false }
@@ -953,7 +954,7 @@ export default {
       toggleMainMenu, toggleSettingsSubmenu, toggleHelpSubmenu, toggleShareSubmenu, toggleShareSubClipboard, toggleShareSubFile,
       compactShareClipboard, compactCopyLink, compactExportFile, compactImportFile, compactImportClipboard,
       /* small-screen toolbox */ showToolboxPopup, toggleToolboxPopup, closeToolboxPopup, smallToolbox,
-      smallTopZoom, resetZoom,
+      smallTopZoom, bbLargeMode, resetZoom,
       invokeAndClose, deleteAndClose,
       /* tabs dropdown */ showTabsDropdown, toggleTabsDropdown, closeTabsDropdown, currentTabLabel, setActiveTab, addNewTab, getTabDropdownStyle, tabStyleMap, currentTabStyle,
       /* grid clipboard actions */ copyToClipboard, cutToClipboard, startPaste, startDuplicate, removeSelected,
@@ -985,7 +986,7 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 .top-bar { position: relative }
 .title-group { display: flex; align-items: baseline; gap: 10px }
 .menu-root { display: flex; align-items: center; gap: 8px }
-.top-bar h1 { margin: 0 }
+.top-bar h1 { margin: 0; white-space: nowrap }
 .title-tagline { font-size: 1.1rem; color: #aaa; font-style: italic; white-space: nowrap }
 .compact-title { margin: 0; font-size: 1.05rem; font-weight: 700; align-self: center; margin-left: 8px; white-space: nowrap }
 .header-right { display: flex; align-items: center; gap: 6px; margin-right: 8px }
@@ -1301,15 +1302,15 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 }
 .viewport-debug-row { margin: 2px 0 }
 
-/* Hide the tagline slightly earlier at 1300px to avoid overlap */
-@media (max-width: 1300px) {
+/* Hide the tagline when space is limited */
+@media (max-width: 1310px) {
   .title-tagline { display: none !important }
 }
 
 
 
 /* Compact responsive rules: hide palette toolbox and adjust header */
-@media (max-width: 1023px) {
+@media (max-width: 1100px) {
   .menu-root { position: relative }
 
   .menu-button {
@@ -1377,7 +1378,7 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 }
 
 /* Tabs visibility is controlled via the `tabs-hidden` root class, which is
-   toggled from JavaScript at the single 840px breakpoint. This avoids
+   toggled from JavaScript at the single 1100px breakpoint. This avoids
    scrollbar/rounding mismatches between CSS media queries and JS checks. */
 .tabs-hidden .tabs { display: none !important }
 
@@ -1566,11 +1567,13 @@ html.dark input[type="number"] { background: #141926; border-color: #2a3a54; col
 
 <style>
 /* Responsive: when palette collapses to one column hide room size text */
-@media (max-width: 1280px) {
+@media (max-width: 1100px) {
   html .palette-toolbox .toolbox-button--size { padding: 8px !important; width: 44px !important; }
   html .palette-toolbox .toolbox-button--size .toolbox-size-text { display: none !important }
   html .palette-toolbox .toolbox-button--size .toolbox-icon { width: 20px !important; height: 20px !important }
-  /* Hide tagline when the UI compacts */
+}
+@media (max-width: 1310px) {
+  /* Hide tagline when space is limited */
   html .title-tagline { display: none !important }
 }
 </style>
