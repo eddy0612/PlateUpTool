@@ -362,7 +362,8 @@ function loadFromHash() {
       if (k in parsed) state[k] = parsed[k]
       else state[k] = JSON.parse(JSON.stringify(DEFAULT_STATE[k]))
     })
-    state.activeTabId = 'complete'
+    const firstContent = parsed.tabs.find(t => t.id !== 'complete' && t.id !== 'structure')
+    state.activeTabId = firstContent ? firstContent.id : DEFAULT_ACTIVE_TAB
   }
 }
 
