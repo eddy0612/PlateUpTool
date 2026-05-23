@@ -3358,6 +3358,7 @@ export default {
   align-items: center; overflow-x: auto; overflow-y: hidden;
   gap: 3px; padding: 4px 6px;
   scrollbar-width: none;
+  touch-action: pan-x;
 }
 .bb-scroll::-webkit-scrollbar { display: none }
 .bb-chevron {
@@ -3375,6 +3376,7 @@ export default {
   transition: background 0.1s, border-color 0.1s;
   user-select: none; -webkit-user-select: none; touch-action: manipulation;
 }
+.bb-item:not(.bb-tool-btn) { touch-action: none; }
 .bb-item:hover, .bb-item.bb-item-active { background: #eef4ff; border-color: #b0ccee; }
 .bb-item-add { border: 1px dashed #9ab0cc; background: #f5f8ff; }
 .bb-item-add:hover { background: #e8f0ff; border-color: #1f79ff; }
