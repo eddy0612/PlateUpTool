@@ -3416,7 +3416,7 @@ html.dark .bb-tool-char { color: #9aaabe; }
 /* ── Bottom-bar large-icon mode (≥520px viewport)
    Inside scoped block so specificity matches the base bb-* rules above.
    Toolbox items (bb-tool-btn) stay at the original small size. ── */
-@media (min-width: 520px) and (min-height: 400px) {
+@media (min-width: 520px) and (min-height: 700px) {
   .bb-item:not(.bb-tool-btn) {
     width: 116px;
     height: 148px;
