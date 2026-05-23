@@ -984,7 +984,7 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 </style>
 
 <style scoped>
-.root { padding: 10px; display: flex; flex-direction: column; min-height: 100vh }
+.root { padding: calc(10px + env(safe-area-inset-top, 0px)) calc(10px + env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) calc(10px + env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; min-height: 100vh }
 .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px }
 .top-bar { position: relative }
 .title-group { display: flex; align-items: baseline; gap: 10px }
