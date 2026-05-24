@@ -16,6 +16,7 @@
           </template>
           <template v-else-if="isPreviewTab">
             <span class="bb-tab-label">Preview</span>
+            <button class="bb-tab bb-tab-inv" @click="openBbInventory" title="View inventory">Inventory</button>
           </template>
           <template v-else>
             <button :class="['bb-tab', { 'bb-tab-active': paletteTab === 'appliances' }]" @click="paletteTab = 'appliances'">Appliances</button>
@@ -34,7 +35,7 @@
               <div
                 v-for="tool in structureTools"
                 :key="tool.id"
-                :class="['bb-item', { 'bb-item-active': selectedStructureTool === tool.id }]"
+                :class="['bb-item', 'bb-item-structure', { 'bb-item-active': selectedStructureTool === tool.id }]"
                 @click="setStructureTool(tool.id)"
               >
                 <div :class="['bb-swatch', 'swatch-' + tool.id]"></div>
@@ -158,7 +159,7 @@
         <div class="inventory-list">
           <div v-for="item in inventoryList" :key="item.id" class="inventory-row">
             <div class="inventory-icon">
-              <img v-if="isImageIcon(item.icon)" :src="item.icon" :alt="item.label" />
+              <canvas v-if="isImageIcon(item.icon)" :data-icon="item.icon" class="inv-canvas"></canvas>
               <span v-else class="inventory-icon-emoji">{{ item.icon }}</span>
             </div>
             <span class="inventory-count-badge">{{ item.count }}</span>
@@ -395,6 +396,41 @@
       </div>
     </teleport>
 
+    <!-- Bottom-bar inventory modal -->
+    <teleport to="body">
+      <div v-if="bbInventoryVisible" class="bb-inv-backdrop" @click="closeBbInventory">
+        <div class="bb-inv-dialog" role="dialog" aria-modal="true" aria-label="Inventory" @click.stop>
+          <div class="bb-inv-header">
+            <span class="bb-inv-title">Inventory</span>
+            <span class="bb-inv-total-badge">{{ inventoryTotal }} items</span>
+            <button class="bb-inv-close" @click="closeBbInventory" aria-label="Close">&#10005;</button>
+          </div>
+          <div class="bb-inv-scroll-wrap">
+            <button v-if="bbInvCanScrollUp" class="bb-inv-chevron bb-inv-chevron-up" @click="scrollInvList(-160)" aria-label="Scroll up">
+              <span style="display:inline-block;transform:rotate(-90deg)">&#8250;</span>
+            </button>
+            <div class="bb-inv-list" ref="bbInvListEl" @scroll="updateInvScrollChevrons">
+              <div v-for="item in inventoryList" :key="item.id" class="inventory-row">
+                <div class="inventory-icon">
+                  <canvas v-if="isImageIcon(item.icon)" :data-icon="item.icon" class="inv-canvas"></canvas>
+                  <span v-else class="inventory-icon-emoji">{{ item.icon }}</span>
+                </div>
+                <span class="inventory-count-badge">{{ item.count }}</span>
+                <span class="inventory-multiply">&#215;</span>
+                <span class="inventory-name">{{ item.label }}</span>
+              </div>
+              <div v-if="inventoryList.length === 0" class="inventory-empty">
+                No appliances placed yet
+              </div>
+            </div>
+            <button v-if="bbInvCanScrollDown" class="bb-inv-chevron bb-inv-chevron-down" @click="scrollInvList(160)" aria-label="Scroll down">
+              <span style="display:inline-block;transform:rotate(90deg)">&#8250;</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </teleport>
+
   </aside>
 </template>
 
@@ -509,6 +545,34 @@ export default {
         redrawPaletteCanvases()
         updateScrollChevrons()
       })
+    }
+
+    // ── Bottom-bar inventory modal ────────────────────────────────────────────
+    const bbInventoryVisible = ref(false)
+    const bbInvListEl = ref(null)
+    const bbInvCanScrollUp = ref(false)
+    const bbInvCanScrollDown = ref(false)
+
+    function updateInvScrollChevrons() {
+      if (!bbInvListEl.value) { bbInvCanScrollUp.value = false; bbInvCanScrollDown.value = false; return }
+      const el = bbInvListEl.value
+      bbInvCanScrollUp.value = el.scrollTop > 2
+      bbInvCanScrollDown.value = el.scrollTop + el.clientHeight < el.scrollHeight - 2
+    }
+
+    function scrollInvList(delta) {
+      if (!bbInvListEl.value) return
+      bbInvListEl.value.scrollBy({ top: delta, behavior: 'smooth' })
+      setTimeout(updateInvScrollChevrons, 200)
+    }
+
+    function openBbInventory() {
+      bbInventoryVisible.value = true
+      nextTick(() => { updateInvScrollChevrons(); redrawPaletteCanvases() })
+    }
+
+    function closeBbInventory() {
+      bbInventoryVisible.value = false
     }
 
     const inventoryList = computed(() => {
@@ -678,7 +742,7 @@ export default {
 
     async function redrawPaletteCanvases() {
       await nextTick()
-      document.querySelectorAll('.palette-item canvas, .bb-item canvas').forEach(canvas => {
+      document.querySelectorAll('.palette-item canvas, .bb-item canvas, .inv-canvas').forEach(canvas => {
         cropAndDrawImage(canvas, canvas.dataset.icon)
       })
     }
@@ -696,8 +760,11 @@ export default {
 
     watch(isPreviewTab, (val) => {
       if (!val) redrawPaletteCanvases()
+      else nextTick(redrawPaletteCanvases)
       nextTick(updateScrollChevrons)
     })
+
+    watch(inventoryList, () => { nextTick(redrawPaletteCanvases) })
 
     function addAllToGrid() {
       for (const item of palette.value) {
@@ -2812,6 +2879,9 @@ export default {
       // bottom-bar search
       bbSearchQuery, bbSearchInputText, bbSearchDialogVisible, bbSearchInputEl,
       bbFilteredPalette, openBbSearch, bbSearchConfirm, bbSearchCancel, clearBbSearch,
+      // bottom-bar inventory modal
+      bbInventoryVisible, bbInvListEl, bbInvCanScrollUp, bbInvCanScrollDown,
+      openBbInventory, closeBbInventory, scrollInvList, updateInvScrollChevrons,
       // palette toolbox state removed (handled in App)
       bbInvoke,
     }
@@ -3286,6 +3356,7 @@ export default {
   height: 100%;
   object-fit: contain;
 }
+.inv-canvas { width: 36px; height: 36px; display: block; flex-shrink: 0; }
 .inventory-icon-emoji {
   font-size: 22px;
   line-height: 1;
@@ -3555,6 +3626,143 @@ export default {
 .bb-search-btn-confirm:hover:not(:disabled) { background: #0e65e0; }
 .bb-search-btn-confirm:disabled { opacity: 0.38; cursor: default; }
 
+/* ── Bottom-bar inventory modal ─────────────────────────────────────────── */
+.bb-tab-inv {
+  flex: 1; max-width: 130px;
+  background: transparent; border: none; cursor: pointer;
+  font-size: 11px; font-weight: 700; color: #6b7a8d;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color 0.1s;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.bb-tab-inv:hover { color: #3a5070; }
+.bb-inv-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 18, 28, 0.52);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 20001;
+  padding-bottom: 84px;
+}
+.bb-inv-dialog {
+  background: #fff;
+  border-radius: 16px;
+  width: min(420px, calc(100vw - 28px));
+  max-height: min(80dvh, calc(100dvh - 96px));
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.bb-inv-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+.bb-inv-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: #1a2a3a;
+  letter-spacing: -0.01em;
+  flex: 1;
+}
+.bb-inv-total-badge {
+  background: #e8f0fe;
+  color: #1a56db;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.bb-inv-close {
+  border: none;
+  background: #f0f4f8;
+  color: #5a6a7a;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+.bb-inv-close:hover { background: #dde5ef; }
+.bb-inv-scroll-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.bb-inv-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: #b0c4d8 transparent;
+}
+.bb-inv-list::-webkit-scrollbar { width: 6px; }
+.bb-inv-list::-webkit-scrollbar-track { background: transparent; }
+.bb-inv-list::-webkit-scrollbar-thumb { background: #b0c4d8; border-radius: 3px; }
+.bb-inv-chevron {
+  width: 100%;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #3a5a80;
+  z-index: 2;
+  touch-action: manipulation;
+}
+.bb-inv-chevron-up {
+  background: linear-gradient(to bottom, rgba(255,255,255,1) 40%, transparent);
+  order: -1;
+}
+.bb-inv-chevron-down {
+  background: linear-gradient(to top, rgba(255,255,255,1) 40%, transparent);
+}
+
+/* dark mode for inventory modal */
+html.dark .inventory-icon { background: #121e30; border-color: #1e3050; }
+html.dark .inventory-row:hover { background: #0e1c2e; }
+html.dark .inventory-panel { background: #0d1b2e; border-color: #1d2e42; }
+html.dark .inventory-header { border-bottom-color: #1d2e42; }
+html.dark .inventory-title { color: #dbe9ff; }
+html.dark .inventory-total-badge { background: #0e2a50; color: #6aabff; }
+html.dark .inventory-name { color: #c8dcf0; }
+html.dark .inventory-multiply { color: #4a6a88; }
+html.dark .inventory-empty { color: #4a6a88; }
+html.dark .bb-inv-dialog { background: #0d1b2e; }
+html.dark .bb-inv-header { border-bottom-color: #1d2e42; }
+html.dark .bb-inv-title { color: #dbe9ff; }
+html.dark .bb-inv-total-badge { background: #0e2a50; color: #6aabff; }
+html.dark .bb-inv-close { background: #152840; color: #8ab0d0; }
+html.dark .bb-inv-close:hover { background: #1e3655; }
+html.dark .bb-inv-list { scrollbar-color: #2a4a68 transparent; }
+html.dark .bb-inv-list::-webkit-scrollbar-thumb { background: #2a4a68; }
+html.dark .bb-inv-chevron { color: #5a9aff; }
+html.dark .bb-inv-chevron-up { background: linear-gradient(to bottom, rgba(13,27,46,1) 40%, transparent); }
+html.dark .bb-inv-chevron-down { background: linear-gradient(to top, rgba(13,27,46,1) 40%, transparent); }
+
 /* ── Bottom-bar mode (< 640 px) ─────────────────────────────────────────── */
 .right-panel.bottom-bar-mode {
   /* Positioning is handled by .bottom-bar-wrapper in App.vue */
@@ -3686,16 +3894,16 @@ html.dark .bb-tool-char { color: #9aaabe; }
   .bb-item-appliance .bb-canvas { width: 64px; height: 64px; }
   .bb-item-appliance .bb-label { font-size: 10px; width: 72px; }
   /* Blueprints (non-appliance, non-tool items) keep larger icons */
-  .bb-item:not(.bb-tool-btn):not(.bb-item-appliance) {
+  .bb-item:not(.bb-tool-btn):not(.bb-item-appliance):not(.bb-item-structure) {
     width: 116px;
     height: 148px;
   }
-  .bb-item:not(.bb-tool-btn):not(.bb-item-appliance) .bb-icon {
+  .bb-item:not(.bb-tool-btn):not(.bb-item-appliance):not(.bb-item-structure) .bb-icon {
     width: 108px;
     height: 108px;
   }
-  .bb-item:not(.bb-tool-btn):not(.bb-item-appliance) .bb-canvas { width: 108px; height: 108px; }
-  .bb-item:not(.bb-tool-btn):not(.bb-item-appliance) .bb-label {
+  .bb-item:not(.bb-tool-btn):not(.bb-item-appliance):not(.bb-item-structure) .bb-canvas { width: 108px; height: 108px; }
+  .bb-item:not(.bb-tool-btn):not(.bb-item-appliance):not(.bb-item-structure) .bb-label {
     font-size: 18px;
     width: 112px;
   }
