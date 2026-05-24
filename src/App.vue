@@ -405,7 +405,7 @@
 </template>
 
 <script>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRestaurantStore, encodeState as encodeStateFn } from './store/restaurant'
 import { useGrid, smallScreenMode, compactMenuMode, bottomBarHeight } from './composables/useGrid'
 import GridView from './components/GridView.vue'
@@ -668,6 +668,9 @@ export default {
       document.documentElement.classList.toggle('dark', darkMode.value)
       loadFromHash()
       loadGridFromState()
+      // Fit the restaurant to the viewport on initial load (mirrors what
+      // resetZoom does when clicking the magnifying glass).
+      nextTick(() => resetZoom())
       // Broadcast current visibility preferences so components render consistently
       try {
         window.dispatchEvent(new CustomEvent('teleporter-lines-changed', { detail: teleporterLines.value }))

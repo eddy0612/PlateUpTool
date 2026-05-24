@@ -3373,7 +3373,7 @@ export default {
 .bb-item {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   width: 58px; flex-shrink: 0; height: 74px; cursor: pointer; border-radius: 6px;
-  padding: 4px 2px; border: 1px solid transparent;
+  padding: 0 2px; border: 1px solid transparent;
   transition: background 0.1s, border-color 0.1s;
   user-select: none; -webkit-user-select: none; touch-action: manipulation;
 }
@@ -3382,14 +3382,14 @@ export default {
 .bb-item-add { border: 1px dashed #9ab0cc; background: #f5f8ff; }
 .bb-item-add:hover { background: #e8f0ff; border-color: #1f79ff; }
 .bb-icon {
-  width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  width: 58px; height: 58px; display: flex; align-items: center; justify-content: center;
   overflow: hidden; flex-shrink: 0;
 }
 .bb-icon img, .bb-bp-img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .bb-icon-add { background: transparent; }
 .bb-icon-add span { font-size: 32px; font-weight: 300; color: #6b9fd4; line-height: 1; }
 .bb-icon-placeholder { font-size: 24px; }
-.bb-canvas { width: 44px; height: 44px; display: block; }
+.bb-canvas { width: 58px; height: 58px; display: block; }
 .bb-label {
   font-size: 9px; text-align: center; width: 56px; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap; color: #3a5070; line-height: 1.2; margin-top: 2px;
