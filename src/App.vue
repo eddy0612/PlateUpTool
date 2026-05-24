@@ -63,11 +63,11 @@
             <div class="menu-item has-sub">
               <button @click="toggleHelpSubmenu">Help</button>
               <div v-if="showHelpSubmenu" class="submenu" @click.stop>
-                <button class="menu-item sub-item" @click="showTutorial = true">Tutorial</button>
+                <button class="menu-item sub-item" @click="showTutorial = true; closeMainMenu()">Tutorial</button>
                 <button class="menu-item sub-item" @click="openFeedback">Feedback</button>
                 <button class="menu-item sub-item" @click="openDonate">Donate</button>
-                <button class="menu-item sub-item" @click="showCredits = true">Credits</button>
-                <button class="menu-item sub-item" @click="showHelp = true">Keyboard Shortcuts</button>
+                <button class="menu-item sub-item" @click="showCredits = true; closeMainMenu()">Credits</button>
+                <button class="menu-item sub-item" @click="showHelp = true; closeMainMenu()">Keyboard Shortcuts</button>
               </div>
             </div>
           </div>
@@ -565,14 +565,17 @@ export default {
     )
 
     function openDonate() {
+      closeMainMenu()
       window.open('https://paypal.me/JasonEdmeades', '_blank', 'noopener,noreferrer')
     }
 
     function openFeedback() {
+      closeMainMenu()
       showFeedbackModal.value = true
     }
 
     function openChangeSizeModal() {
+      closeMainMenu()
       sizeModalDismissable.value = true
       showSizeModal.value = true
     }
@@ -588,6 +591,7 @@ export default {
     }
 
     function toggleDarkMode() {
+      closeMainMenu()
       darkMode.value = !darkMode.value
       localStorage.setItem('darkMode', darkMode.value)
       document.documentElement.classList.toggle('dark', darkMode.value)
@@ -753,6 +757,14 @@ export default {
         showShareSubFile.value = false
       }
     }
+    function closeMainMenu() {
+      showMainMenu.value = false
+      showSettingsSubmenu.value = false
+      showHelpSubmenu.value = false
+      showShareSubmenu.value = false
+      showShareSubClipboard.value = false
+      showShareSubFile.value = false
+    }
     function toggleSettingsSubmenu() {
       showHelpSubmenu.value = false
       showShareSubmenu.value = false
@@ -837,6 +849,7 @@ export default {
 
 
     async function startAgain() {
+      closeMainMenu()
       // If there are any modifications (appliances/walls), confirm before discarding them
       if (!isDefaultState()) {
         const confirmed = await confirm('This will discard any unsaved changes and reset the planner. Continue?')
@@ -893,6 +906,7 @@ export default {
     }
 
     function toggleTeleporterLines() {
+      closeMainMenu()
       try {
         teleporterLines.value = !teleporterLines.value
         const next = teleporterLines.value
@@ -902,6 +916,7 @@ export default {
     }
 
     function toggleLabelDisplayMode() {
+      closeMainMenu()
       try {
         labelDisplayMode.value = (labelDisplayMode.value + 1) % 3
         localStorage.setItem('labelDisplayMode', String(labelDisplayMode.value))
@@ -935,6 +950,7 @@ export default {
       toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode,
       paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon,
       cellSize, state, onSizeChosen, onSizeCancelled, undo, showTouchDebug, toggleTouchDebug,
+      closeMainMenu,
       /* menu controls */ showMainMenu, showSettingsSubmenu, showHelpSubmenu, showShareSubmenu, showShareSubClipboard, showShareSubFile, showCompactMenu,
       toggleMainMenu, toggleSettingsSubmenu, toggleHelpSubmenu, toggleShareSubmenu, toggleShareSubClipboard, toggleShareSubFile,
       compactShareClipboard, compactCopyLink, compactExportFile, compactImportFile, compactImportClipboard,
