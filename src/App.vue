@@ -1260,12 +1260,13 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 .palette-column { display:flex; flex-direction:column; gap:8px; align-items:stretch }
 .bottom-bar-wrapper {
   position: fixed;
-  bottom: 0;
+  bottom: 4px;
   left: 10px;
   right: 10px;
   height: 110px;
   z-index: 9900;
   overflow: hidden;
+  border-radius: 0 0 10px 10px;
 }
 .palette-toolbox-box { display:flex; align-items:center; padding:5px; background: #f4f8fb; border-radius:8px; border: 1px solid #d2dfe9; width: 100%; box-sizing: border-box }
 .dark .palette-toolbox-box { background: #1e2629; border-color: #33393d }
