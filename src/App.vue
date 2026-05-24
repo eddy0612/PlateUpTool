@@ -397,10 +397,6 @@
         <button class="tool-popup-button" @click="invokeAndClose('plateup-invoke-help')" title="Help"><span class="toolbox-char">?</span></button>
       </div>
     </div>
-    <div class="viewport-debug" aria-hidden="true">
-      <div class="viewport-debug-row"><strong>{{ viewportWidth }}</strong> × <strong>{{ viewportHeight }}</strong></div>
-      <div class="viewport-debug-row">{{ deviceLabel }}</div>
-    </div>
   </div>
 </template>
 
@@ -431,7 +427,6 @@ export default {
     const showHelp = ref(false)
     const showCredits = ref(false)
 
-    const showViewportDebug = ref(true)
     const showTutorial = ref(false)
     const showMainMenu = ref(false)
     const showSettingsSubmenu = ref(false)
@@ -439,8 +434,6 @@ export default {
     const showShareSubmenu = ref(false)
     const showShareSubClipboard = ref(false)
     const showShareSubFile = ref(false)
-    const viewportWidth = ref(window.innerWidth)
-    const viewportHeight = ref(window.innerHeight)
     // Use matchMedia for breakpoint booleans so JS fires at exactly the same
     // point as CSS media queries, avoiding subpixel rounding discrepancies.
     const _mqSmall = window.matchMedia('(max-width: 1100px)')
@@ -702,11 +695,6 @@ export default {
       window.addEventListener('plateup-copy-link', copyUrl)
       // Listen for external undo requests (from child components)
       window.addEventListener('plateup-undo', undo)
-      const onResize = () => {
-        viewportWidth.value = window.innerWidth
-        viewportHeight.value = window.innerHeight
-      }
-      window.addEventListener('resize', onResize)
       const onDocClick = (e) => {
         // close menus when clicking outside
         if (showMainMenu.value) {
@@ -750,7 +738,6 @@ export default {
         window.removeEventListener('keydown', onKey)
         window.removeEventListener('plateup-undo', undo)
         window.removeEventListener('contextmenu', onContextMenu)
-        window.removeEventListener('resize', onResize)
         document.removeEventListener('click', onDocClick)
       })
     })
@@ -941,13 +928,6 @@ export default {
       if (!v && isDefaultState()) { showSizeModal.value = true; sizeModalDismissable.value = false }
     })
 
-    const deviceLabel = computed(() => {
-      const w = viewportWidth.value || 0
-      if (w <= 480) return 'Phone'
-      if (w <= 768) return 'Tablet'
-      return 'Laptop'
-    })
-
     return {
       startAgain, showHelp, showCredits, showTutorial, showSizeModal, sizeModalDismissable,
       showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord,
@@ -955,7 +935,6 @@ export default {
       toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode,
       paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon,
       cellSize, state, onSizeChosen, onSizeCancelled, undo, showTouchDebug, toggleTouchDebug,
-      viewportWidth, viewportHeight, deviceLabel, showViewportDebug,
       /* menu controls */ showMainMenu, showSettingsSubmenu, showHelpSubmenu, showShareSubmenu, showShareSubClipboard, showShareSubFile, showCompactMenu,
       toggleMainMenu, toggleSettingsSubmenu, toggleHelpSubmenu, toggleShareSubmenu, toggleShareSubClipboard, toggleShareSubFile,
       compactShareClipboard, compactCopyLink, compactExportFile, compactImportFile, compactImportClipboard,
@@ -1290,24 +1269,6 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 /* Room size button inside palette toolbox */
 .palette-toolbox .toolbox-button--size { gap: 6px; padding: 8px 12px; }
 .toolbox-size-text { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; min-width: 56px; text-align: center }
-
-/* Viewport debug overlay (temporary) */
-.viewport-debug {
-  position: fixed;
-  right: 10px;
-  top: 10px;
-  background: rgba(0,0,0,0.6);
-  color: #fff;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  line-height: 1;
-  z-index: 20000;
-  pointer-events: none;
-  text-align: center;
-  min-width: 82px;
-}
-.viewport-debug-row { margin: 2px 0 }
 
 /* Hide the tagline when space is limited */
 @media (max-width: 1310px) {
