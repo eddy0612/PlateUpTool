@@ -877,6 +877,10 @@ export default {
       const startY = e.clientY
       const isTouchLike = pointerType === 'touch' || pointerType === 'pen'
       let dragStarted = false
+      // For touch, defer pointer capture until we know it's a drag (not a horizontal palette scroll)
+      const captureEl = e.currentTarget
+      const capturePointerId = e.pointerId
+      let pointerCaptured = false
 
       if (isTouchLike) {
         logTouchDebug('palette-down', `${pointerType} ${Math.round(startX)},${Math.round(startY)} item=${options.label}`)
@@ -900,10 +904,27 @@ export default {
         if (!movedEnough) return false
 
         if (isTouchLike) {
+          // If movement is primarily horizontal, this is a palette scroll gesture — abort
+          // and let the browser's native pan-x handle it on .bb-scroll.
+          if (Math.abs(dx) > Math.abs(dy) * 1.2) {
+            logTouchDebug('palette-scroll-abort', `dx=${Math.round(dx)} dy=${Math.round(dy)}`)
+            cleanup()
+            return false
+          }
           const stillInPalette = isPointWithinRect(moveEvent.clientX, moveEvent.clientY, boundaryRect)
           if (stillInPalette) {
             logTouchDebug('palette-wait', `${Math.round(moveEvent.clientX)},${Math.round(moveEvent.clientY)} in-palette=1`)
             return false
+          }
+          // Confirmed drag: capture pointer now so it stays locked during the drag
+          if (!pointerCaptured) {
+            try {
+              captureEl?.setPointerCapture?.(capturePointerId)
+              pointerCaptured = true
+              logTouchDebug('palette-capture-deferred', `pointer=${capturePointerId}`)
+            } catch (err) {
+              logTouchDebug('palette-capture-fail', err?.message || String(err))
+            }
           }
           try { moveEvent.preventDefault() } catch (err) {}
         }
@@ -978,7 +999,9 @@ export default {
       window.addEventListener('pointerup', onUp, { passive: false })
       window.addEventListener('pointercancel', onCancel, { passive: false })
 
-      if (pointerType !== 'mouse') {
+      // For mouse, capture immediately (no scroll conflict). For touch/pen, capture is
+      // deferred to maybeStartDrag so horizontal palette swipes reach the scroll container.
+      if (pointerType === 'mouse') {
         try {
           e.currentTarget?.setPointerCapture?.(e.pointerId)
           logTouchDebug('palette-capture', `pointer=${e.pointerId}`)
@@ -3834,7 +3857,8 @@ html.dark .bb-inv-chevron-down { background: linear-gradient(to top, rgba(13,27,
   transition: background 0.1s, border-color 0.1s;
   user-select: none; -webkit-user-select: none; touch-action: manipulation;
 }
-.bb-item:not(.bb-tool-btn) { touch-action: none; }
+/* pan-x lets horizontal swipes scroll the palette; vertical drags still fire pointer events for drag-to-place */
+.bb-item:not(.bb-tool-btn) { touch-action: pan-x; }
 .bb-item:hover, .bb-item.bb-item-active { background: #eef4ff; border-color: #b0ccee; }
 .bb-item-add { border: 1px dashed #9ab0cc; background: #f5f8ff; }
 .bb-item-add:hover { background: #e8f0ff; border-color: #1f79ff; }
