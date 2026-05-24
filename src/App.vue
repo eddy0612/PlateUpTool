@@ -1260,7 +1260,7 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 .palette-column { display:flex; flex-direction:column; gap:8px; align-items:stretch }
 .bottom-bar-wrapper {
   position: fixed;
-  bottom: 4px;
+  bottom: calc(4px + env(safe-area-inset-bottom, 0px));
   left: 10px;
   right: 10px;
   height: 110px;
