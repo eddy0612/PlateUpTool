@@ -3562,6 +3562,7 @@ export default {
   height: 100%;
   background: #fff;
   border-top: 2px solid #c8d6e8;
+  border-radius: 0 0 10px 10px;
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
