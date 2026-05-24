@@ -1996,11 +1996,14 @@ export default {
       return Math.min(2.5, Math.max(0.3, Math.round(nextZoom * 100) / 100))
     }
 
-    // Add 80px scroll padding around the grid only when zoomed in, so the
-    // default zoom fills the viewport without wasted space.
-    const gridCenteringStyle = computed(() =>
-      state.zoom > 1 ? { padding: '80px' } : {}
-    )
+    // Add 80px scroll padding around the grid only when the grid actually
+    // overflows the viewport, so edge cells are reachable by scrolling.
+    // Using a height-overflow check instead of "zoom > 1" prevents the padding
+    // from pushing the grid off-screen when resetZoom sets a zoom just above 1.
+    const gridCenteringStyle = computed(() => {
+      const gridH = state.roomHeight * cellSize.value * state.zoom
+      return gridH > viewportBoxHeight.value - 18 ? { padding: '80px' } : {}
+    })
     function getTouchDistance(firstTouch, secondTouch) {
       const dx = secondTouch.clientX - firstTouch.clientX
       const dy = secondTouch.clientY - firstTouch.clientY

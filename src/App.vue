@@ -826,7 +826,7 @@ export default {
           const innerW = vb.clientWidth - 16  // 8px padding each side
           const innerH = vb.clientHeight - 16
           const fz = Math.min(innerW / (state.roomWidth * cellSize.value), innerH / (state.roomHeight * cellSize.value))
-          state.zoom = Math.max(0.25, parseFloat(fz.toFixed(2)))
+          state.zoom = Math.max(0.25, Math.floor(fz * 100) / 100)
         } else {
           state.zoom = 1
         }
