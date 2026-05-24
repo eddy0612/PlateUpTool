@@ -42,8 +42,39 @@
               </div>
             </template>
             <template v-else-if="paletteTab === 'appliances'">
+              <!-- Search / Cancel-filter button — always first in the list -->
               <div
-                v-for="item in filteredPalette"
+                v-if="!bbSearchQuery"
+                class="bb-item bb-item-appliance bb-search-item"
+                title="Filter appliances"
+                @click="openBbSearch"
+              >
+                <div class="bb-icon">
+                  <svg class="bb-search-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="bb-label">Search</div>
+              </div>
+              <div
+                v-else
+                class="bb-item bb-item-appliance bb-search-item bb-search-active"
+                :title="'Clear filter: \'' + bbSearchQuery + '\''"
+                @click="clearBbSearch"
+              >
+                <div class="bb-icon bb-search-cancel-icon">
+                  <svg class="bb-search-svg bb-search-svg-sm" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M9 9l6 6M15 9l-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="bb-search-clear-text">Clear Filter</span>
+                </div>
+                <div class="bb-label bb-search-active-term">'{{ bbSearchQuery }}'</div>
+              </div>
+              <!-- Appliance items, filtered by the bb search query -->
+              <div
+                v-for="item in bbFilteredPalette"
                 :key="item.id"
                 class="bb-item bb-item-appliance"
                 @click="onPaletteItemClick(item)"
@@ -334,6 +365,36 @@
         @cancel="closeBlueprintDialog" />
     </teleport>
 
+    <!-- Bottom-bar appliance search dialog -->
+    <teleport to="body">
+      <div v-if="bbSearchDialogVisible" class="bb-search-backdrop" @click="bbSearchCancel">
+        <div class="bb-search-dialog" role="dialog" aria-modal="true" aria-label="Filter appliances" @click.stop>
+          <div class="bb-search-dialog-header">
+            <svg class="bb-search-dialog-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Filter Appliances</span>
+          </div>
+          <input
+            ref="bbSearchInputEl"
+            v-model="bbSearchInputText"
+            class="bb-search-dialog-input"
+            placeholder="e.g. counter, oven, sink…"
+            maxlength="50"
+            autocomplete="off"
+            spellcheck="false"
+            @keydown.enter.prevent="bbSearchConfirm"
+            @keydown.esc.prevent="bbSearchCancel"
+          />
+          <div class="bb-search-dialog-actions">
+            <button class="bb-search-btn-cancel" @click="bbSearchCancel">Cancel</button>
+            <button class="bb-search-btn-confirm" :disabled="!bbSearchInputText.trim()" @click="bbSearchConfirm">Apply Filter</button>
+          </div>
+        </div>
+      </div>
+    </teleport>
+
   </aside>
 </template>
 
@@ -404,6 +465,51 @@ export default {
         : palette.value.slice()
       return items.slice().sort((a, b) => a.label.localeCompare(b.label))
     })
+
+    // ── Bottom-bar search ─────────────────────────────────────────────────────
+    const bbSearchQuery = ref('')
+    const bbSearchInputText = ref('')
+    const bbSearchDialogVisible = ref(false)
+    const bbSearchInputEl = ref(null)
+
+    const bbFilteredPalette = computed(() => {
+      const q = bbSearchQuery.value.trim().toLowerCase()
+      const items = q
+        ? palette.value.filter(item => item.label.toLowerCase().includes(q))
+        : palette.value.slice()
+      return items.slice().sort((a, b) => a.label.localeCompare(b.label))
+    })
+
+    function openBbSearch() {
+      bbSearchInputText.value = bbSearchQuery.value || ''
+      bbSearchDialogVisible.value = true
+      nextTick(() => { try { bbSearchInputEl.value?.focus() } catch (e) {} })
+    }
+
+    function bbSearchConfirm() {
+      const q = (bbSearchInputText.value || '').trim()
+      if (!q) return
+      bbSearchQuery.value = q
+      bbSearchDialogVisible.value = false
+      nextTick(() => {
+        try { if (bbScrollEl.value) bbScrollEl.value.scrollLeft = 0 } catch (e) {}
+        redrawPaletteCanvases()
+        updateScrollChevrons()
+      })
+    }
+
+    function bbSearchCancel() {
+      bbSearchDialogVisible.value = false
+    }
+
+    function clearBbSearch() {
+      bbSearchQuery.value = ''
+      nextTick(() => {
+        try { if (bbScrollEl.value) bbScrollEl.value.scrollLeft = 0 } catch (e) {}
+        redrawPaletteCanvases()
+        updateScrollChevrons()
+      })
+    }
 
     const inventoryList = computed(() => {
       const counts = {}
@@ -578,6 +684,10 @@ export default {
     }
 
     watch(filteredPalette, redrawPaletteCanvases, { immediate: true })
+
+    watch(bbSearchQuery, () => {
+      nextTick(() => { redrawPaletteCanvases(); updateScrollChevrons() })
+    })
 
     watch(isStructureMode, (val) => {
       if (!val) redrawPaletteCanvases()
@@ -2699,6 +2809,9 @@ export default {
       bottomBarMode,
       // bottom-bar scroll chevrons
       bbScrollEl, canScrollLeft, canScrollRight, updateScrollChevrons, scrollPalette,
+      // bottom-bar search
+      bbSearchQuery, bbSearchInputText, bbSearchDialogVisible, bbSearchInputEl,
+      bbFilteredPalette, openBbSearch, bbSearchConfirm, bbSearchCancel, clearBbSearch,
       // palette toolbox state removed (handled in App)
       bbInvoke,
     }
@@ -3307,6 +3420,141 @@ export default {
 .dark .seed-suggestion:hover { background: #0b2a46 }
 .dark .seed-suggestion.active { background: #123a6b; outline-color: rgba(90,140,255,0.18) }
 
+/* ── Bottom-bar search button ────────────────────────────────────────────── */
+.bb-search-item {
+  border-color: #b0cce8;
+  background: #eef5ff;
+}
+.bb-search-item:hover {
+  background: #daeaff !important;
+  border-color: #1f79ff !important;
+}
+.bb-search-svg {
+  width: 32px;
+  height: 32px;
+  display: block;
+  flex-shrink: 0;
+  color: #1e5faa;
+}
+.bb-search-active {
+  border-color: #e89030 !important;
+  background: #fff6ec !important;
+}
+.bb-search-active:hover {
+  background: #ffecd8 !important;
+  border-color: #cc6a00 !important;
+}
+.bb-search-active .bb-search-svg {
+  color: #c45a00;
+}
+.bb-search-cancel-icon {
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+.bb-search-svg-sm {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.bb-search-clear-text {
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  color: #b85000;
+}
+.bb-search-active-term {
+  color: #b85000 !important;
+  font-style: italic;
+  font-weight: 600;
+}
+
+/* ── Bottom-bar search dialog ─────────────────────────────────────────────── */
+.bb-search-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 18, 28, 0.52);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 20001;
+  padding-bottom: 84px;
+}
+.bb-search-dialog {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px 18px 16px;
+  width: min(380px, calc(100vw - 28px));
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bb-search-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 16px;
+  color: #1a2a3a;
+  letter-spacing: -0.01em;
+}
+.bb-search-dialog-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: #1f79ff;
+}
+.bb-search-dialog-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border: 1.5px solid #c0cfe0;
+  border-radius: 10px;
+  font-size: 16px;
+  outline: none;
+  color: #1a2a3a;
+  background: #f8fbff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.bb-search-dialog-input:focus {
+  border-color: #1f79ff;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(31, 121, 255, 0.13);
+}
+.bb-search-dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.bb-search-btn-cancel {
+  padding: 9px 18px;
+  border: 1.5px solid #d0dcea;
+  border-radius: 9px;
+  background: #f4f7fb;
+  color: #4a6078;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.bb-search-btn-cancel:hover { background: #e8eef6; border-color: #b8c8da; }
+.bb-search-btn-confirm {
+  padding: 9px 20px;
+  border: none;
+  border-radius: 9px;
+  background: #1f79ff;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s, opacity 0.12s;
+  letter-spacing: -0.01em;
+}
+.bb-search-btn-confirm:hover:not(:disabled) { background: #0e65e0; }
+.bb-search-btn-confirm:disabled { opacity: 0.38; cursor: default; }
+
 /* ── Bottom-bar mode (< 640 px) ─────────────────────────────────────────── */
 .right-panel.bottom-bar-mode {
   /* Positioning is handled by .bottom-bar-wrapper in App.vue */
@@ -3452,6 +3700,11 @@ html.dark .bb-tool-char { color: #9aaabe; }
   }
   .bb-icon-add span { font-size: 78px; }
   .bb-icon-placeholder { font-size: 58px; }
+  /* Search item scales with appliance items in large-icon mode */
+  .bb-item.bb-search-item .bb-search-svg { width: 42px; height: 42px; }
+  .bb-item.bb-search-item .bb-search-svg-sm { width: 30px; height: 30px; }
+  .bb-item.bb-search-item .bb-search-clear-text { font-size: 10px; }
+  .bb-item.bb-search-item .bb-search-active-term { font-size: 10px; }
 }
 </style>
 
@@ -3474,4 +3727,24 @@ html.dark .bb-item-add { background: #141926; border-color: #2a3a54; }
 html.dark .bb-item-add:hover { background: #1a2840; border-color: #3a5a88; }
 html.dark .bb-label { color: #7a9ab0; }
 html.dark .bb-preview-msg { color: #6a8aaa; }
+
+/* ── Bottom-bar search — dark mode ──────────────────────────────────────── */
+html.dark .bb-search-item { border-color: #2a4870 !important; background: #0e1b2e !important; }
+html.dark .bb-search-item:hover { background: #142236 !important; border-color: #3a70c8 !important; }
+html.dark .bb-search-item .bb-search-svg { color: #7ab4ff; }
+html.dark .bb-search-active { border-color: #8a5200 !important; background: #1c1200 !important; }
+html.dark .bb-search-active:hover { background: #241600 !important; border-color: #c87000 !important; }
+html.dark .bb-search-active .bb-search-svg { color: #e08020; }
+html.dark .bb-search-clear-text { color: #e08020; }
+html.dark .bb-search-active-term { color: #e08020 !important; }
+html.dark .bb-search-backdrop { background: rgba(6, 10, 18, 0.72); }
+html.dark .bb-search-dialog { background: #172230; color: #dbe9ff; box-shadow: 0 20px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04); }
+html.dark .bb-search-dialog-header { color: #c8dcf2; }
+html.dark .bb-search-dialog-icon { color: #5a9aff; }
+html.dark .bb-search-dialog-input { background: #0f1926; color: #dbe9ff; border-color: rgba(255,255,255,0.10); }
+html.dark .bb-search-dialog-input:focus { border-color: #4a80ff; background: #101f30; box-shadow: 0 0 0 3px rgba(74,128,255,0.15); }
+html.dark .bb-search-btn-cancel { background: #1a2c40; border-color: #2e4868; color: #8aacc8; }
+html.dark .bb-search-btn-cancel:hover { background: #1f3550; }
+html.dark .bb-search-btn-confirm { background: #2a78ff; }
+html.dark .bb-search-btn-confirm:hover:not(:disabled) { background: #1a65e8; }
 </style>
