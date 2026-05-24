@@ -868,7 +868,7 @@ export default {
     function beginDeferredPalettePointerDrag(e, options) {
       if (e.button !== 0 || e.isPrimary === false) return
 
-      const boundaryEl = e.currentTarget?.closest?.('.palette') || e.currentTarget
+      const boundaryEl = e.currentTarget?.closest?.('.palette') || e.currentTarget?.closest?.('.bb-scroll') || e.currentTarget
       const boundaryRect = boundaryEl?.getBoundingClientRect?.()
       if (!boundaryRect) return
 
