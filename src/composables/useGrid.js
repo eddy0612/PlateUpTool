@@ -7,6 +7,66 @@ import { alert, confirm, toast } from '../utils/ui'
 const { state } = useRestaurantStore()
 const { palette } = useAppliancePalette()
 
+// Load appliances.json once so we can check the original "Keep" flag for any
+// appliance id encountered while restoring or importing designs. Some saved
+// grids may reference appliance IDs that were marked Keep=false and should be
+// discarded when importing/loading.
+let __applianceKeepMap = null
+let __applianceKeepMapPromise = null
+function _loadApplianceKeepMap() {
+  if (__applianceKeepMapPromise) return __applianceKeepMapPromise
+  __applianceKeepMapPromise = (async () => {
+    try {
+      const base = import.meta.env.BASE_URL || '/'
+      const resp = await fetch(base + 'res/appliances.json')
+      if (!resp.ok) throw new Error('Failed to load appliances.json')
+      const arr = await resp.json()
+      __applianceKeepMap = new Map()
+      for (const e of arr) {
+        // ID in the file is numeric
+        const id = Number(e.ID ?? e.id ?? e.Id)
+        __applianceKeepMap.set(id, !!e.Keep)
+      }
+    } catch (e) {
+      __applianceKeepMap = new Map()
+    }
+    return __applianceKeepMap
+  })()
+  return __applianceKeepMapPromise
+}
+
+// Helper to remove cells whose applianceId maps to Keep === false. Runs
+// as soon as the appliance map is available; safe to call multiple times.
+function _pruneKeepFalseCells() {
+  // ensure map is loaded, then prune
+  _loadApplianceKeepMap().then(() => {
+    if (!__applianceKeepMap) return
+    const deletedIids = new Set()
+    const deletedCoords = new Set()
+    for (let y = 0; y < grid.value.length; y++) {
+      for (let x = 0; x < grid.value[y].length; x++) {
+        const cell = grid.value[y][x]
+        if (!cell || !cell.applianceId) continue
+        const apId = Number(cell.applianceId)
+        // If the appliance is explicitly marked Keep=false, discard it
+        if (__applianceKeepMap.has(apId) && __applianceKeepMap.get(apId) === false) {
+          if (cell && cell.iid) deletedIids.add(cell.iid)
+          deletedCoords.add(cellKey(x, y))
+          grid.value[y][x] = null
+        }
+      }
+    }
+    // Remove any labels anchored to deleted iids or coords
+    if (state.labels && state.labels.length) {
+      state.labels = state.labels.filter(lbl => {
+        if (lbl.anchorIid && deletedIids.has(lbl.anchorIid)) return false
+        if (lbl.anchorX != null && lbl.anchorY != null && deletedCoords.has(cellKey(lbl.anchorX, lbl.anchorY))) return false
+        return true
+      })
+    }
+  }).catch(() => {})
+}
+
 // Instance id generator for appliance instances
 let __instanceCounter = 1
 function genInstanceId() {
@@ -1468,7 +1528,7 @@ function cancelPaste() {
 
 // Start a paste using an explicit set of cells (e.g. from a saved blueprint).
 // Uses the duplicate buffer so the user's clipboard is not overwritten.
-function startPasteFromCells(payload) {
+async function startPasteFromCells(payload) {
   // payload may be either an array of cells (legacy) or an object { cells, labels }
   if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
   if (!payload) return
@@ -1480,10 +1540,34 @@ function startPasteFromCells(payload) {
     labels = Array.isArray(payload.labels) ? payload.labels : []
   }
   if (!cells || cells.length === 0) return
-
-  duplicateBuffer.value = cells.map(c => ({ ...c, cell: { ...c.cell } }))
+  // Ensure we know which appliance IDs are marked Keep:false and filter them out.
+  try { await _loadApplianceKeepMap() } catch (e) {}
+  const filteredCells = []
+  for (const c of cells) {
+    const apId = Number(c.cell?.applianceId)
+    if (apId != null && __applianceKeepMap && __applianceKeepMap.has(apId) && __applianceKeepMap.get(apId) === false) {
+      // skip this cell
+      continue
+    }
+    filteredCells.push({ ...c, cell: { ...c.cell } })
+  }
+  duplicateBuffer.value = filteredCells
   // accept either blueprint-style labels ({dxCell,dyCell,dx2,dy2,label}) or legacy cells-only
-  duplicateBufferLabels.value = labels.map(l => ({ ...l }))
+  // Filter labels that anchor to discarded cells
+  const filteredLabels = []
+  for (const l of labels) {
+    // labels in blueprint export reference relative dxCell/dyCell positions
+    const anchorApIndex = (l.dxCell != null)
+    if (anchorApIndex) {
+      const apX = l.dxCell
+      const apY = l.dyCell
+      // if corresponding cell was filtered out, skip this label
+      const matched = filteredCells.find(fc => fc.dx === apX && fc.dy === apY)
+      if (!matched) continue
+    }
+    filteredLabels.push({ ...l })
+  }
+  duplicateBufferLabels.value = filteredLabels
 
   duplicateMode.value = true
   pastePending.value = true
@@ -1634,6 +1718,9 @@ function loadGridFromState() {
       }
     }
   }
+  // Remove any appliances that are marked Keep=false in the canonical
+  // appliances list (these items should not be restored/imported)
+  _pruneKeepFalseCells()
 }
 
 // Returns the {x, y} of the partner teleporter for the cell at (x, y),

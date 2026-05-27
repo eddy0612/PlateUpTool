@@ -1510,9 +1510,9 @@ export default {
       blueprintDialogVisible.value = true
     }
 
-    function applyBlueprint(bp) {
+    async function applyBlueprint(bp) {
       if (suppressNextBlueprintClickForId.value !== null && suppressNextBlueprintClickForId.value === bp.id) { suppressNextBlueprintClickForId.value = null; return }
-      startPasteFromCells(bp)
+      await startPasteFromCells(bp)
     }
 
     const suppressNextBlueprintClickForId = ref(null)
@@ -1528,7 +1528,7 @@ export default {
 
       beginDeferredPalettePointerDrag(e, {
         label: bp.name,
-        onStart: () => startPasteFromCells(bp),
+        onStart: async () => { await startPasteFromCells(bp) },
         onMove: (clientX, clientY) => {
           const cell = getCellFromPoint(clientX, clientY)
           if (cell) setPasteAnchor(cell.x, cell.y)
@@ -2482,7 +2482,7 @@ export default {
             }
             const { cells, labels } = payload
             if (!Array.isArray(cells) || cells.length === 0) { await alert('No appliance data found in this file.'); return }
-            startPasteFromCells({ cells, labels: labels || [] })
+            await startPasteFromCells({ cells, labels: labels || [] })
             return
           }
 
@@ -2539,7 +2539,7 @@ export default {
             dx: c.x - minX, dy: c.y - minY,
             cell: { applianceId: c.applianceId, rotation: c.rotation ?? 0, extraData: c.extraData ?? 0, tabIds: [] }
           }))
-          startPasteFromCells(cells)
+          await startPasteFromCells(cells)
           return
         }
 
