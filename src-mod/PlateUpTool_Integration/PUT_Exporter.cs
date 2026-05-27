@@ -274,7 +274,8 @@ namespace PlateUpTool_Integration
                     Entity primaryOccupant = TileManager.GetPrimaryOccupant(gridPos);
 
                     PlateUpTool_Integration.TDbg("Found: " + (primaryOccupant != Entity.Null ? primaryOccupant.ToString() : "nothing"));
-                    if (primaryOccupant != Entity.Null) {
+                    if (primaryOccupant != Entity.Null)
+                    {
                         CAppliance appliance;
                         CPosition position;
                         bool applResult = base.EntityManager.RequireComponent<CAppliance>(primaryOccupant, out appliance);
@@ -297,11 +298,13 @@ namespace PlateUpTool_Integration
                             PlateUpTool_Integration.TDbg("Ghost Chair!!!");
                             var chairComponent = base.EntityManager.GetComponentData<CApplianceGhostChair>(primaryOccupant);
 
-                            if (chairComponent.IsDisabled) {
+                            if (chairComponent.IsDisabled)
+                            {
                                 PlateUpTool_Integration.TDbg("Disabled Chair!!!");
                                 forceAction = -1; // Ignore chair
                             }
-                            if (!chairComponent.IsPathable) {
+                            if (!chairComponent.IsPathable)
+                            {
                                 PlateUpTool_Integration.TDbg("Not pathable Chair!!!");
                                 forceAction = -1; // Ignore chair
                             }
@@ -316,8 +319,9 @@ namespace PlateUpTool_Integration
                         {
                             PlateUpTool_Integration.TDbg("Corner grabber!!!");
                             var rotateComponent = base.EntityManager.GetComponentData<CConveyPushRotatable>(primaryOccupant);
-                            switch (rotateComponent.Target) {
-                                case Orientation.Left: PlateUpTool_Integration.TDbg("Corner grabber : LEFT!!!"); forceAction = ID_GRABBER_L;  break;
+                            switch (rotateComponent.Target)
+                            {
+                                case Orientation.Left: PlateUpTool_Integration.TDbg("Corner grabber : LEFT!!!"); forceAction = ID_GRABBER_L; break;
                                 case Orientation.Right: PlateUpTool_Integration.TDbg("Corner grabber : RIGHT!!!"); forceAction = ID_GRABBER_R; break;
                                 case Orientation.Down: PlateUpTool_Integration.TDbg("Corner grabber : DOWN!!!"); break; // Unexpected - leave as is
                                 case Orientation.Up: PlateUpTool_Integration.TDbg("Corner grabber : Up!!!"); break; // Normal straight on, leave as is
@@ -409,58 +413,38 @@ namespace PlateUpTool_Integration
                                 AddCell(xPos, yPos, convertedApplianceId, rotation, forceExtraData, new System.Collections.Generic.List<string> { "main" });
                             }
                         }
-                    }
+                    }  /* End of handling appliances */
 
+                    // Debug info:
+                    CLayoutRoomTile tile = TileManager.GetTile(gridPos);
+                    PlateUpTool_Integration.TDbg("Room: " + tile.RoomID);
+                    PlateUpTool_Integration.TDbg("Type: " + tile.Type.ToString());
+                    PlateUpTool_Integration.TDbg("HasFeature: " + tile.HasFeature);
 
                     // If we arent at the right edge, look to the right to determine if there is a wall and if so what type (window/door/normal)
                     if (roomW < bounds.max.x)
                     {
                         Vector3 rightCell = gridPos + (Vector3)LayoutHelpers.Directions[3];
-                        int wallType = 0;
-                        if (TileManager.GetRoom(gridPos) == TileManager.GetRoom(rightCell))
+                        string featureToAdd = checkGridFeatures(gridPos, rightCell);
+                        if (featureToAdd != null)
                         {
-                            // Same room - must be no wall or anything
-                            wallType = 0;
-                        }
-                        else if (TileManager.CanReach(gridPos, rightCell))
-                        {
-                            // Can reach between the rooms but different rooms - hatch
-                            wallType = 2;
-                        }
-                        else
-                        {
-                            // Must be a door or a wall.... Assume wall for now
-                            wallType = 1;
-                        }
-                        if (wallType != 0)
-                        {
-                            AddWall('v', xPos + 1, yPos, wallType == 1 ? "wall" : "hatch");
+                            PlateUpTool_Integration.TDbg("Found feature between " + gridPos + " and " + rightCell + " of type " + featureToAdd);
+                            AddWall('v', xPos + 1, yPos, featureToAdd);
                         }
                     }
 
                     // If we arent at the bottom, look below to determine if there is a wall and if so what type (window/door/normal)
-                    if (roomH > bounds.min.z)
+                    if (roomH >= bounds.min.z)
                     {
                         Vector3 belowCell = gridPos + (Vector3)LayoutHelpers.Directions[1];
-                        int wallType = 0;
-                        if (TileManager.GetRoom(gridPos) == TileManager.GetRoom(belowCell))
+                        string featureToAdd = checkGridFeatures(gridPos, belowCell);
+                        if (featureToAdd != null)
                         {
-                            // Same room - must be no wall or anything
-                            wallType = 0;
-                        }
-                        else if (TileManager.CanReach(gridPos, belowCell))
-                        {
-                            // Can reach between the rooms but different rooms - hatch
-                            wallType = 2;
-                        }
-                        else
-                        {
-                            // Must be a door or a wall.... Assume wall for now
-                            wallType = 1;
-                        }
-                        if (wallType != 0)
-                        {
-                            AddWall('h', xPos, yPos+1, wallType == 1 ? "wall" : "hatch");
+                            PlateUpTool_Integration.TDbg("Found feature between " + gridPos + " and " + belowCell + " of type " + featureToAdd);
+                            // Special case - if we are looking at the bottom row and the feature is a wall, we can ignore it as PUT assumes
+                            // there is always a wall at the bottom of the map and it causes confusion to have an extra one there which doesnt
+                            // actually exist in the game world, but we do want the front door!
+                            if (!(roomH == bounds.min.z && featureToAdd.Equals("wall"))) AddWall('h', xPos, yPos + 1, featureToAdd);
                         }
                     }
                 }
@@ -487,6 +471,61 @@ namespace PlateUpTool_Integration
                               .Where(n => n != null)
                               .ToArray();
             return matches.Length > 0 ? matches[0] : null;
+        }
+
+        private string checkGridFeatures(Vector3 from, Vector3 to)
+        {
+            CLayoutFeature feature;
+            if (TryGetFeature(from, to, out feature))
+            {
+                PlateUpTool_Integration.TDbg("Found feature between " + from + " and " + to + " of type " + feature.Type);
+                switch (feature.Type)
+                {
+                    case FeatureType.Door: return "door";
+                    case FeatureType.DoorReversed: return "door";
+                    case FeatureType.FrontDoor: return "door";
+                    case FeatureType.EmployeesOnlyDoor: return "door";
+                    case FeatureType.LightDoor: return "door";
+                    case FeatureType.MissingDoor: return "door";
+                    case FeatureType.Hatch: return "hatch";
+                    case FeatureType.Generic: return "wall";
+                }
+            }
+
+            if (TileManager.GetRoom(from) == TileManager.GetRoom(to))
+            {
+                // Same room - must be no wall or anything
+                return null;
+            }
+            else if (TileManager.CanReach(from, to))
+            {
+                // Can reach between the rooms but different rooms - hatch
+                // Should be handled by code above for features, but just in case.
+                return "hatch";
+            }
+            else
+            {
+                // Must be a wall
+                return "wall";
+            }
+        }
+
+        private bool TryGetFeature(Vector3 from, Vector3 to, out CLayoutFeature feature)
+        {
+            var EM = base.EntityManager;
+            feature = default;
+            var buffer = EM.GetBuffer<CLayoutFeature>(base.GetSingletonEntity<SLayout>());
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                var checkedFeature = buffer[i];
+                if ((from.IsSameTile(checkedFeature.Tile1) && to.IsSameTile(checkedFeature.Tile2)) ||
+                    (from.IsSameTile(checkedFeature.Tile2) && to.IsSameTile(checkedFeature.Tile1)))
+                {
+                    feature = checkedFeature;
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
