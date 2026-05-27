@@ -618,7 +618,7 @@ export default {
     // Maintain an undo stack (last 30 full snapshots) in sessionStorage
     const UNDO_KEY = 'undoStack'
     const MAX_UNDO = 30
-    const URL_KEYS = ['tabs', 'orientation', 'roomWidth', 'roomHeight', 'walls', 'gridCells', 'labels']
+    const URL_KEYS = ['tabs', 'URLVersion', 'roomWidth', 'roomHeight', 'walls', 'gridCells', 'labels']
     const buildUrlState = (s) => {
       const toSave = {}
       URL_KEYS.forEach(k => { toSave[k] = JSON.parse(JSON.stringify(s[k])) })

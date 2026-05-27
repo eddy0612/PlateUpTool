@@ -11,7 +11,7 @@ const DEFAULT_TABS_JSON = JSON.stringify(DEFAULT_TABS)
 const DEFAULT_STATE = {
   tabs: JSON.parse(DEFAULT_TABS_JSON),
   activeTabId: DEFAULT_ACTIVE_TAB,
-  orientation: 0,
+    URLVersion: 0,
   zoom: 1.0,        // kept in state for UI reactivity, not saved to URL
   roomWidth: 16,
   roomHeight: 12,
@@ -23,7 +23,7 @@ const DEFAULT_STATE = {
 }
 
 // Only these fields are serialized into the URL
-const URL_FIELDS = ['tabs', 'orientation', 'roomWidth', 'roomHeight', 'walls', 'gridCells', 'labels']
+const URL_FIELDS = ['tabs', 'URLVersion', 'roomWidth', 'roomHeight', 'walls', 'gridCells', 'labels']
 
 // Wall type string ↔ compact integer code
 const WALL_TYPE_TO_CODE = { wall: 1, hatch: 2, door: 3 }
@@ -94,7 +94,7 @@ class BitReader {
 //   Header (12 bytes):
 //     [0]  roomWidth
 //     [1]  roomHeight
-//     [2]  orientation
+//     [2]  URLVersion
 //     [3]  flags  (bit0=customTabs, bit1=legacy customActiveTab — consumed but ignored on load,
 //                  bit2=legacy extended wall codes; old hatchAlt9 now loads as hatch)
 //     [4]  defaultTabMask
@@ -143,7 +143,7 @@ function encodeState(stateObj) {
   const w = new BitWriter()
   // Header
   for (const b of [
-    roomWidth, roomHeight, stateObj.orientation, flags, defaultTabMask,
+    roomWidth, roomHeight, stateObj.URLVersion, flags, defaultTabMask,
     cells.length & 0xFF, (cells.length >> 8) & 0xFF,
     wallEntries.length & 0xFF, (wallEntries.length >> 8) & 0xFF,
     xyIdxBits, xBits, yBits
@@ -234,7 +234,7 @@ function decodeState(encoded) {
 
     const roomWidth       = r.read(8)
     const roomHeight      = r.read(8)
-    const orientation     = r.read(8)
+    const URLVersion     = r.read(8)
     const flags           = r.read(8)
     const defaultTabMask  = r.read(8)
     const numCells        = r.read(8) | (r.read(8) << 8)
@@ -324,7 +324,7 @@ function decodeState(encoded) {
       // ignore malformed trailing label data
     }
 
-    return { tabs, orientation, roomWidth, roomHeight, walls, gridCells, labels }
+    return { tabs, URLVersion, roomWidth, roomHeight, walls, gridCells, labels }
   } catch {
     return null
   }
@@ -333,7 +333,7 @@ function decodeState(encoded) {
 function isDefaultState() {
   return (
     JSON.stringify(state.tabs) === DEFAULT_TABS_JSON &&
-    state.orientation === DEFAULT_STATE.orientation &&
+    state.URLVersion === DEFAULT_STATE.URLVersion &&
     state.roomWidth === DEFAULT_STATE.roomWidth &&
     state.roomHeight === DEFAULT_STATE.roomHeight &&
     Object.keys(state.walls).length === 0 &&
