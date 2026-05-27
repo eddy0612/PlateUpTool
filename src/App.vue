@@ -699,6 +699,8 @@ export default {
         } finally {
           isRestoring = false
         }
+        // Ensure the grid fits the viewport after loading a new URL/state
+        nextTick(() => resetZoom())
         // Reset undo stack when a new URL/state is loaded
         try {
           const snap = JSON.stringify(buildFullSnapshot())
