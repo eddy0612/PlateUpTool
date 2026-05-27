@@ -1826,6 +1826,7 @@ export default {
         }
       }
       const cells = []
+      let minCellX = Infinity, minCellY = Infinity, maxCellX = -Infinity, maxCellY = -Infinity
       for (let y = 0; y < grid.value.length; y++) {
         for (let x = 0; x < (grid.value[y]?.length ?? 0); x++) {
           const cell = grid.value[y][x]
@@ -1835,6 +1836,10 @@ export default {
             if (!inTab) continue
           }
           cells.push({ x, y, cell })
+          if (x < minCellX) minCellX = x
+          if (y < minCellY) minCellY = y
+          if (x > maxCellX) maxCellX = x
+          if (y > maxCellY) maxCellY = y
         }
       }
       await Promise.all(cells.map(({ x, y, cell }) => new Promise(resolve => {
@@ -2047,6 +2052,20 @@ export default {
           }
         }
       } catch (e) {}
+
+      // Crop to the smallest bounding rectangle containing appliances (tab / all-tabs exports)
+      if (!includeWalls && cells.length > 0 && isFinite(minCellX)) {
+        const cropX = minCellX * CELL_PX
+        const cropY = minCellY * CELL_PX
+        const cropW = (maxCellX - minCellX + 1) * CELL_PX + PAD * 2
+        const cropH = (maxCellY - minCellY + 1) * CELL_PX + PAD * 2
+        const cropped = document.createElement('canvas')
+        cropped.width = cropW * scale
+        cropped.height = cropH * scale
+        const cctx = cropped.getContext('2d')
+        cctx.drawImage(offscreen, cropX * scale, cropY * scale, cropW * scale, cropH * scale, 0, 0, cropW * scale, cropH * scale)
+        return cropped.toDataURL('image/png')
+      }
 
       return offscreen.toDataURL('image/png')
     }
