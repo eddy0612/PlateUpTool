@@ -1857,7 +1857,7 @@
         "Reason": "",
         "flipPartner": 346,
         "gametype": "base",
-        "GameID": -99,
+        "GameID": 367215780,
         "MapGameId": -1
     },
     {
@@ -1870,7 +1870,7 @@
         "Reason": "",
         "flipPartner": 154,
         "gametype": "base",
-        "GameID": -98,
+        "GameID": -961856961,
         "MapGameId": -1
     },
     {
@@ -2062,7 +2062,7 @@
         "ItemDescription": "Ice Cream - Chocolate",
         "Reason": "Manually created",
         "gametype": "base",
-        "GameID": -97,
+        "GameID": -46968470,
         "MapGameId": -1
     },
     {
@@ -2074,7 +2074,7 @@
         "ItemDescription": "Ice Cream - Strawberry",
         "Reason": "Manually created",
         "gametype": "base",
-        "GameID": -96,
+        "GameID": -2094600179,
         "MapGameId": -1
     },
     {
@@ -2086,7 +2086,7 @@
         "ItemDescription": "Ice Cream - Vanilla",
         "Reason": "Manually created",
         "gametype": "base",
-        "GameID": -95,
+        "GameID": 26405173,
         "MapGameId": -1
     },
     {
@@ -3826,7 +3826,7 @@
         "ItemDescription": "Teleporter (Unbound)",
         "Reason": "",
         "gametype": "base",
-        "GameID": -1,
+        "GameID": 1135242412,
         "MapGameId": -1
     },
     {
