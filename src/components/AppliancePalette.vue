@@ -707,7 +707,7 @@ export default {
             type: 'complete',
             roomWidth: state.roomWidth,
             roomHeight: state.roomHeight,
-            orientation: state.orientation,
+            URLVersion: state.URLVersion,
             walls: state.walls || {},
             tabs: state.tabs,
             gridCells: state.gridCells,
@@ -2447,7 +2447,7 @@ export default {
           type: 'complete',
           roomWidth: state.roomWidth,
           roomHeight: state.roomHeight,
-          orientation: state.orientation,
+          URLVersion: state.URLVersion,
           walls: state.walls || {},
           tabs: state.tabs,
           gridCells: state.gridCells,
@@ -2500,14 +2500,14 @@ export default {
           }
 
           if (type === 'complete') {
-            const { roomWidth, roomHeight, orientation, walls, tabs, gridCells, labels } = payload
+            const { roomWidth, roomHeight, URLVersion, walls, tabs, gridCells, labels } = payload
             if (!roomWidth || !roomHeight) { await alert('Invalid complete export data.'); return }
             const dimChanged = roomWidth !== state.roomWidth || roomHeight !== state.roomHeight
             const dimNote = dimChanged ? `\n\nNote: the room will also be resized from ${state.roomWidth}×${state.roomHeight} to ${roomWidth}×${roomHeight}.` : ''
             if (hasAnyContent() && !(await confirm(`This will replace ALL current structure and appliances. All your current design will be lost.${dimNote}\n\nWould you like to continue?`))) return
             state.roomWidth = roomWidth
             state.roomHeight = roomHeight
-            state.orientation = orientation ?? 0
+            state.URLVersion = URLVersion ?? 0
             state.walls = walls || {}
             state.tabs = tabs || JSON.parse(JSON.stringify([{ id: 'complete', label: 'Preview' }, { id: 'structure', label: 'Structure' }, { id: 'main', label: 'Base' }]))
             state.gridCells = gridCells || []
@@ -2679,14 +2679,14 @@ export default {
             return { success: true, message: 'Structure imported.' }
           }
           if (type === 'complete') {
-            const { roomWidth, roomHeight, orientation, walls, tabs, gridCells } = payload
+            const { roomWidth, roomHeight, URLVersion, walls, tabs, gridCells } = payload
             if (!roomWidth || !roomHeight) return { success: false, message: 'Invalid complete export data.' }
             const dimChanged = roomWidth !== state.roomWidth || roomHeight !== state.roomHeight
             const dimNote = dimChanged ? `\n\nNote: the room will also be resized from ${state.roomWidth}×${state.roomHeight} to ${roomWidth}×${roomHeight}.` : ''
             if (hasAnyContent() && !(await confirm(`This will replace ALL current structure and appliances. All your current design will be lost.${dimNote}\n\nWould you like to continue?`))) return { success: false, message: 'Import cancelled.' }
             state.roomWidth = roomWidth
             state.roomHeight = roomHeight
-            state.orientation = orientation ?? 0
+            state.URLVersion = URLVersion ?? 0
             state.walls = walls || {}
             state.tabs = tabs || JSON.parse(JSON.stringify([{ id: 'complete', label: 'Preview' }, { id: 'structure', label: 'Structure' }, { id: 'main', label: 'Base' }]))
             state.gridCells = gridCells || []

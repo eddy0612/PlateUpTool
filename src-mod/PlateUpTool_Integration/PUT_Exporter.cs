@@ -28,7 +28,7 @@ namespace PlateUpTool_Integration
         public class PUTState {
             public List<PUTTab> tabs = new List<PUTTab>() { new PUTTab("complete","Preview"), new PUTTab("structure","Structure"), new PUTTab("main","Generated") };
             public string activeTabId = "main";
-            public int orientation = 0;
+            public int URLVersion = 0;
             public double zoom = 1.0; // not serialized
             public int roomWidth = 16;
             public int roomHeight = 12;
@@ -43,7 +43,7 @@ namespace PlateUpTool_Integration
 
         // --- Setter helpers (call these from your mod code to prepare a state) ---
         private void SetRoomSize(int width, int height) { exportState.roomWidth = width; exportState.roomHeight = height; }
-        private void SetOrientation(int o) { exportState.orientation = o; }
+        private void SetURLVersion(int o) { exportState.URLVersion = o; }
         private void SetTabs(List<PUTTab> tabs) { exportState.tabs = tabs ?? new List<PUTTab>(); }
         private void ClearCells() { exportState.gridCells.Clear(); }
         private void AddCell(int x, int y, int applianceId, int rotation = 0, int extraData = 0, List<string> tabIds = null, string iid = null) {
@@ -114,7 +114,7 @@ namespace PlateUpTool_Integration
             var w = new BitWriter();
             // Header bytes
             var headerBytes = new List<int> {
-                roomWidth, roomHeight, stateObj.orientation, flags, defaultTabMask,
+                roomWidth, roomHeight, stateObj.URLVersion, flags, defaultTabMask,
                 cells.Count & 0xFF, (cells.Count >> 8) & 0xFF,
                 wallEntries.Count & 0xFF, (wallEntries.Count >> 8) & 0xFF,
                 xyIdxBits, xBits, yBits
