@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Unity.Entities;
 using UnityEngine;
 using System.Diagnostics;
+//using KitchenData;
 
 namespace PlateUpTool_Integration
 {
@@ -328,6 +329,20 @@ namespace PlateUpTool_Integration
                                 case Orientation.Null: PlateUpTool_Integration.TDbg("Corner grabber : NULL!!!"); break; // Unexpected - leave as is
                             }
                         }
+                        if (base.EntityManager.HasComponent<CConveyPushItems>(primaryOccupant))
+                        {
+                            PlateUpTool_Integration.TDbg("Smart grabber?");
+                            var sgData = base.EntityManager.GetComponentData<CConveyPushItems>(primaryOccupant);
+                            PlateUpTool_Integration.TDbg("GrabSpecificType: " + sgData.GrabSpecificType);
+                            PlateUpTool_Integration.TDbg("SpecificType: " + sgData.SpecificType);
+                            PlateUpTool_Integration.TDbg("SpecificComponents:");
+                            KitchenData.ItemList il = sgData.SpecificComponents;
+                            for (int i = 0; i < il.Count; i++)
+                            {
+                                var item = il[i];
+                                PlateUpTool_Integration.TDbg(" - " + item.ToString());
+                            }
+                        }
 
                         // -----------------------------------------------------------------------------------
                         // Teleporters - these are in pairs, and their number is represented in the GroupID
@@ -451,8 +466,8 @@ namespace PlateUpTool_Integration
             }
             string urlState = EncodeStateForUrl();
             PlateUpTool_Integration.TDbg("Finished, state for my app: " + urlState);
-            //Process.Start("https://eddy0612.github.io/PlateUpTool/#state=" + urlState);
-            Process.Start("http://localhost:5173/#state=" + urlState);
+            Process.Start("https://eddy0612.github.io/PlateUpTool/#state=" + urlState);
+            //Process.Start("http://localhost:5173/#state=" + urlState);
         }
 
         /// <summary>
