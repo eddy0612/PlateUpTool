@@ -14,6 +14,7 @@ const { palette } = useAppliancePalette()
 let __applianceKeepMap = null
 let __applianceKeepMapPromise = null
 let __applianceByGameId = null
+let __applianceByInternalId = null
 var __suppressStateGridSync = false
 function _loadApplianceKeepMap() {
   if (__applianceKeepMapPromise) return __applianceKeepMapPromise
@@ -25,11 +26,13 @@ function _loadApplianceKeepMap() {
       const arr = await resp.json()
       __applianceKeepMap = new Map()
           __applianceByGameId = new Map()
+          __applianceByInternalId = new Map()
       for (const e of arr) {
         // ID in the file is numeric
         const id = Number(e.ID ?? e.id ?? e.Id)
         __applianceKeepMap.set(id, !!e.Keep)
-            // map by GameID for URLVersion=1 compatibility lookups
+        if (!Number.isNaN(id)) __applianceByInternalId.set(id, e)
+            // map by GameID for v0->v1 conversion and Keep lookups
             try {
               const g = Number(e.GameID ?? e.gameid ?? e.gameId)
               if (!Number.isNaN(g)) __applianceByGameId.set(g, e)
@@ -38,6 +41,7 @@ function _loadApplianceKeepMap() {
     } catch (e) {
         __applianceKeepMap = new Map()
         __applianceByGameId = new Map()
+        __applianceByInternalId = new Map()
     }
     return __applianceKeepMap
   })()
@@ -59,7 +63,9 @@ function _pruneKeepFalseCells() {
         if (!cell || !cell.applianceId) continue
         const apId = Number(cell.applianceId)
         // If the appliance is explicitly marked Keep=false, discard it
-        if (__applianceKeepMap.has(apId) && __applianceKeepMap.get(apId) === false) {
+        // applianceId is now a GameID so look up via __applianceByGameId
+        const apEntry = __applianceByGameId ? __applianceByGameId.get(apId) : null
+        if (apEntry && apEntry.Keep === false) {
           if (cell && cell.iid) deletedIids.add(cell.iid)
           deletedCoords.add(cellKey(x, y))
           grid.value[y][x] = null
@@ -215,7 +221,25 @@ function get2DApplianceIcon(applianceId) {
 }
 
 // ── Teleporter pairing ───────────────────────────────────────────────────────
-export const TELEPORTER_APPLIANCE_ID = 315
+export const TELEPORTER_APPLIANCE_ID = 459840623
+
+// Convert an array of cell objects (with applianceId as internal sequential ID)
+// to use GameID. Loads appliance map if not yet available. Returns a new array.
+// Cells with unknown or Keep=false internal IDs are excluded.
+export async function convertCellsToGameId(cells) {
+  await _loadApplianceKeepMap()
+  if (!__applianceByInternalId) return cells
+  return cells
+    .map(c => {
+      const internalId = Number(c.applianceId)
+      const entry = __applianceByInternalId.get(internalId)
+      if (!entry || entry.Keep === false) return null
+      const gameId = Number(entry.GameID ?? entry.gameid ?? entry.gameId)
+      if (Number.isNaN(gameId)) return null
+      return { ...c, applianceId: gameId }
+    })
+    .filter(Boolean)
+}
 
 function isTeleporter(cell) {
   return cell?.applianceId === TELEPORTER_APPLIANCE_ID
@@ -1564,9 +1588,15 @@ async function startPasteFromCells(payload) {
     }
     filteredCells.push({ ...c, cell: { ...c.cell } })
   }
-  duplicateBuffer.value = filteredCells
+  // Normalize so minimum dx/dy is 0 — prevents phantom offsets in blueprints saved with non-zero origin
+  const minDx = filteredCells.length ? Math.min(...filteredCells.map(c => c.dx)) : 0
+  const minDy = filteredCells.length ? Math.min(...filteredCells.map(c => c.dy)) : 0
+  const normalizedCells = (minDx === 0 && minDy === 0)
+    ? filteredCells
+    : filteredCells.map(c => ({ ...c, dx: c.dx - minDx, dy: c.dy - minDy }))
+  duplicateBuffer.value = normalizedCells
   // accept either blueprint-style labels ({dxCell,dyCell,dx2,dy2,label}) or legacy cells-only
-  // Filter labels that anchor to discarded cells
+  // Filter labels that anchor to discarded cells, and shift their coords to match normalized cells
   const filteredLabels = []
   for (const l of labels) {
     // labels in blueprint export reference relative dxCell/dyCell positions
@@ -1577,8 +1607,17 @@ async function startPasteFromCells(payload) {
       // if corresponding cell was filtered out, skip this label
       const matched = filteredCells.find(fc => fc.dx === apX && fc.dy === apY)
       if (!matched) continue
+      // shift label anchor coords to match normalized cells
+      filteredLabels.push({
+        ...l,
+        dxCell: l.dxCell - minDx,
+        dyCell: l.dyCell - minDy,
+        dx2: l.dx2 != null ? l.dx2 - minDx * 2 : l.dx2,
+        dy2: l.dy2 != null ? l.dy2 - minDy * 2 : l.dy2,
+      })
+    } else {
+      filteredLabels.push({ ...l })
     }
-    filteredLabels.push({ ...l })
   }
   duplicateBufferLabels.value = filteredLabels
 
@@ -1734,12 +1773,24 @@ async function loadGridFromState() {
   let restored = 0
   for (const { x, y, ...cell } of state.gridCells) {
     if (grid.value[y] && x < grid.value[y].length) {
-      // If this URL encodes GameIDs (URLVersion=1) translate to internal ID
-      if (state.URLVersion === 1 && cell && cell.applianceId != null && __applianceByGameId && applianceMapAvailable) {
+      // If this is a v0 URL (internal sequential ID), convert to GameID
+      if (state.URLVersion === 0 && cell && cell.applianceId != null && __applianceByInternalId && applianceMapAvailable) {
+        const internalId = Number(cell.applianceId)
+        const entry = __applianceByInternalId.get(internalId)
+        if (entry) {
+          if (entry.Keep === false) continue
+          const gameId = Number(entry.GameID ?? entry.gameid ?? entry.gameId)
+          if (!Number.isNaN(gameId)) cell.applianceId = gameId
+          else continue
+        } else {
+          // unknown internal ID — drop
+          continue
+        }
+      } else if (state.URLVersion === 1 && cell && cell.applianceId != null && __applianceByGameId && applianceMapAvailable) {
+        // For v1, follow MapGameId chains to canonical entry and check Keep
         let gameId = Number(cell.applianceId)
         const seen = new Set()
         let entry = __applianceByGameId.get(gameId)
-        // follow MapGameId chains if present
         while (entry && entry.MapGameId != null && Number(entry.MapGameId) !== -1) {
           const next = Number(entry.MapGameId)
           if (seen.has(next)) break
@@ -1748,13 +1799,9 @@ async function loadGridFromState() {
           entry = __applianceByGameId.get(gameId)
         }
         if (entry) {
-          // resolved to a canonical appliance entry; use its internal ID
-          const resolvedId = Number(entry.ID ?? entry.id ?? entry.Id)
-          if (!Number.isNaN(resolvedId)) cell.applianceId = resolvedId
-          // if canonical entry is marked Keep=false, skip restoring this cell
+          if (!Number.isNaN(gameId)) cell.applianceId = gameId
           if (entry.Keep === false) continue
         } else {
-          // drop unknown entries for URLVersion=1
           continue
         }
       }
@@ -1777,6 +1824,8 @@ async function loadGridFromState() {
       }
     }
   }
+  // If state was v0 (internal IDs), upgrade to v1 (GameIDs) now that cells have been converted
+  if (state.URLVersion === 0) state.URLVersion = 1
   // Remove any appliances that are marked Keep=false in the canonical
   // appliances list (these items should not be restored/imported)
   _pruneKeepFalseCells()
