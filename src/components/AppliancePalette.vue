@@ -2516,7 +2516,7 @@ export default {
             const firstUserTab = state.tabs.find(t => t.id !== 'complete' && t.id !== 'structure')
             state.activeTabId = firstUserTab?.id ?? 'main'
             // Rebuild the internal grid from the new state
-            loadGridFromState()
+            await loadGridFromState()
             return
           }
 
@@ -2692,7 +2692,7 @@ export default {
             state.gridCells = gridCells || []
             const firstUserTab = state.tabs.find(t => t.id !== 'complete' && t.id !== 'structure')
             state.activeTabId = firstUserTab?.id ?? 'main'
-            loadGridFromState()
+            await loadGridFromState()
             return { success: true, message: 'Complete import applied.' }
           }
         }

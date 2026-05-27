@@ -358,6 +358,9 @@ function loadFromHash() {
   const raw = hash.slice(7)
   const parsed = decodeState(raw)
   if (parsed && parsed.tabs) {
+    try {
+      // parsed state available
+    } catch (e) {}
     URL_FIELDS.forEach((k) => {
       if (k in parsed) state[k] = parsed[k]
       else state[k] = JSON.parse(JSON.stringify(DEFAULT_STATE[k]))
