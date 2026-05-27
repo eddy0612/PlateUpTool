@@ -11,7 +11,7 @@ const DEFAULT_TABS_JSON = JSON.stringify(DEFAULT_TABS)
 const DEFAULT_STATE = {
   tabs: JSON.parse(DEFAULT_TABS_JSON),
   activeTabId: DEFAULT_ACTIVE_TAB,
-    URLVersion: 0,
+    URLVersion: 1,
   zoom: 1.0,        // kept in state for UI reactivity, not saved to URL
   roomWidth: 16,
   roomHeight: 12,

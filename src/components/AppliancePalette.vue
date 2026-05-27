@@ -439,7 +439,7 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import AddLabelDialog from './AddLabelDialog.vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
-import { useGrid } from '../composables/useGrid'
+import { useGrid, convertCellsToGameId } from '../composables/useGrid'
 import { useTouchDebug } from '../composables/useTouchDebug'
 import { readPngText, writePngText, writeStegoText, readStegoFromBytes, dataUrlToBytes, bytesToDataUrl, downloadDataUrl, readFileAsBytes, writePngDpi } from '../composables/usePngMetadata'
 import { alert, confirm, toast } from '../utils/ui'
@@ -673,7 +673,7 @@ export default {
             if (!tabCellKeySet.has(`${ax},${ay}`)) continue
             tabExportLabels.push({ dxCell: ax - tabMinX, dyCell: ay - tabMinY, dx2: (lbl.x2 != null ? lbl.x2 : ax * 2) - tabMinX * 2, dy2: (lbl.y2 != null ? lbl.y2 : ay * 2) - tabMinY * 2, label: { ...lbl } })
           }
-          payload = encodePayload({ type: 'tab', tabId, tabLabel, cells: exportCells, labels: tabExportLabels })
+          payload = encodePayload({ type: 'tab', tabId, tabLabel, URLVersion: 1, cells: exportCells, labels: tabExportLabels })
         } else if (type === 'all-tabs') {
           const allCells = []
           let allMinX = Infinity, allMinY = Infinity
@@ -701,7 +701,7 @@ export default {
             if (!allCellKeySet2.has(`${ax},${ay}`)) continue
             allExportLabels.push({ dxCell: ax - allMinX, dyCell: ay - allMinY, dx2: (lbl.x2 != null ? lbl.x2 : ax * 2) - allMinX * 2, dy2: (lbl.y2 != null ? lbl.y2 : ay * 2) - allMinY * 2, label: { ...lbl } })
           }
-          payload = encodePayload({ type: 'all-tabs', cells: exportCells, labels: allExportLabels })
+          payload = encodePayload({ type: 'all-tabs', URLVersion: 1, cells: exportCells, labels: allExportLabels })
         } else if (type === 'complete') {
           payload = encodePayload({
             type: 'complete',
@@ -1063,11 +1063,36 @@ export default {
         }
       } catch (e) {}
 
+      let migrated = false
       for (const bp of blueprints.value || []) {
         try {
-          bp.preview = await generateBlueprintPreview(bp.cells || [], 40, bp.labels || [])
+          // If a previous broken migration wiped cells but set version=1, reset version so
+          // migration can re-attempt on this load (cells are still lost, but at least the
+          // entry won't permanently block re-migration if cells are somehow restored).
+          if (bp.version === 1 && (!bp.cells || bp.cells.length === 0)) {
+            bp.version = undefined
+            migrated = true
+          }
+
+          // Migrate old blueprints that stored internal sequential IDs (pre-GameID refactor).
+          // Blueprints without a version field were saved before the GameID migration.
+          if (!bp.version && Array.isArray(bp.cells) && bp.cells.length > 0) {
+            const inputCells = bp.cells.map(c => ({ ...c.cell, _dx: c.dx, _dy: c.dy }))
+            const raw = await convertCellsToGameId(inputCells)
+            const converted = raw?.map(c => { const { _dx, _dy, ...cell } = c; return { dx: _dx, dy: _dy, cell } })
+            // Only accept conversion if it produced cells (guard against map-load failure)
+            if (converted && converted.length > 0) {
+              bp.cells = converted
+              bp.version = 1
+              migrated = true
+            }
+          }
+          const newPreview = await generateBlueprintPreview(bp.cells || [], 40, bp.labels || [])
+          // Only overwrite preview if generation succeeded; preserve existing thumbnail otherwise
+          if (newPreview) bp.preview = newPreview
         } catch (e) {}
       }
+      if (migrated) saveBlueprintsToStorage()
       nextTick(updateScrollChevrons)
     })
 
@@ -1087,7 +1112,7 @@ export default {
     function onBlueprintDialogConfirm(name) {
       const trimmedName = (name || '').trim() || 'Blueprint'
       if (!blueprintCandidate.value) { closeBlueprintDialog(); return }
-      blueprints.value.push({ id: Date.now().toString(), name: trimmedName, preview: blueprintCandidate.value.preview, cells: blueprintCandidate.value.cells, labels: blueprintCandidate.value.labels })
+      blueprints.value.push({ id: Date.now().toString(), version: 1, name: trimmedName, preview: blueprintCandidate.value.preview, cells: blueprintCandidate.value.cells, labels: blueprintCandidate.value.labels })
       saveBlueprintsToStorage()
       closeBlueprintDialog()
     }
@@ -1235,7 +1260,7 @@ export default {
           ctx.fillText((entry?.label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
           // Draw teleporter pair number if present
           try {
-            if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
+            if (cell?.applianceId === 459840623 && (cell.extraData || 0) > 0) {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
               ctx.save()
@@ -1268,7 +1293,7 @@ export default {
           }
           ctx.restore()
           try {
-            if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
+            if (cell?.applianceId === 459840623 && (cell.extraData || 0) > 0) {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
               ctx.save()
@@ -1302,9 +1327,9 @@ export default {
           for (const a of localCells) {
             const x = a.dx, y = a.dy
             const cell = a.cell
-            if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
+            if (cell?.applianceId === 459840623 && (cell.extraData || 0) > 0) {
               // find partner within blueprint
-              const partner = localCells.find(c => (c.cell?.applianceId === 315) && (c.cell.extraData || 0) === cell.extraData && (c.dx !== x || c.dy !== y))
+              const partner = localCells.find(c => (c.cell?.applianceId === 459840623) && (c.cell.extraData || 0) === cell.extraData && (c.dx !== x || c.dy !== y))
               if (!partner) continue
               const key = `${Math.min(x, partner.dx)},${Math.min(y, partner.dy)},${Math.max(x, partner.dx)},${Math.max(y, partner.dy)}`
               if (seen.has(key)) continue
@@ -1512,7 +1537,13 @@ export default {
 
     async function applyBlueprint(bp) {
       if (suppressNextBlueprintClickForId.value !== null && suppressNextBlueprintClickForId.value === bp.id) { suppressNextBlueprintClickForId.value = null; return }
-      await startPasteFromCells(bp)
+      let { cells, labels } = bp
+      // Migrate old blueprints that used internal sequential IDs (pre-GameID refactor).
+      if (!bp.version && Array.isArray(cells) && cells.length > 0) {
+        const raw = await convertCellsToGameId(cells.map(c => ({ ...c.cell, _dx: c.dx, _dy: c.dy })))
+        if (raw) cells = raw.map(c => { const { _dx, _dy, ...cell } = c; return { dx: _dx, dy: _dy, cell } })
+      }
+      await startPasteFromCells({ cells, labels: labels || [] })
     }
 
     const suppressNextBlueprintClickForId = ref(null)
@@ -1528,7 +1559,7 @@ export default {
 
       beginDeferredPalettePointerDrag(e, {
         label: bp.name,
-        onStart: async () => { await startPasteFromCells(bp) },
+        onStart: async () => { await applyBlueprint(bp) },
         onMove: (clientX, clientY) => {
           const cell = getCellFromPoint(clientX, clientY)
           if (cell) setPasteAnchor(cell.x, cell.y)
@@ -1562,7 +1593,7 @@ export default {
       // Always generate a fresh high-res image for the exported PNG (not from localStorage)
       const exportPreview = await generateBlueprintPreview(bp.cells, 100, bp.labels || [])
       if (!exportPreview) { await alert('Could not generate preview image.'); return }
-      const json = JSON.stringify({ name: bp.name, cells: bp.cells, labels: bp.labels || [] })
+      const json = JSON.stringify({ name: bp.name, version: bp.version ?? 1, cells: bp.cells, labels: bp.labels || [] })
       const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
       const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(exportPreview), 'plateup-blueprint', payload))
       let modified = writePngText(bytes, 'plateup-blueprint', payload)
@@ -1589,10 +1620,16 @@ export default {
           return
         }
         const json = new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0)))
-        const { name, cells, labels } = JSON.parse(json)
+        let { name, version, cells, labels } = JSON.parse(json)
         if (!name || !Array.isArray(cells) || cells.length === 0) { await alert('Invalid blueprint data.'); return }
+        // Migrate cells from old blueprint PNGs that predate the GameID version field
+        if (!version) {
+          const raw = await convertCellsToGameId(cells.map(c => ({ ...c.cell, _dx: c.dx, _dy: c.dy })))
+          if (raw) cells = raw.map(c => { const { _dx, _dy, ...cell } = c; return { dx: _dx, dy: _dy, cell } })
+          version = 1
+        }
         const preview = await generateBlueprintPreview(cells, 40, labels || [])
-        blueprints.value.push({ id: Date.now().toString(), name, preview, cells, labels: labels || [] })
+        blueprints.value.push({ id: Date.now().toString(), version: 1, name, preview, cells, labels: labels || [] })
         saveBlueprintsToStorage()
         paletteTab.value = 'blueprints'
       } catch (e) {
@@ -1813,7 +1850,7 @@ export default {
           ctx.fillText((entry?.label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
           // Draw teleporter pair number if present
           try {
-            if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
+            if (cell?.applianceId === 459840623 && (cell.extraData || 0) > 0) {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
               ctx.save()
@@ -1846,7 +1883,7 @@ export default {
           ctx.restore()
           // Draw teleporter pair number if present
           try {
-            if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
+            if (cell?.applianceId === 459840623 && (cell.extraData || 0) > 0) {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
               ctx.save()
@@ -1887,7 +1924,7 @@ export default {
           for (let y = 0; y < grid.value.length; y++) {
             for (let x = 0; x < (grid.value[y]?.length ?? 0); x++) {
               const cell = grid.value[y][x]
-              if (cell?.applianceId === 315 && (cell.extraData || 0) > 0) {
+              if (cell?.applianceId === 459840623 && (cell.extraData || 0) > 0) {
                 // find partner using getTeleporterPairPos
                 const partner = getTeleporterPairPos(x, y)
                 if (!partner) continue
@@ -2189,7 +2226,7 @@ export default {
       } catch (e) {}
 
       const preview = await generateBlueprintPreview(previewCells, 80, labelsForPreview, false)
-      const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: exportCells, labels: exportLabels })
+      const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', URLVersion: 1, cells: exportCells, labels: exportLabels })
       const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
       let modified = writePngText(bytes, 'plateup-v2-export', payload)
       try { modified = writePngDpi(modified, 300) } catch (e) {}
@@ -2306,7 +2343,7 @@ export default {
       if (!dataUrl) { await alert('Nothing to copy.'); return }
       dataUrl = await addWatermark(dataUrl)
       try {
-        const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', cells: valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] } })), labels: clipboardExportLabels })
+        const payload = encodePayload({ type: 'tab', tabId: 'selection', tabLabel: 'Selection', URLVersion: 1, cells: valid.map(({ x, y, cell }) => ({ dx: x - minX, dy: y - minY, cell: { applianceId: cell.applianceId, rotation: cell.rotation ?? 0, extraData: cell.extraData ?? 0, tabIds: [] } })), labels: clipboardExportLabels })
         const stegoDataUrl = await writeStegoText(dataUrl, 'plateup-v2-export', payload)
         const bytes = dataUrlToBytes(stegoDataUrl)
         let modified = writePngText(bytes, 'plateup-v2-export', payload)
@@ -2399,7 +2436,7 @@ export default {
           exportLabels.push({ dxCell: ax - minX, dyCell: ay - minY, dx2: (lbl.x2 != null ? lbl.x2 : ax * 2) - minX * 2, dy2: (lbl.y2 != null ? lbl.y2 : ay * 2) - minY * 2, label: { ...lbl } })
         }
         const preview = await generateGridPreview(tabId, false)
-        const payload = encodePayload({ type: 'tab', tabId, tabLabel, cells: exportCells, labels: exportLabels })
+        const payload = encodePayload({ type: 'tab', tabId, tabLabel, URLVersion: 1, cells: exportCells, labels: exportLabels })
         const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
         let modified = writePngText(bytes, 'plateup-v2-export', payload)
         try { modified = writePngDpi(modified, 300) } catch (e) {}
@@ -2435,7 +2472,7 @@ export default {
           exportLabels.push({ dxCell: ax - minX, dyCell: ay - minY, dx2: (lbl.x2 != null ? lbl.x2 : ax * 2) - minX * 2, dy2: (lbl.y2 != null ? lbl.y2 : ay * 2) - minY * 2, label: { ...lbl } })
         }
         const preview = await generateGridPreview(null, false)
-        const payload = encodePayload({ type: 'all-tabs', cells: exportCells, labels: exportLabels })
+        const payload = encodePayload({ type: 'all-tabs', URLVersion: 1, cells: exportCells, labels: exportLabels })
         const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(preview), 'plateup-v2-export', payload))
         let modified = writePngText(bytes, 'plateup-v2-export', payload)
         try { modified = writePngDpi(modified, 300) } catch (e) {}
@@ -2480,8 +2517,13 @@ export default {
               await alert('Switch to a coloured tab before importing appliances.')
               return
             }
-            const { cells, labels } = payload
+            let { cells, labels, URLVersion } = payload
             if (!Array.isArray(cells) || cells.length === 0) { await alert('No appliance data found in this file.'); return }
+            // If this payload uses internal IDs (v0), convert to GameIDs before pasting
+            if (!URLVersion || URLVersion === 0) {
+              const raw = await convertCellsToGameId(cells.map(c => ({ ...c.cell, _dx: c.dx, _dy: c.dy })))
+              if (raw) cells = raw.map(c => { const { _dx, _dy, ...cell } = c; return { dx: _dx, dy: _dy, cell } })
+            }
             await startPasteFromCells({ cells, labels: labels || [] })
             return
           }
@@ -2535,11 +2577,14 @@ export default {
           if (!parsed?.gridCells?.length) { await alert('Invalid or empty design data.'); return }
           let minX = Infinity, minY = Infinity
           for (const c of parsed.gridCells) { if (c.x < minX) minX = c.x; if (c.y < minY) minY = c.y }
-          const cells = parsed.gridCells.map(c => ({
-            dx: c.x - minX, dy: c.y - minY,
-            cell: { applianceId: c.applianceId, rotation: c.rotation ?? 0, extraData: c.extraData ?? 0, tabIds: [] }
-          }))
-          await startPasteFromCells(cells)
+          // Legacy format uses internal IDs — convert to GameIDs
+          const rawCells = parsed.gridCells.map(c => ({ applianceId: c.applianceId, rotation: c.rotation ?? 0, extraData: c.extraData ?? 0, _dx: c.x - minX, _dy: c.y - minY }))
+          const rawConverted = await convertCellsToGameId(rawCells)
+          const convertedCells = (rawConverted ?? rawCells).map(c => {
+            const { _dx, _dy, ...cell } = c
+            return { dx: _dx, dy: _dy, cell: { ...cell, tabIds: [] } }
+          })
+          await startPasteFromCells(convertedCells)
           return
         }
 
