@@ -125,7 +125,7 @@
                 :title="bp.name"
                 @click="applyBlueprint(bp)"
                 @pointerdown="onBlueprintPointerDown(bp, $event)"
-                @contextmenu.prevent="deleteBlueprint(bp)"
+                @contextmenu.prevent="openBpContextMenu(bp)"
               >
                 <div class="bb-icon">
                   <img v-if="bp.preview" :src="bp.preview" :alt="bp.name" class="bb-bp-img" />
@@ -260,11 +260,11 @@
                 v-for="bp in filteredBlueprints"
                 :key="bp.id"
                 class="palette-item blueprint-item"
-                :title="bp.name + '\n(right-click to delete)'"
+                :title="bp.name"
                 @click="applyBlueprint(bp)"
                 @pointerdown="onBlueprintPointerDown(bp, $event)"
                 @dragstart.prevent
-                @contextmenu.prevent="deleteBlueprint(bp)"
+                @contextmenu.prevent="openBpContextMenu(bp)"
               >
                 <div class="item-icon" style="position:relative">
                   <img
@@ -275,7 +275,8 @@
                     draggable="false"
                   />
                   <span v-else class="blueprint-placeholder">📋</span>
-                  <button class="bp-export-btn" @click.stop="exportBlueprint(bp)" title="Export blueprint as PNG">⬇</button>
+                  <button class="bp-export-btn" @pointerdown.stop @click.stop="exportBlueprint(bp)" title="Export blueprint as PNG">⬇</button>
+                  <button class="bp-delete-btn" @pointerdown.stop @click.stop="deleteBlueprint(bp)" title="Delete blueprint">🗑</button>
                 </div>
                 <div class="blueprint-name">{{ bp.name }}</div>
               </div>
@@ -427,6 +428,26 @@
               <span style="display:inline-block;transform:rotate(90deg)">&#8250;</span>
             </button>
           </div>
+        </div>
+      </div>
+    </teleport>
+
+    <!-- Blueprint long-press context menu -->
+    <teleport to="body">
+      <div v-if="bpContextMenuVisible" class="bp-ctx-backdrop" @click="closeBpContextMenu" @contextmenu.prevent="closeBpContextMenu">
+        <div class="bp-ctx-dialog" role="dialog" aria-modal="true" :aria-label="'Blueprint options for ' + (bpContextMenuBp?.name || '')" @click.stop>
+          <div class="bp-ctx-title">{{ bpContextMenuBp?.name }}</div>
+          <div class="bp-ctx-item" @click="bpCtxShareClipboard">
+            <span class="bp-ctx-icon">📋</span> Share blueprint via clipboard
+          </div>
+          <div class="bp-ctx-item" @click="bpCtxShareFile">
+            <span class="bp-ctx-icon">💾</span> Share blueprint via file
+          </div>
+          <div class="bp-ctx-divider"></div>
+          <div class="bp-ctx-item bp-ctx-item-danger" @click="bpCtxDelete">
+            <span class="bp-ctx-icon">🗑</span> Delete blueprint
+          </div>
+          <button class="bp-ctx-cancel" @click="closeBpContextMenu">Cancel</button>
         </div>
       </div>
     </teleport>
@@ -1551,6 +1572,43 @@ export default {
     function onBlueprintPointerDown(bp, e) {
       if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
 
+      const pointerType = e.pointerType || 'mouse'
+      const isTouchLike = pointerType === 'touch' || pointerType === 'pen'
+
+      // On touch/pen, detect a long press (500 ms with no significant movement) and
+      // show the blueprint context menu instead of starting a drag.
+      if (isTouchLike) {
+        const startX = e.clientX
+        const startY = e.clientY
+        const pointerId = e.pointerId
+        let longPressTimer = setTimeout(() => {
+          cleanupLp()
+          suppressNextBlueprintClickForId.value = bp.id
+          // Cancel any pending drag the pointer-drag machinery may have set up
+          try { window.dispatchEvent(new PointerEvent('pointercancel', { pointerId, bubbles: true })) } catch (_) {}
+          openBpContextMenu(bp)
+        }, 500)
+
+        function cleanupLp() {
+          clearTimeout(longPressTimer)
+          longPressTimer = null
+          window.removeEventListener('pointermove', onLpMove)
+          window.removeEventListener('pointerup', onLpUp)
+        }
+        function onLpMove(me) {
+          if (!longPressTimer || me.pointerId !== pointerId) return
+          const dx = me.clientX - startX
+          const dy = me.clientY - startY
+          if (Math.sqrt(dx * dx + dy * dy) > 8) cleanupLp()
+        }
+        function onLpUp(me) {
+          if (me.pointerId !== pointerId) return
+          cleanupLp()
+        }
+        window.addEventListener('pointermove', onLpMove, { passive: true })
+        window.addEventListener('pointerup', onLpUp, { passive: true })
+      }
+
       function getCellFromPoint(clientX, clientY) {
         const el = document.elementFromPoint(clientX, clientY)?.closest?.('.grid-item')
         if (el && el.dataset.x !== undefined) return { x: parseInt(el.dataset.x), y: parseInt(el.dataset.y) }
@@ -1600,6 +1658,58 @@ export default {
       try { modified = writePngDpi(modified, 300) } catch (e) {}
       const safeName = bp.name.replace(/[^a-z0-9_-]/gi, '_').slice(0, 40) || 'blueprint'
       downloadDataUrl(bytesToDataUrl(modified), `plateup-blueprint-${safeName}-${exportTimestamp()}.png`)
+    }
+
+    // ── Blueprint long-press context menu ────────────────────────────────────
+    const bpContextMenuVisible = ref(false)
+    const bpContextMenuBp = ref(null)
+
+    function openBpContextMenu(bp) {
+      bpContextMenuBp.value = bp
+      bpContextMenuVisible.value = true
+    }
+
+    function closeBpContextMenu() {
+      bpContextMenuVisible.value = false
+      bpContextMenuBp.value = null
+    }
+
+    async function bpCtxShareClipboard() {
+      const bp = bpContextMenuBp.value
+      closeBpContextMenu()
+      if (!bp) return
+      await shareBlueprintToClipboard(bp)
+    }
+
+    async function bpCtxShareFile() {
+      const bp = bpContextMenuBp.value
+      closeBpContextMenu()
+      if (!bp) return
+      await exportBlueprint(bp)
+    }
+
+    async function bpCtxDelete() {
+      const bp = bpContextMenuBp.value
+      closeBpContextMenu()
+      if (!bp) return
+      await deleteBlueprint(bp)
+    }
+
+    async function shareBlueprintToClipboard(bp) {
+      const exportPreview = await generateBlueprintPreview(bp.cells, 100, bp.labels || [])
+      if (!exportPreview) { await alert('Could not generate preview image.'); return }
+      const json = JSON.stringify({ name: bp.name, version: bp.version ?? 1, cells: bp.cells, labels: bp.labels || [] })
+      const payload = btoa(String.fromCharCode(...new TextEncoder().encode(json)))
+      const bytes = dataUrlToBytes(await writeStegoText(await addWatermark(exportPreview), 'plateup-blueprint', payload))
+      let modified = writePngText(bytes, 'plateup-blueprint', payload)
+      try { modified = writePngDpi(modified, 300) } catch (e) {}
+      try {
+        const finalBlob = new Blob([modified], { type: 'image/png' })
+        await navigator.clipboard.write([new window.ClipboardItem({ [finalBlob.type]: finalBlob })])
+        toast('Blueprint copied to clipboard!')
+      } catch (e) {
+        await alert('Failed to copy blueprint to clipboard: ' + e.message)
+      }
     }
 
     async function handleBlueprintImport(event) {
@@ -2947,6 +3057,9 @@ export default {
       blueprintDialogVisible, blueprintDialogInitial, onBlueprintDialogConfirm, closeBlueprintDialog,
       exportBlueprint, handleBlueprintImport, triggerBlueprintImport, blueprintImportInput,
       bpDragOver, onBpDragOver, onBpDragLeave, onBpFileDrop,
+      // blueprint context menu
+      bpContextMenuVisible, bpContextMenuBp, openBpContextMenu, closeBpContextMenu,
+      bpCtxShareClipboard, bpCtxShareFile, bpCtxDelete,
       // unified export/import
       unifiedImportInput, triggerUnifiedImport, handleUnifiedImport,
       exportMenuVisible, exportMenuPos, showExportMenu, closeExportMenu, doExport, doExportClipboard,
@@ -3154,9 +3267,107 @@ export default {
   padding: 0;
   line-height: 1;
 }
+.bp-delete-btn {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 3px;
+  background: rgba(160, 30, 20, 0.55);
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+  padding: 0;
+  line-height: 1;
+}
 .blueprint-item:hover .bp-export-btn { opacity: 1 }
+.blueprint-item:hover .bp-delete-btn { opacity: 1 }
 
-/* ── Palette tabs ─────────────────────────────────────────────────────────── */
+/* ── Blueprint long-press context menu ───────────────────────────────────── */
+.bp-ctx-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 18, 28, 0.52);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 20001;
+  padding-bottom: 84px;
+}
+.bp-ctx-dialog {
+  background: #fff;
+  border-radius: 16px;
+  padding: 8px;
+  width: min(340px, calc(100vw - 28px));
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.bp-ctx-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7a8d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 14px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bp-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #17202a;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s;
+}
+.bp-ctx-item:hover, .bp-ctx-item:active { background: rgba(31,121,255,0.07); }
+.bp-ctx-icon {
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.bp-ctx-item-danger { color: #c0392b; }
+.bp-ctx-item-danger:hover, .bp-ctx-item-danger:active { background: rgba(192,57,43,0.07); }
+.bp-ctx-divider {
+  height: 1px;
+  background: #e8eef5;
+  margin: 4px 8px;
+}
+.bp-ctx-cancel {
+  margin-top: 4px;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 10px;
+  background: #f0f4f8;
+  color: #4a6078;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s;
+}
+.bp-ctx-cancel:hover, .bp-ctx-cancel:active { background: #e2e8f0; }
+
+
 .palette-tabs {
   display: flex;
   gap: 0;
@@ -3211,12 +3422,16 @@ export default {
 }
 .blueprint-item {
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 .blueprint-preview-img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
+  -webkit-touch-callout: none;
+  pointer-events: none;
 }
 .blueprint-placeholder {
   font-size: 40px;
@@ -3231,6 +3446,7 @@ export default {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  -webkit-touch-callout: none;
 }
 
 /* ---- Structure mode palette ---- */
@@ -3921,7 +4137,7 @@ html.dark .bb-inv-chevron-down { background: linear-gradient(to top, rgba(13,27,
   width: 58px; flex-shrink: 0; height: 74px; cursor: pointer; border-radius: 6px;
   padding: 0 2px; border: 1px solid transparent;
   transition: background 0.1s, border-color 0.1s;
-  user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
 }
 /* pan-x lets horizontal swipes scroll the palette; vertical drags still fire pointer events for drag-to-place */
 .bb-item:not(.bb-tool-btn) { touch-action: pan-x; }
@@ -3932,7 +4148,7 @@ html.dark .bb-inv-chevron-down { background: linear-gradient(to top, rgba(13,27,
   width: 58px; height: 58px; display: flex; align-items: center; justify-content: center;
   overflow: hidden; flex-shrink: 0;
 }
-.bb-icon img, .bb-bp-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.bb-icon img, .bb-bp-img { width: 100%; height: 100%; object-fit: contain; display: block; -webkit-touch-callout: none; pointer-events: none; }
 .bb-icon-add { background: transparent; }
 .bb-icon-add span { font-size: 32px; font-weight: 300; color: #6b9fd4; line-height: 1; }
 .bb-icon-placeholder { font-size: 24px; }
@@ -4046,4 +4262,16 @@ html.dark .bb-search-btn-cancel { background: #1a2c40; border-color: #2e4868; co
 html.dark .bb-search-btn-cancel:hover { background: #1f3550; }
 html.dark .bb-search-btn-confirm { background: #2a78ff; }
 html.dark .bb-search-btn-confirm:hover:not(:disabled) { background: #1a65e8; }
+
+/* ── Blueprint context menu — dark mode ─────────────────────────────────── */
+html.dark .bp-ctx-backdrop { background: rgba(6, 10, 18, 0.72); }
+html.dark .bp-ctx-dialog { background: #172230; box-shadow: 0 20px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04); }
+html.dark .bp-ctx-title { color: #6a8aaa; }
+html.dark .bp-ctx-item { color: #dbe9ff; }
+html.dark .bp-ctx-item:hover, html.dark .bp-ctx-item:active { background: rgba(90,154,255,0.1); }
+html.dark .bp-ctx-item-danger { color: #e87070; }
+html.dark .bp-ctx-item-danger:hover, html.dark .bp-ctx-item-danger:active { background: rgba(232,112,112,0.1); }
+html.dark .bp-ctx-divider { background: #2e3e52; }
+html.dark .bp-ctx-cancel { background: #1a2c40; color: #8aacc8; }
+html.dark .bp-ctx-cancel:hover, html.dark .bp-ctx-cancel:active { background: #1f3550; }
 </style>
