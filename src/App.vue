@@ -718,6 +718,8 @@ export default {
       window.addEventListener('plateup-copy-link', copyUrl)
       // Listen for external undo requests (from child components)
       window.addEventListener('plateup-undo', undo)
+      // Listen for rezoom requests (e.g. after complete import)
+      window.addEventListener('plateup-rezoom', () => nextTick(() => resetZoom()))
       const onDocClick = (e) => {
         // close menus when clicking outside
         if (showMainMenu.value) {

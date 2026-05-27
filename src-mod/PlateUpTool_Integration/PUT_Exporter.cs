@@ -468,8 +468,8 @@ namespace PlateUpTool_Integration
             }
             string urlState = EncodeStateForUrl();
             PlateUpTool_Integration.TDbg("Finished, state for my app: " + urlState);
-            //Process.Start("https://eddy0612.github.io/PlateUpTool/#state=" + urlState);
-            Process.Start("http://localhost:5173/#state=" + urlState);
+            Process.Start("https://eddy0612.github.io/PlateUpTool/#state=" + urlState);
+            //Process.Start("http://localhost:5173/#state=" + urlState);
         }
 
         /// <summary>
