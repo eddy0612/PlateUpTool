@@ -2559,6 +2559,8 @@ export default {
             state.activeTabId = firstUserTab?.id ?? 'main'
             // Rebuild the internal grid from the new state
             await loadGridFromState()
+            // Fit viewport to the newly loaded room size
+            nextTick(() => window.dispatchEvent(new Event('plateup-rezoom')))
             return
           }
 
