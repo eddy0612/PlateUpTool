@@ -1,0 +1,17 @@
+Change Note:
+Initial release of the PlateUpTool planner integration mod
+
+Title:
+PlateUpTool Planner integration
+
+Description:
+Adds a menu under "Mod Preferences" which when clicked will open a web page to the PlateUpTool planner, prepopulated with the design of your restaurant. 
+
+This should transfer all layout (walls, hatches, doors) plus all non-cosmetic details. Rotating grabbers will be in the right positions, teleporters will remain grouped etc
+
+Preview Image:
+C:\Users\us\Cloud-Drive\to_backup\Jasons\Projects\PlateUpTool\bin-mod\ModPreview.jpg
+
+Tags:
+Layouts
+
