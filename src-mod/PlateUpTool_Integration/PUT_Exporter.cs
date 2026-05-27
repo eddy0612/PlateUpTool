@@ -253,6 +253,7 @@ namespace PlateUpTool_Integration
             int height = (int)(bounds.max.z - bounds.min.z + 1f);
             int width = (int)(bounds.max.x - bounds.min.x + 1f);
             PlateUpTool_Integration.TDbg("Screen size: " + width + " x " + height);
+            SetURLVersion(0);
             SetRoomSize(width, height);
             ClearCells();
             ClearWalls();

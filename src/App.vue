@@ -138,6 +138,11 @@
       </div>
 
     </header>
+    <!-- Spinner overlay while appliance metadata is loading -->
+    <div v-if="applianceMapLoading" class="appliance-map-overlay" role="status" aria-live="polite">
+      <div class="appliance-map-spinner"></div>
+      <div class="appliance-map-text">Loading appliance metadata…</div>
+    </div>
 
     <TutorialModal v-if="showTutorial" @close="showTutorial = false" />
 
@@ -422,7 +427,7 @@ export default {
     const { state, loadFromHash, syncToHash } = useRestaurantStore()
     const _encodeState = encodeStateFn
     const { loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon, cellSize, selectedCells, selectedLabelIds,
-      copyToClipboard, cutToClipboard, startPaste, startDuplicate, removeSelected } = useGrid()
+      copyToClipboard, cutToClipboard, startPaste, startDuplicate, removeSelected, applianceMapLoading } = useGrid()
 
     const showHelp = ref(false)
     const showCredits = ref(false)
@@ -661,10 +666,10 @@ export default {
       syncToHash()
     }, { deep: true })
 
-    onMounted(() => {
+    onMounted(async () => {
       document.documentElement.classList.toggle('dark', darkMode.value)
       loadFromHash()
-      loadGridFromState()
+      await loadGridFromState()
       // Fit the restaurant to the viewport on initial load (mirrors what
       // resetZoom does when clicking the magnifying glass).
       nextTick(() => resetZoom())
@@ -679,9 +684,9 @@ export default {
         showSizeModal.value = true
         sizeModalDismissable.value = false
       }
-      window.addEventListener('hashchange', () => {
+      window.addEventListener('hashchange', async () => {
         loadFromHash()
-        loadGridFromState()
+        await loadGridFromState()
         // Reset undo stack when a new URL/state is loaded
         try {
           const snap = JSON.stringify(buildFullSnapshot())
@@ -867,7 +872,7 @@ export default {
     }
 
     // Undo: revert to previous encoded state from sessionStorage stack
-    function undo() {
+    async function undo() {
       try {
         const stack = readUndo()
         if (!stack || stack.length <= 1) { return }
@@ -888,7 +893,7 @@ export default {
           } catch (e) {}
         }
         // Rebuild grid view first (this clears selections internally)
-        loadGridFromState()
+        await loadGridFromState()
         // Restore UI selections/preferences after grid is rebuilt
         try {
           selectedCells.value = new Set(parsed.ui.selectedCells || [])
@@ -924,10 +929,10 @@ export default {
       } catch (e) {}
     }
 
-    function onSizeChosen({ w, h }) {
+    async function onSizeChosen({ w, h }) {
       state.roomWidth = Number(w)
       state.roomHeight = Number(h)
-      loadGridFromState()
+      await loadGridFromState()
       showSizeModal.value = false
       sizeModalDismissable.value = false
       resetZoom()
@@ -950,6 +955,7 @@ export default {
       toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode,
       paletteDragActive, paletteDragItem, paletteDragPos, get2DApplianceIcon, isImageIcon,
       cellSize, state, onSizeChosen, onSizeCancelled, undo, showTouchDebug, toggleTouchDebug,
+      applianceMapLoading,
       closeMainMenu,
       /* menu controls */ showMainMenu, showSettingsSubmenu, showHelpSubmenu, showShareSubmenu, showShareSubClipboard, showShareSubFile, showCompactMenu,
       toggleMainMenu, toggleSettingsSubmenu, toggleHelpSubmenu, toggleShareSubmenu, toggleShareSubClipboard, toggleShareSubFile,
@@ -959,6 +965,7 @@ export default {
       invokeAndClose, deleteAndClose,
       /* tabs dropdown */ showTabsDropdown, toggleTabsDropdown, closeTabsDropdown, currentTabLabel, setActiveTab, addNewTab, getTabDropdownStyle, tabStyleMap, currentTabStyle,
       /* grid clipboard actions */ copyToClipboard, cutToClipboard, startPaste, startDuplicate, removeSelected,
+      applianceMapLoading,
     }
   }
 }
@@ -1560,4 +1567,25 @@ html.dark input[type="number"] { background: #141926; border-color: #2a3a54; col
   /* Hide tagline when space is limited */
   html .title-tagline { display: none !important }
 }
+
+/* Spinner overlay while waiting for appliances.json */
+.appliance-map-overlay {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.35);
+  z-index: 20050;
+  flex-direction: column;
+}
+.appliance-map-spinner {
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 6px solid rgba(255,255,255,0.2);
+  border-top-color: rgba(255,255,255,0.95);
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+.appliance-map-text { color: #fff; font-weight: 700 }
+@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
 </style>

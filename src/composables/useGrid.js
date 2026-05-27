@@ -13,6 +13,8 @@ const { palette } = useAppliancePalette()
 // discarded when importing/loading.
 let __applianceKeepMap = null
 let __applianceKeepMapPromise = null
+let __applianceByGameId = null
+var __suppressStateGridSync = false
 function _loadApplianceKeepMap() {
   if (__applianceKeepMapPromise) return __applianceKeepMapPromise
   __applianceKeepMapPromise = (async () => {
@@ -22,13 +24,20 @@ function _loadApplianceKeepMap() {
       if (!resp.ok) throw new Error('Failed to load appliances.json')
       const arr = await resp.json()
       __applianceKeepMap = new Map()
+          __applianceByGameId = new Map()
       for (const e of arr) {
         // ID in the file is numeric
         const id = Number(e.ID ?? e.id ?? e.Id)
         __applianceKeepMap.set(id, !!e.Keep)
+            // map by GameID for URLVersion=1 compatibility lookups
+            try {
+              const g = Number(e.GameID ?? e.gameid ?? e.gameId)
+              if (!Number.isNaN(g)) __applianceByGameId.set(g, e)
+            } catch (err) {}
       }
     } catch (e) {
-      __applianceKeepMap = new Map()
+        __applianceKeepMap = new Map()
+        __applianceByGameId = new Map()
     }
     return __applianceKeepMap
   })()
@@ -39,6 +48,7 @@ function _loadApplianceKeepMap() {
 // as soon as the appliance map is available; safe to call multiple times.
 function _pruneKeepFalseCells() {
   // ensure map is loaded, then prune
+  applianceMapLoading.value = true
   _loadApplianceKeepMap().then(() => {
     if (!__applianceKeepMap) return
     const deletedIids = new Set()
@@ -65,6 +75,7 @@ function _pruneKeepFalseCells() {
       })
     }
   }).catch(() => {})
+  .finally(() => { applianceMapLoading.value = false })
 }
 
 // Instance id generator for appliance instances
@@ -89,6 +100,9 @@ export const smallScreenMode = ref(false)
 // Set to true by App.vue when viewport <= 1023px (compact hamburger-menu mode).
 // Used by GridView to hide palette-toolbox items from the help overlay.
 export const compactMenuMode = ref(false)
+
+// Expose appliance map loading state so UI can show a spinner while we wait
+const applianceMapLoading = ref(false)
 
 // Shared hover status (written by GridView, read by AppliancePalette)
 const hoverLabel = ref('')
@@ -1681,6 +1695,7 @@ function cancelPaletteDrag() {
 
 // Serialize grid to state.gridCells whenever it changes so the URL stays current
 watch(grid, (newGrid) => {
+  if (__suppressStateGridSync) return
   const cells = []
   for (let y = 0; y < newGrid.length; y++) {
     for (let x = 0; x < newGrid[y].length; x++) {
@@ -1691,20 +1706,65 @@ watch(grid, (newGrid) => {
 }, { deep: true })
 
 // Restore the grid from state.gridCells — call this after loadFromHash()
-function loadGridFromState() {
+async function loadGridFromState() {
   // Clear first so initGrid starts with a blank slate (no stale cells carried over)
+  // Suppress the grid->state sync while we perform a full restore to avoid
+  // overwriting the parsed `state.gridCells` prematurely.
+  __suppressStateGridSync = true
   grid.value = []
   selectedCells.value = new Set()
   anchorCell.value = null
   initGrid()
-  if (!Array.isArray(state.gridCells) || state.gridCells.length === 0) return
+  if (!Array.isArray(state.gridCells) || state.gridCells.length === 0) {
+    __suppressStateGridSync = false
+    return
+  }
+  // Ensure appliance metadata is available for URLVersion-specific mapping.
+  // Wait until the appliance map is loaded (block indefinitely) so mapping is deterministic.
+  let applianceMapAvailable = false
+  applianceMapLoading.value = true
+  try {
+    await _loadApplianceKeepMap()
+    applianceMapAvailable = true
+  } catch (e) {
+    applianceMapAvailable = false
+  } finally {
+    applianceMapLoading.value = false
+  }
+  let restored = 0
   for (const { x, y, ...cell } of state.gridCells) {
-        if (grid.value[y] && x < grid.value[y].length) {
+    if (grid.value[y] && x < grid.value[y].length) {
+      // If this URL encodes GameIDs (URLVersion=1) translate to internal ID
+      if (state.URLVersion === 1 && cell && cell.applianceId != null && __applianceByGameId && applianceMapAvailable) {
+        let gameId = Number(cell.applianceId)
+        const seen = new Set()
+        let entry = __applianceByGameId.get(gameId)
+        // follow MapGameId chains if present
+        while (entry && entry.MapGameId != null && Number(entry.MapGameId) !== -1) {
+          const next = Number(entry.MapGameId)
+          if (seen.has(next)) break
+          seen.add(next)
+          gameId = next
+          entry = __applianceByGameId.get(gameId)
+        }
+        if (entry) {
+          // resolved to a canonical appliance entry; use its internal ID
+          const resolvedId = Number(entry.ID ?? entry.id ?? entry.Id)
+          if (!Number.isNaN(resolvedId)) cell.applianceId = resolvedId
+          // if canonical entry is marked Keep=false, skip restoring this cell
+          if (entry.Keep === false) continue
+        } else {
+          // drop unknown entries for URLVersion=1
+          continue
+        }
+      }
       // ensure loaded cells have an instance id so labels can anchor to appliance instances
       if (!cell.iid) cell.iid = genInstanceId()
       grid.value[y][x] = cell
+      restored++
     }
   }
+  
   // Migrate labels that reference explicit coords to appliance instance ids when possible
   if (state.labels && state.labels.length) {
     for (const lbl of state.labels) {
@@ -1720,6 +1780,16 @@ function loadGridFromState() {
   // Remove any appliances that are marked Keep=false in the canonical
   // appliances list (these items should not be restored/imported)
   _pruneKeepFalseCells()
+  // After we've fully restored the grid, update the serialized state to
+  // reflect the actual restored cells and re-enable the watcher.
+  const finalCells = []
+  for (let y = 0; y < grid.value.length; y++) {
+    for (let x = 0; x < grid.value[y].length; x++) {
+      if (grid.value[y][x]) finalCells.push({ x, y, ...grid.value[y][x] })
+    }
+  }
+  state.gridCells = finalCells
+  __suppressStateGridSync = false
 }
 
 // Returns the {x, y} of the partner teleporter for the cell at (x, y),
@@ -1739,5 +1809,5 @@ function getTeleporterPairPos(x, y) {
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, hoverLabel, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, selectedLabelIds, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveSelectionBy, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, pastePendingLabels, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal, skipLabelAnchorSync }
+  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, hoverLabel, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, selectedLabelIds, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveSelectionBy, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, pastePendingLabels, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, applianceMapLoading, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal, skipLabelAnchorSync }
 }
