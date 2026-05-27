@@ -83,7 +83,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GameIdToPutId.cs" />
     <Compile Include="PlateUpTool_Integration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PUT_Exporter.cs" />
