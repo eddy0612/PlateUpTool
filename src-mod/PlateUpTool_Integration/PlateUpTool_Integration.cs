@@ -8,7 +8,7 @@ namespace PlateUpTool_Integration
     {
         // ========= Constants ===========
         public const string MOD_ID = "com.eddy0612.plateuptool_integration";
-        public const string MOD_NAME = "plateuptool_integration";
+        public const string MOD_NAME = "PlateUpTool";
         public const string MOD_VERSION = "0.0.1";
 
         // ========= Class wide variables ===========
