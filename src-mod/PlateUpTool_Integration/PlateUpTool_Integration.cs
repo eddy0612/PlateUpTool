@@ -7,7 +7,7 @@ namespace PlateUpTool_Integration
     public class PlateUpTool_Integration : BaseMod
     {
         // ========= Constants ===========
-        public const string MOD_ID = "com.eddy0612.plateuptool_integration";
+        public const string MOD_ID = "com.eddy0612.plateuptool";
         public const string MOD_NAME = "PlateUpTool";
         public const string MOD_VERSION = "0.0.1";
 
@@ -38,7 +38,7 @@ namespace PlateUpTool_Integration
             TDbg("Initialize start");
 
             /*
-            // Using the PreferenceSystem mod to add a button to the mod's settings menu. 
+            // Using the PreferenceSystem mod to add a button to the mod's settings menu.
             PrefManager = new PreferenceSystemManager("com.eddy0612.plateuptool_integration", "plateuptool_integration");
             PrefManager.AddLabel("Excport to PlateUpTool").AddButton("Open Menu", (Action<int>)delegate
             {
@@ -61,18 +61,18 @@ namespace PlateUpTool_Integration
 
 /*
             Events.PlayerPauseView_SetupMenusEvent = (EventHandler<PlayerPauseView_SetupMenusArgs>)Delegate.Combine(
-                Events.PlayerPauseView_SetupMenusEvent, 
+                Events.PlayerPauseView_SetupMenusEvent,
                 (EventHandler<PlayerPauseView_SetupMenusArgs>)delegate (object s, PlayerPauseView_SetupMenusArgs args)
                   {
                       args.addActionButton("Open design in PlateUpTool", delegate {
                           ExportToPUT();
                       });
-                  }                  
+                  }
             );
 
 
             Events.MainMenu_SetupEvent = (EventHandler<MainMenu_SetupArgs>)Delegate.Combine(
-                Events.MainMenu_SetupEvent, 
+                Events.MainMenu_SetupEvent,
                 (EventHandler<MainMenu_SetupArgs>)delegate (object s, MainMenu_SetupArgs args)
                   {
                       // Get the MenuAction type from the method parameters
@@ -103,12 +103,12 @@ namespace PlateUpTool_Integration
                           }
                       }
 
-                      args.addActionButton.Invoke(args.instance, new object[] { 
-                          "Open design in PlateUpTool", 
+                      args.addActionButton.Invoke(args.instance, new object[] {
+                          "Open design in PlateUpTool",
                           buttonAction,
                           0  // player_id parameter
                       });
-                  }                  
+                  }
             );
 */
         }

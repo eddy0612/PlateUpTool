@@ -206,11 +206,11 @@ namespace PlateUpTool_Integration
         // ======================================================================================================================
         private static PUT_Exporter _instance;
 
-        static int ID_GRABBER_L = -99;
-        static int ID_GRABBER_R = -98;
-        static int ID_ICECREAM_CHOC = -97;
-        static int ID_ICECREAM_STRAW = -96;
-        static int ID_ICECREAM_VAN = -95;
+        static int ID_GRABBER_L = 367215780;
+        static int ID_GRABBER_R = -961856961;
+        static int ID_ICECREAM_CHOC = -46968470;
+        static int ID_ICECREAM_STRAW = -2094600179;
+        static int ID_ICECREAM_VAN = 26405173;
         static int ID_ICECREAM = -1533430406;
 
         [StructLayout(LayoutKind.Sequential, Size = 1)]
