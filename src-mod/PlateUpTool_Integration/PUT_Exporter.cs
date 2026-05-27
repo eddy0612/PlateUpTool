@@ -110,6 +110,7 @@ namespace PlateUpTool_Integration
             int xyIdxBits = Math.Max(1, (int)Math.Ceiling(Math.Log(roomWidth * roomHeight + 1, 2)));
             int xBits = Math.Max(1, (int)Math.Ceiling(Math.Log(roomWidth + 2, 2)));
             int yBits = Math.Max(1, (int)Math.Ceiling(Math.Log(roomHeight + 2, 2)));
+            int applianceIdBits = stateObj.URLVersion == 1 ? 32 : 9;
 
             var w = new BitWriter();
             // Header bytes
@@ -141,7 +142,8 @@ namespace PlateUpTool_Integration
                 int rot = c.rotation;
                 int extra = c.extraData;
                 w.Write(c.x + c.y * roomWidth, xyIdxBits);
-                w.Write(c.applianceId, 9);
+                // Write appliance id using wider 32-bit when URLVersion==1 so full GameIDs are preserved
+                w.Write(c.applianceId, applianceIdBits);
                 if (tabMask == defaultTabMask) {
                     w.Write(0, 1);
                 } else {
@@ -209,7 +211,7 @@ namespace PlateUpTool_Integration
         static int ID_ICECREAM_CHOC = -97;
         static int ID_ICECREAM_STRAW = -96;
         static int ID_ICECREAM_VAN = -95;
-        static int PUT_ID_ICECREAM = 168;
+        static int ID_ICECREAM = -1533430406;
 
         [StructLayout(LayoutKind.Sequential, Size = 1)]
         protected struct PUT_DummyComponent : IComponentData, IModComponent
@@ -253,7 +255,7 @@ namespace PlateUpTool_Integration
             int height = (int)(bounds.max.z - bounds.min.z + 1f);
             int width = (int)(bounds.max.x - bounds.min.x + 1f);
             PlateUpTool_Integration.TDbg("Screen size: " + width + " x " + height);
-            SetURLVersion(0);
+            SetURLVersion(1);
             SetRoomSize(width, height);
             ClearCells();
             ClearWalls();
@@ -364,8 +366,7 @@ namespace PlateUpTool_Integration
                         if (base.EntityManager.HasComponent<CVariableProvider>(primaryOccupant))
                         {
                             PlateUpTool_Integration.TDbg("CVariableProvider - is it icecream?");
-                            int tempConvertedApplianceId = GameIdToPutId.GetPutId(appliance.ID);
-                            if (tempConvertedApplianceId == PUT_ID_ICECREAM)
+                            if (appliance.ID == ID_ICECREAM)
                             {
                                 PlateUpTool_Integration.TDbg("IceCream... flavour: ");
                                 var variableData = base.EntityManager.GetComponentData<CVariableProvider>(primaryOccupant);
@@ -416,7 +417,7 @@ namespace PlateUpTool_Integration
                             int IDtoUse = appliance.ID;
                             if (forceAction != 0) IDtoUse = forceAction;
 
-                            int convertedApplianceId = GameIdToPutId.GetPutId(IDtoUse);
+                            int convertedApplianceId = IDtoUse;
 
                             PlateUpTool_Integration.TDbg("Convert GameID: input=" + IDtoUse + " -> putId=" + convertedApplianceId);
                             if (convertedApplianceId == -1)
@@ -467,8 +468,8 @@ namespace PlateUpTool_Integration
             }
             string urlState = EncodeStateForUrl();
             PlateUpTool_Integration.TDbg("Finished, state for my app: " + urlState);
-            Process.Start("https://eddy0612.github.io/PlateUpTool/#state=" + urlState);
-            //Process.Start("http://localhost:5173/#state=" + urlState);
+            //Process.Start("https://eddy0612.github.io/PlateUpTool/#state=" + urlState);
+            Process.Start("http://localhost:5173/#state=" + urlState);
         }
 
         /// <summary>

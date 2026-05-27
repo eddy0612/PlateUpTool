@@ -139,6 +139,7 @@ function encodeState(stateObj) {
   const xyIdxBits = Math.max(1, Math.ceil(Math.log2(roomWidth * roomHeight + 1)))
   const xBits = Math.max(1, Math.ceil(Math.log2(roomWidth + 2)))
   const yBits = Math.max(1, Math.ceil(Math.log2(roomHeight + 2)))
+  const applianceIdBits = stateObj.URLVersion === 1 ? 32 : 9
 
   const w = new BitWriter()
   // Header
@@ -166,7 +167,8 @@ function encodeState(stateObj) {
     const rot = rotation ?? 0
     const extra = extraData ?? 0
     w.write(x + y * roomWidth, xyIdxBits)
-    w.write(applianceId, 9)
+    // Write appliance id. For URLVersion=1 we encode full 32-bit GameID, otherwise compact 9-bit internal id.
+    w.write(applianceId >>> 0, applianceIdBits)
     if (tabMask === defaultTabMask) {
       w.write(0, 1)
     } else {
@@ -262,9 +264,12 @@ function decodeState(encoded) {
     const tabFromMask = (mask) => tabs.filter((_, i) => mask & (1 << i)).map(t => t.id)
 
     const gridCells = []
+    const applianceIdBits = URLVersion === 1 ? 32 : 9
     for (let i = 0; i < numCells; i++) {
       const xyIdx = r.read(xyIdxBits)
-      const applianceId = r.read(9)
+      let applianceId = r.read(applianceIdBits)
+      // Convert 32-bit unsigned to signed int when URLVersion=1 so negative GameIDs map correctly
+      if (URLVersion === 1 && applianceIdBits === 32) applianceId = (applianceId << 0)
       const tabMask = r.read(1) ? r.read(tabs.length) : defaultTabMask
       let rotation = 0, extraData = 0
       if (r.read(1)) { rotation = r.read(3); extraData = r.read(8) }

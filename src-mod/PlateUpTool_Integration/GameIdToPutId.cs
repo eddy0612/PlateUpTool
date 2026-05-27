@@ -5,7 +5,7 @@ namespace PlateUpTool_Integration
 {
     public static class GameIdToPutId
     {
-        public static readonly Dictionary<int, int> Map = new Dictionary<int, int>
+        private static readonly Dictionary<int, int> Map = new Dictionary<int, int>
         {
             { -2147057861, 263 },
             { -2145487392, 128 },

@@ -668,8 +668,14 @@ export default {
 
     onMounted(async () => {
       document.documentElement.classList.toggle('dark', darkMode.value)
-      loadFromHash()
-      await loadGridFromState()
+      // Prevent syncToHash from running while we restore state from the URL/hash
+      isRestoring = true
+      try {
+        loadFromHash()
+        await loadGridFromState()
+      } finally {
+        isRestoring = false
+      }
       // Fit the restaurant to the viewport on initial load (mirrors what
       // resetZoom does when clicking the magnifying glass).
       nextTick(() => resetZoom())
@@ -685,8 +691,14 @@ export default {
         sizeModalDismissable.value = false
       }
       window.addEventListener('hashchange', async () => {
-        loadFromHash()
-        await loadGridFromState()
+        // When the URL/hash changes externally, treat this as a restore operation
+        isRestoring = true
+        try {
+          loadFromHash()
+          await loadGridFromState()
+        } finally {
+          isRestoring = false
+        }
         // Reset undo stack when a new URL/state is loaded
         try {
           const snap = JSON.stringify(buildFullSnapshot())

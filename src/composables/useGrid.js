@@ -1764,7 +1764,7 @@ async function loadGridFromState() {
       restored++
     }
   }
-  
+
   // Migrate labels that reference explicit coords to appliance instance ids when possible
   if (state.labels && state.labels.length) {
     for (const lbl of state.labels) {
