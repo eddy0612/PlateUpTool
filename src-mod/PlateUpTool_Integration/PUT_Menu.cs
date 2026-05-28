@@ -17,11 +17,14 @@ namespace PlateUpTool_Integration
 
             New<SpacerElement>();
             New<SpacerElement>();
-            AddButton("Open design in PlateUpTool", delegate { 
-                ExportToPUT(); 
+            AddButton("Open design in PlateUpTool", delegate {
+                ExportToPUT();
             });
-            AddButton("Back", delegate { 
-                RequestPreviousMenu(); 
+            AddButton("Import design from clipboard", delegate {
+                ImportFromPUT();
+            });
+            AddButton("Back", delegate {
+                RequestPreviousMenu();
             });
 
             PlateUpTool_Integration.TDbg("Set up menu...");
@@ -38,6 +41,19 @@ namespace PlateUpTool_Integration
             catch (Exception ex)
             {
                 PlateUpTool_Integration.TError("Failed to export to PlateUpTool: " + ex.Message);
+            }
+        }
+        void ImportFromPUT()
+        {
+            PlateUpTool_Integration.TDbg("Importing from clipboard into PlateUpTool...");
+            try
+            {
+                myPUT_Exporter.ImportDesign();
+                PlateUpTool_Integration.TDbg("Imported from clipboard into PlateUpTool successfully.");
+            }
+            catch (Exception ex)
+            {
+                PlateUpTool_Integration.TError("Failed to import into PlateUpTool: " + ex.Message);
             }
         }
     }

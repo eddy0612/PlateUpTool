@@ -15,7 +15,7 @@ using System.Diagnostics;
 
 namespace PlateUpTool_Integration
 {
-    public class PUT_Exporter : RestaurantSystem, IModSystem
+    public partial class PUT_Exporter : RestaurantSystem, IModSystem
     {
 
         // ======================================================================================================================
@@ -36,6 +36,24 @@ namespace PlateUpTool_Integration
             public Dictionary<string,string> walls = new Dictionary<string,string>();
             public List<PUTGridCell> gridCells = new List<PUTGridCell>();
             public List<PUTLabel> labels = new List<PUTLabel>();
+        }
+
+        // Working data for ReallyImport
+        private class GameAppliance {
+            public int putX, putY;           // PUT grid coordinates
+            public float worldX, worldZ;     // game world coordinates
+            public int applianceId;          // effective game ID (after grabber/icecream overrides)
+            public int altId;                // canonical alias from MapGameId (0 = none)
+            public int rotation;             // 0-3
+            public int extraData;            // teleporter GroupID or 0
+            public Entity entity;
+        }
+
+        // Pairing of an imported cell to the game appliance that will fulfil it
+        private struct ImportPairing {
+            public PUTGridCell imported;
+            public GameAppliance game;
+            public ImportPairing(PUTGridCell imported, GameAppliance game) { this.imported = imported; this.game = game; }
         }
 
         // In-memory state instance you can populate with the helpers below
@@ -201,6 +219,129 @@ namespace PlateUpTool_Integration
             var packed = w.Finish();
             return Base64UrlEncode(packed);
         }
+
+        // --- Bit reader and base64url decoder (mirror of writer/encoder above) ---
+        private class BitReader {
+            private readonly byte[] _bytes;
+            private int _byteIdx = 0;
+            private int _bitIdx  = 7;
+            public bool IsEOF => _byteIdx >= _bytes.Length;
+            public BitReader(byte[] bytes) { _bytes = bytes; }
+            public int Read(int n) {
+                int result = 0;
+                for (int i = 0; i < n; i++) {
+                    if (_byteIdx >= _bytes.Length) break;
+                    int bit = (_bytes[_byteIdx] >> _bitIdx) & 1;
+                    result = (result << 1) | bit;
+                    if (--_bitIdx < 0) { _bitIdx = 7; _byteIdx++; }
+                }
+                return result;
+            }
+        }
+
+        private static byte[] Base64UrlDecode(string s) {
+            s = s.Replace('-', '+').Replace('_', '/');
+            switch (s.Length % 4) { case 2: s += "=="; break; case 3: s += "="; break; }
+            return Convert.FromBase64String(s);
+        }
+
+        // --- Decoder matching encodeState in src/store/restaurant.js ---
+        public PUTState DecodeStateFromUrl(string encoded) {
+            var bytes = Base64UrlDecode(encoded);
+            var r     = new BitReader(bytes);
+            var state = new PUTState();
+
+            // Header bytes
+            int roomWidth      = r.Read(8);
+            int roomHeight     = r.Read(8);
+            int urlVersion     = r.Read(8);
+            int flags          = r.Read(8);
+            int defaultTabMask = r.Read(8);
+            int cellCountLo    = r.Read(8);
+            int cellCountHi    = r.Read(8);
+            int wallCountLo    = r.Read(8);
+            int wallCountHi    = r.Read(8);
+            int xyIdxBits      = r.Read(8);
+            int xBits          = r.Read(8);
+            int yBits          = r.Read(8);
+
+            int cellCount       = cellCountLo | (cellCountHi << 8);
+            int wallCount       = wallCountLo | (wallCountHi << 8);
+            bool customTabs     = (flags & 1) != 0;
+            int applianceIdBits = urlVersion == 1 ? 32 : 9;
+
+            state.roomWidth  = roomWidth;
+            state.roomHeight = roomHeight;
+            state.URLVersion = urlVersion;
+
+            // Tabs
+            List<PUTTab> tabs;
+            if (customTabs) {
+                int tabCount = r.Read(8);
+                tabs = new List<PUTTab>();
+                for (int i = 0; i < tabCount; i++) {
+                    int idLen = r.Read(8);
+                    var idChars = new char[idLen];
+                    for (int j = 0; j < idLen; j++) idChars[j] = (char)r.Read(8);
+                    int labelLen = r.Read(8);
+                    var labelChars = new char[labelLen];
+                    for (int j = 0; j < labelLen; j++) labelChars[j] = (char)r.Read(8);
+                    tabs.Add(new PUTTab(new string(idChars), new string(labelChars)));
+                }
+            } else {
+                tabs = new List<PUTTab> { new PUTTab("complete","Preview"), new PUTTab("structure","Structure"), new PUTTab("main","Base") };
+            }
+            state.tabs = tabs;
+
+            // Cells
+            state.gridCells = new List<PUTGridCell>();
+            for (int ci = 0; ci < cellCount; ci++) {
+                int xyIdx = r.Read(xyIdxBits);
+                int x = xyIdx % roomWidth;
+                int y = xyIdx / roomWidth;
+                int appId = r.Read(applianceIdBits); // 32-bit read preserves two's-complement sign
+                int tabMask = r.Read(1) == 0 ? defaultTabMask : r.Read(Math.Max(1, tabs.Count));
+                int rot = 0, extra = 0;
+                if (r.Read(1) != 0) { rot = r.Read(3); extra = r.Read(8); }
+                var tabIds = new List<string>();
+                for (int i = 0; i < tabs.Count; i++)
+                    if ((tabMask & (1 << i)) != 0) tabIds.Add(tabs[i].id);
+                state.gridCells.Add(new PUTGridCell { x = x, y = y, applianceId = appId, rotation = rot, extraData = extra, tabIds = tabIds });
+            }
+
+            // Walls
+            state.walls = new Dictionary<string,string>();
+            for (int wi = 0; wi < wallCount; wi++) {
+                int wx = r.Read(xBits);
+                int wy = r.Read(yBits);
+                string orient = r.Read(1) == 1 ? "v" : "h";
+                int code = r.Read(2);
+                string type = code == 2 ? "hatch" : code == 3 ? "door" : "wall";
+                state.walls[$"{orient},{wx},{wy}"] = type;
+            }
+
+            // Labels
+            state.labels = new List<PUTLabel>();
+            int labelCount = r.Read(8);
+            for (int li = 0; li < labelCount; li++) {
+                int lx2 = r.Read(8); int ly2 = r.Read(8);
+                int textLen = r.Read(8);
+                var textBytes = new byte[textLen];
+                for (int i = 0; i < textLen; i++) textBytes[i] = (byte)r.Read(8);
+                int lflags = r.Read(8);
+                string anchorIid = null; int? anchorX = null, anchorY = null;
+                if ((lflags & 1) != 0) {
+                    int iidLen = r.Read(8);
+                    var iidBytes = new byte[iidLen];
+                    for (int i = 0; i < iidLen; i++) iidBytes[i] = (byte)r.Read(8);
+                    anchorIid = Encoding.UTF8.GetString(iidBytes);
+                }
+                if ((lflags & 2) != 0) { anchorX = r.Read(8); anchorY = r.Read(8); }
+                state.labels.Add(new PUTLabel { x2 = lx2, y2 = ly2, text = Encoding.UTF8.GetString(textBytes), anchorIid = anchorIid, anchorX = anchorX, anchorY = anchorY });
+            }
+
+            return state;
+        }
         // ======================================================================================================================
         // Above code all produced by AI to represent the state object maintained in the JavaScript web based tool
         // ======================================================================================================================
@@ -208,6 +349,7 @@ namespace PlateUpTool_Integration
 
         static int ID_GRABBER_L = 367215780;
         static int ID_GRABBER_R = -961856961;
+        static int ID_GRABBER_S = -331651461;    // GrabberRotatingS (the bidirectional one)
         static int ID_ICECREAM_CHOC = -46968470;
         static int ID_ICECREAM_STRAW = -2094600179;
         static int ID_ICECREAM_VAN = 26405173;
@@ -215,6 +357,11 @@ namespace PlateUpTool_Integration
 
         [StructLayout(LayoutKind.Sequential, Size = 1)]
         protected struct PUT_DummyComponent : IComponentData, IModComponent
+        {
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = 1)]
+        protected struct PUT_DummyComponentImport : IComponentData, IModComponent
         {
         }
 
@@ -238,6 +385,22 @@ namespace PlateUpTool_Integration
 
             _instance?.GetOrCreate<PUT_DummyComponent>();
         }
+
+        public void ImportDesign()
+        {
+            PlateUpTool_Integration.TDbg("ImportDesign called.");
+
+            // Ensure we are in the Kitchen mode
+            if (!(GameInfo.CurrentScene == SceneType.Kitchen))
+            {
+                PlateUpTool_Integration.TDbg("Not in kitchen mode so doing nothing");
+                return;
+            }
+            PlateUpTool_Integration.TDbg("In kitchen mode so continuing");
+
+            _instance?.GetOrCreate<PUT_DummyComponentImport>();
+        }
+
         protected override void OnUpdate()
         {
             if (TryGetSingletonEntity<PUT_DummyComponent>(out var value))
@@ -246,8 +409,17 @@ namespace PlateUpTool_Integration
                 ReallyExport();
                 base.EntityManager.DestroyEntity(value);
             }
+            if (TryGetSingletonEntity<PUT_DummyComponentImport>(out var value2))
+            {
+                PlateUpTool_Integration.TDbg("OnUpdate called - found object");
+                ReallyImport();
+                base.EntityManager.DestroyEntity(value2);
+            }
         }
 
+        // ===================================================================================================
+        // Export logic
+        // ===================================================================================================
         protected void ReallyExport()
         {
             // Get room dimensions and save them away in the export state
@@ -472,9 +644,537 @@ namespace PlateUpTool_Integration
             //Process.Start("http://localhost:5173/#state=" + urlState);
         }
 
-        /// <summary>
-        /// Return the enum member name for a given appliance value, or null if not found.
-        /// </summary>
+        // ===================================================================================================
+        // Export logic
+        // ===================================================================================================
+        protected void ReallyImport()
+        {
+            // *** Can we store smart grabber programming?
+
+            PlateUpTool_Integration.TDbg("Called to import from the clipboard");
+
+            // Initial verification stage:
+            // - Verify there is something on the clipboard which is a 'complete' export
+            string clipboardText = (GUIUtility.systemCopyBuffer ?? "").Trim();
+            if (string.IsNullOrEmpty(clipboardText))
+            {
+                PlateUpTool_Integration.TDbg("Clipboard is empty, aborting import");
+                return;
+            }
+
+            // Support both a raw encoded state and a full URL containing #state=
+            string encodedState = clipboardText;
+            int stateMarker = clipboardText.IndexOf("#state=");
+            if (stateMarker >= 0)
+                encodedState = clipboardText.Substring(stateMarker + 7);
+
+            PUTState importedState;
+            try
+            {
+                importedState = DecodeStateFromUrl(encodedState);
+            }
+            catch (Exception ex)
+            {
+                PlateUpTool_Integration.TDbg("Failed to decode clipboard state: " + ex.Message);
+                return;
+            }
+
+            PlateUpTool_Integration.TDbg("Decoded import: " + importedState.roomWidth + "x" + importedState.roomHeight +
+                ", " + importedState.gridCells.Count + " cells, " + importedState.walls.Count + " walls");
+
+            // - Verify the room dimensions match
+            Bounds bounds = base.Bounds;
+            int height = (int)(bounds.max.z - bounds.min.z + 1f);
+            int width = (int)(bounds.max.x - bounds.min.x + 1f);
+            PlateUpTool_Integration.TDbg("Game room size: " + width + " x " + height);
+
+            if (importedState.roomWidth != width || importedState.roomHeight != height)
+            {
+                PlateUpTool_Integration.TDbg("Import aborted: imported layout is " + importedState.roomWidth + "x" + importedState.roomHeight +
+                    " but current room is " + width + "x" + height);
+                return;
+            }
+            PlateUpTool_Integration.TDbg("Room dimensions match: " + width + "x" + height);
+
+            // - Verify all walls/doors/hatches in the clipboard version match
+            if (!VerifyWallLayout(importedState, bounds))
+                return;
+
+            // Build list of all imported appliances
+            var importedAppliances = importedState.gridCells.ToList();
+            PlateUpTool_Integration.TDbg("Imported appliances: " + importedAppliances.Count);
+
+            // Scan the game grid to build the working lists for the import
+            ScanGameGrid(bounds,
+                out var gameAppliances,
+                out var chairApplianceIds,
+                out var emptyCells);
+
+            // Partition imported list into non-chairs and chairs
+            var importedNonChairs = importedAppliances.Where(c => !chairApplianceIds.Contains(c.applianceId)).ToList();
+            var importedChairs    = importedAppliances.Where(c =>  chairApplianceIds.Contains(c.applianceId)).ToList();
+
+            PlateUpTool_Integration.TDbg("Game appliances: " + gameAppliances.Count +
+                ", chair IDs: " + chairApplianceIds.Count + ", empty cells: " + emptyCells.Count);
+            PlateUpTool_Integration.TDbg("Import non-chairs: " + importedNonChairs.Count +
+                ", import chairs: " + importedChairs.Count);
+
+            // Verify that every imported non-chair appliance has a game appliance to fulfil it.
+            // MatchAppliances does a two-pass greedy match (exact then correctable) and returns the
+            // pairings for the placement loop, or null if anything is unresolvable.
+            var pairings = MatchAppliances(importedNonChairs, gameAppliances);
+            if (pairings == null)
+            {
+                PlateUpTool_Integration.TDbg("Import aborted: appliance inventory does not match (see above for details)");
+                return;
+            }
+            PlateUpTool_Integration.TDbg("All " + pairings.Count + " non-chair appliances matched");
+
+            LogImportStats(pairings);
+
+            PlaceAppliances(pairings, bounds, emptyCells, gameAppliances);
+
+            FixUpTableChairs(pairings, importedChairs);
+
+        }
+
+        // ===================================================================================================
+        // Utility functions
+        // ===================================================================================================
+
+        // -------------------------------------------------------------------------------------
+        // Appliance matching helpers (used by ReallyImport)
+        // -------------------------------------------------------------------------------------
+
+        // Returns true if id is one of the rotating corner-grabber IDs (L/R are the split-out
+        // export representations; S is the single in-game ID with an orientation property).
+        private static bool IsRotatingGrabber(int id) => id == ID_GRABBER_L || id == ID_GRABBER_R || id == ID_GRABBER_S;
+
+        // Returns true if id is one of the three ice-cream flavour overrides.
+        private static bool IsIceCream(int id) => id == ID_ICECREAM_CHOC || id == ID_ICECREAM_STRAW || id == ID_ICECREAM_VAN;
+
+        // Exact match: same applianceId + same extraData. Rotation is always correctable so
+        // is not used as a matching criterion. Cross-ID matches (any grabber, any flavour) are
+        // handled as correctable loose matches in the second pass.
+        private static GameAppliance FindExactMatch(PUTGridCell imp, List<GameAppliance> available)
+        {
+            return available.FirstOrDefault(g =>
+                (g.applianceId == imp.applianceId || (g.altId != 0 && g.altId == imp.applianceId)) &&
+                g.extraData   == imp.extraData);
+        }
+
+        // Loose match rules (correctable alternatives, used when no exact match was found):
+        //   Grabbers  – any rotating grabber (L/R/S are interchangeable; direction corrected in-game)
+        //   Ice cream – any ice-cream flavour (corrected via CVariableProvider)
+        //   Teleporters – extraData (GroupID) must still match; no looser alternative exists
+        //   Regular   – same applianceId + same extraData, any rotation (rotation is correctable)
+        private static GameAppliance FindLooseMatch(PUTGridCell imp, List<GameAppliance> available)
+        {
+            if (IsRotatingGrabber(imp.applianceId))
+                return available.FirstOrDefault(g => IsRotatingGrabber(g.applianceId));
+            if (IsIceCream(imp.applianceId))
+                return available.FirstOrDefault(g => IsIceCream(g.applianceId));
+            return available.FirstOrDefault(g =>
+                (g.applianceId == imp.applianceId || (g.altId != 0 && g.altId == imp.applianceId)) &&
+                g.extraData   == imp.extraData);
+        }
+
+        // -------------------------------------------------------------------------------------
+        // Placement helpers (used by ReallyImport)
+        // -------------------------------------------------------------------------------------
+
+        // Converts PUT grid coordinates back to the game world position.
+        private static Vector3 PutToWorld(int putX, int putY, Bounds bounds)
+        {
+            return new Vector3(bounds.min.x + putX, 0f, bounds.max.z - putY);
+        }
+
+        // Evict whatever occupies fromPos to the first available empty cell.
+        // emptyCells and occupantMap are kept in sync.
+        // Returns a dictionary key from a world-space position using integer rounding,
+        // avoiding float equality / hash collisions in Dictionary<Vector3,…> lookups.
+        private static (int, int) OccupantKey(Vector3 pos) =>
+            (Mathf.RoundToInt(pos.x), Mathf.RoundToInt(pos.z));
+
+        private void EvictToEmpty(Vector3 fromPos, List<Vector3> emptyCells, Dictionary<(int, int), Entity> occupantMap)
+        {
+            if (emptyCells.Count == 0)
+            {
+                PlateUpTool_Integration.TDbg("EvictToEmpty: no empty cell available, cannot evict from " + fromPos);
+                return;
+            }
+            Vector3 toPos = emptyCells[0];
+            emptyCells.RemoveAt(0);
+            emptyCells.Add(fromPos);   // fromPos will be free once the move completes
+            Entity occupant;
+            if (!occupantMap.TryGetValue(OccupantKey(fromPos), out occupant))
+            {
+                PlateUpTool_Integration.TDbg("EvictToEmpty: no entity in map at " + fromPos);
+                return;
+            }
+            occupantMap.Remove(OccupantKey(fromPos));
+            occupantMap[OccupantKey(toPos)] = occupant;
+            var evictPos = base.EntityManager.GetComponentData<CPosition>(occupant);
+            evictPos.Position = toPos;
+            base.EntityManager.SetComponentData(occupant, evictPos);
+            PlateUpTool_Integration.TDbg("Evicted occupant from " + fromPos + " -> " + toPos);
+        }
+
+        // Move appliance to targetPos and keep emptyCells and occupantMap in sync.
+        private void MoveAppliance(GameAppliance appliance, Vector3 targetPos, List<Vector3> emptyCells, Dictionary<(int, int), Entity> occupantMap)
+        {
+            Vector3 fromPos = new Vector3(appliance.worldX, 0f, appliance.worldZ);
+            emptyCells.Remove(targetPos);
+            emptyCells.Add(fromPos);
+            occupantMap.Remove(OccupantKey(fromPos));
+            occupantMap[OccupantKey(targetPos)] = appliance.entity;
+            var movePos = base.EntityManager.GetComponentData<CPosition>(appliance.entity);
+            movePos.Position = targetPos;
+            base.EntityManager.SetComponentData(appliance.entity, movePos);
+            PlateUpTool_Integration.TDbg("Moved appliance (id=" + appliance.applianceId + ") from " + fromPos + " -> " + targetPos);
+            appliance.worldX = targetPos.x;
+            appliance.worldZ = targetPos.z;
+        }
+
+        // Reverse of the read in ScanGameGrid: 0=Up, 1=Right, 2=Down, 3=Left
+        private static Quaternion RotationToQuaternion(int rotation)
+        {
+            switch (rotation)
+            {
+                case 1: return Quaternion.Euler(0f,  90f, 0f);
+                case 2: return Quaternion.Euler(0f, 180f, 0f);
+                case 3: return Quaternion.Euler(0f, 270f, 0f);
+                default: return Quaternion.identity;
+            }
+        }
+
+        // Correct the rotation and attributes of an entity to match the imported cell.
+        private void FixUpAppliance(Entity entity, PUTGridCell target)
+        {
+            // Fix rotation via CPosition
+            var position = base.EntityManager.GetComponentData<CPosition>(entity);
+            position.Rotation = RotationToQuaternion(target.rotation);
+            base.EntityManager.SetComponentData(entity, position);
+            PlateUpTool_Integration.TDbg("FixUp entity " + entity + ": rotation set to " + target.rotation);
+
+            // Fix grabber direction — ID_GRABBER_L/R are the export-side representations of
+            // CConveyPushRotatable.Target; ID_GRABBER_S uses normal rotation only.
+            if (target.applianceId == ID_GRABBER_L || target.applianceId == ID_GRABBER_R)
+            {
+                var grabber = base.EntityManager.GetComponentData<CConveyPushRotatable>(entity);
+                grabber.Target = target.applianceId == ID_GRABBER_L ? Orientation.Left : Orientation.Right;
+                base.EntityManager.SetComponentData(entity, grabber);
+                PlateUpTool_Integration.TDbg("FixUp entity " + entity + ": grabber target set to " + grabber.Target);
+            }
+
+            // Fix ice cream flavour — 0=Vanilla, 1=Chocolate, 2=Strawberry (mirrors ScanGameGrid read)
+            if (IsIceCream(target.applianceId))
+            {
+                int flavour = target.applianceId == ID_ICECREAM_CHOC ? 1 :
+                              target.applianceId == ID_ICECREAM_STRAW ? 2 : 0;
+                var provider = base.EntityManager.GetComponentData<CVariableProvider>(entity);
+                provider.Current = flavour;
+                base.EntityManager.SetComponentData(entity, provider);
+                PlateUpTool_Integration.TDbg("FixUp entity " + entity + ": ice cream flavour set to " + flavour);
+            }
+        }
+
+        // Place each paired appliance at its imported target position, evicting any
+        // unexpected occupant first, then fix up rotation/attributes.
+        private void PlaceAppliances(List<ImportPairing> pairings, Bounds bounds, List<Vector3> emptyCells, List<GameAppliance> gameAppliances)
+        {
+            // Build occupant map from ALL game appliances so that unmatched appliances
+            // (e.g. a table removed from the import) are still visible as blockers.
+            // Integer (putX,putY) keys via OccupantKey() avoid float equality/hash issues.
+            var occupantMap = new Dictionary<(int, int), Entity>();
+            foreach (var ga in gameAppliances)
+                occupantMap[OccupantKey(new Vector3(ga.worldX, 0f, ga.worldZ))] = ga.entity;
+            PlateUpTool_Integration.TDbg("PlaceAppliances: occupantMap has " + occupantMap.Count + " entries");
+
+            foreach (var p in pairings)
+            {
+                Vector3 targetPos = PutToWorld(p.imported.x, p.imported.y, bounds);
+                Entity currentOccupant;
+                occupantMap.TryGetValue(OccupantKey(targetPos), out currentOccupant);
+                PlateUpTool_Integration.TDbg("Pairing imp=" + p.imported.applianceId + "@(" + p.imported.x + "," + p.imported.y + ") target=" + targetPos + " mapOccupant=" + currentOccupant.Index + ":" + currentOccupant.Version + " gameEntity=" + p.game.entity.Index + ":" + p.game.entity.Version);
+
+                if (currentOccupant == p.game.entity)
+                {
+                    // Already in the right cell — only attributes may need correcting.
+                    PlateUpTool_Integration.TDbg("Appliance id=" + p.game.applianceId +
+                        " already at target " + targetPos + ", skipping move");
+                }
+                else
+                {
+                    if (currentOccupant != Entity.Null)
+                    {
+                        // Something else is blocking the target cell — move it out of the way first.
+                        PlateUpTool_Integration.TDbg("Evicting occupant entity " + currentOccupant.Index + ":" + currentOccupant.Version + " from " + targetPos);
+                        EvictToEmpty(targetPos, emptyCells, occupantMap);
+                    }
+                    MoveAppliance(p.game, targetPos, emptyCells, occupantMap);
+                }
+
+                FixUpAppliance(p.game.entity, p.imported);
+            }
+        }
+
+        // For each table entity in pairings, set its CApplianceTable Prevent flags based on
+        // whether the imported layout has a chair in each adjacent cell pointing back at the table.
+        // Only tables present in the import are updated; unmatched tables are left as-is.
+        private void FixUpTableChairs(List<ImportPairing> pairings, List<PUTGridCell> importedChairs)
+        {
+            // Index imported chairs by grid position for O(1) adjacency checks.
+            var chairByPos = new Dictionary<(int, int), PUTGridCell>();
+            foreach (var chair in importedChairs)
+                chairByPos[(chair.x, chair.y)] = chair;
+
+            foreach (var p in pairings)
+            {
+                if (!base.EntityManager.HasComponent<CApplianceTable>(p.game.entity))
+                    continue;
+
+                int tx = p.imported.x;
+                int ty = p.imported.y;
+
+                // A chair at an adjacent cell "points at" this table when its rotation faces
+                // away from the table centre (chair faces the same direction as its offset):
+                //   Up    cell (ty-1): chair faces Up    (rotation 0)
+                //   Down  cell (ty+1): chair faces Down  (rotation 2)
+                //   Left  cell (tx-1): chair faces Left  (rotation 3)
+                //   Right cell (tx+1): chair faces Right (rotation 1)
+                bool upChair    = HasChairFacing(chairByPos, tx,   ty - 1, 0);
+                bool downChair  = HasChairFacing(chairByPos, tx,   ty + 1, 2);
+                bool leftChair  = HasChairFacing(chairByPos, tx - 1, ty,   3);
+                bool rightChair = HasChairFacing(chairByPos, tx + 1, ty,   1);
+
+                var tableData = base.EntityManager.GetComponentData<CApplianceTable>(p.game.entity);
+                tableData.PreventSittingUp    = !upChair;
+                tableData.PreventSittingDown  = !downChair;
+                tableData.PreventSittingLeft  = !leftChair;
+                tableData.PreventSittingRight = !rightChair;
+                base.EntityManager.SetComponentData(p.game.entity, tableData);
+
+                PlateUpTool_Integration.TDbg("FixUpTableChairs entity=" + p.game.entity +
+                    " up=" + upChair + " down=" + downChair +
+                    " left=" + leftChair + " right=" + rightChair);
+            }
+        }
+
+        // Returns true if importedChairs contains a chair at (x, y) with the given rotation.
+        private static bool HasChairFacing(
+            Dictionary<(int, int), PUTGridCell> chairByPos, int x, int y, int expectedRotation)
+        {
+            PUTGridCell chair;
+            return chairByPos.TryGetValue((x, y), out chair) && chair.rotation == expectedRotation;
+        }
+
+        private static void LogImportStats(List<ImportPairing> pairings)
+        {
+            int noChange    = 0;
+            int attrOnly    = 0;
+            int needsMove   = 0;
+
+            foreach (var p in pairings)
+            {
+                bool samePos  = p.imported.x == p.game.putX && p.imported.y == p.game.putY;
+                bool sameRot  = p.imported.rotation  == p.game.rotation;
+                bool sameAttr = p.imported.extraData == p.game.extraData;
+
+                if (samePos && sameRot && sameAttr)
+                    noChange++;
+                else if (samePos)
+                    attrOnly++;
+                else
+                    needsMove++;
+            }
+
+            PlateUpTool_Integration.TDbg(
+                "Import stats: " + noChange + " need no changes, " +
+                attrOnly + " need rotation/attribute fix only, " +
+                needsMove + " need to be moved");
+        }
+
+        // Two-pass greedy match: pass 1 finds exact matches (sorted by applianceId for
+        // determinism), pass 2 finds correctable alternatives for what remains.
+        // Returns the full pairings list, or null if any imported appliance cannot be matched.
+        private static List<ImportPairing> MatchAppliances(
+            List<PUTGridCell> imported,
+            List<GameAppliance> available)
+        {
+            var remaining = new List<GameAppliance>(available);
+            var pairings  = new List<ImportPairing>();
+            var unmatched = new List<PUTGridCell>();
+
+            PlateUpTool_Integration.TDbg("MatchAppliances: " + imported.Count + " imported, " + available.Count + " game appliances");
+            PlateUpTool_Integration.TDbg("  Imported IDs: " + string.Join(", ", imported.Select(c => c.applianceId + "@(" + c.x + "," + c.y + ")").ToArray()));
+            PlateUpTool_Integration.TDbg("  Game IDs:     " + string.Join(", ", available.Select(g => g.applianceId + (g.altId != 0 ? "/alt" + g.altId : "") + "@(" + g.putX + "," + g.putY + ")").ToArray()));
+
+            foreach (var imp in imported.OrderBy(c => c.applianceId))
+            {
+                var match = FindExactMatch(imp, remaining);
+                if (match != null)
+                {
+                    PlateUpTool_Integration.TDbg("  Exact match: imp=" + imp.applianceId + "@(" + imp.x + "," + imp.y + ") -> game=" + match.applianceId + "@(" + match.putX + "," + match.putY + ")");
+                    pairings.Add(new ImportPairing(imp, match));
+                    remaining.Remove(match);
+                }
+                else
+                {
+                    PlateUpTool_Integration.TDbg("  No exact match for imp=" + imp.applianceId + " extra=" + imp.extraData + " at (" + imp.x + "," + imp.y + ") -> deferring to loose pass");
+                    unmatched.Add(imp);
+                }
+            }
+
+            foreach (var imp in unmatched)
+            {
+                var match = FindLooseMatch(imp, remaining);
+                if (match == null)
+                {
+                    PlateUpTool_Integration.TDbg("  FAIL loose match: imp=" + imp.applianceId + " extra=" + imp.extraData + " at (" + imp.x + "," + imp.y + ")");
+                    PlateUpTool_Integration.TDbg("  Remaining game IDs: " + string.Join(", ", remaining.Select(g => g.applianceId + (g.altId != 0 ? "/alt" + g.altId : "") + "@(" + g.putX + "," + g.putY + ")").ToArray()));
+                    PlateUpTool_Integration.TDbg("  IsRotatingGrabber(imp)=" + IsRotatingGrabber(imp.applianceId) + "  IsIceCream(imp)=" + IsIceCream(imp.applianceId));
+                    return null;
+                }
+                PlateUpTool_Integration.TDbg("  Loose match: imp=" + imp.applianceId + "@(" + imp.x + "," + imp.y + ") -> game=" + match.applianceId + "@(" + match.putX + "," + match.putY + ")");
+                pairings.Add(new ImportPairing(imp, match));
+                remaining.Remove(match);
+            }
+
+            return pairings;
+        }
+
+        // Scan the game grid and produce the three working lists needed by ReallyImport:
+        //   gameAppliances  – every non-chair occupant with effective ID/rotation/extraData
+        //   chairApplianceIds – set of applianceIds that are ghost chairs (for partitioning the import list)
+        //   emptyCells      – world positions of squares with no primary occupant
+        private void ScanGameGrid(
+            Bounds bounds,
+            out List<GameAppliance> gameAppliances,
+            out HashSet<int> chairApplianceIds,
+            out List<Vector3> emptyCells)
+        {
+            gameAppliances    = new List<GameAppliance>();
+            chairApplianceIds = new HashSet<int>();
+            emptyCells        = new List<Vector3>();
+
+            for (float roomH = bounds.max.z; roomH >= bounds.min.z; roomH -= 1f)
+            {
+                int yPos = 0 - (int)(roomH - bounds.max.z);
+                for (float roomW = bounds.min.x; roomW <= bounds.max.x; roomW += 1f)
+                {
+                    int xPos = (int)(roomW - bounds.min.x);
+                    Vector3 gridPos = new Vector3(roomW, 0f, roomH);
+                    Entity occupant = TileManager.GetPrimaryOccupant(gridPos);
+
+                    if (occupant == Entity.Null)
+                    {
+                        emptyCells.Add(gridPos);
+                        continue;
+                    }
+
+                    CAppliance appliance; CPosition position;
+                    base.EntityManager.RequireComponent<CAppliance>(occupant, out appliance);
+                    base.EntityManager.RequireComponent<CPosition>(occupant, out position);
+
+                    // Ghost chairs are handled in the separate chair pass
+                    if (base.EntityManager.HasComponent<CApplianceGhostChair>(occupant))
+                    {
+                        chairApplianceIds.Add(appliance.ID);
+                        continue;
+                    }
+
+                    // Apply the same ID overrides as ReallyExport
+                    int effectiveId = appliance.ID;
+                    int altId     = GetAltId(appliance.ID); // canonical alias (0 if none)
+                    int extraData = 0;
+                    if (base.EntityManager.HasComponent<CConveyPushRotatable>(occupant))
+                    {
+                        var cr = base.EntityManager.GetComponentData<CConveyPushRotatable>(occupant);
+                        if (cr.Target == Orientation.Left)  effectiveId = ID_GRABBER_L;
+                        if (cr.Target == Orientation.Right) effectiveId = ID_GRABBER_R;
+                    }
+                    if (base.EntityManager.HasComponent<CConveyTeleport>(occupant))
+                        extraData = base.EntityManager.GetComponentData<CConveyTeleport>(occupant).GroupID;
+                    if (base.EntityManager.HasComponent<CVariableProvider>(occupant) && appliance.ID == ID_ICECREAM)
+                    {
+                        int flavour = base.EntityManager.GetComponentData<CVariableProvider>(occupant).Current;
+                        effectiveId = flavour == 1 ? ID_ICECREAM_CHOC : flavour == 2 ? ID_ICECREAM_STRAW : ID_ICECREAM_VAN;
+                    }
+
+                    string rotStr = position.Rotation.ToOrientation().ToString();
+                    int rotation = rotStr == "Right" ? 1 : rotStr == "Left" ? 3 : rotStr == "Down" ? 2 : 0;
+
+                    gameAppliances.Add(new GameAppliance {
+                        putX = xPos, putY = yPos,
+                        worldX = roomW, worldZ = roomH,
+                        applianceId = effectiveId,
+                        altId     = altId,
+                        rotation = rotation,
+                        extraData = extraData,
+                        entity = occupant
+                    });
+                    PlateUpTool_Integration.TDbg("ScanGrid ("+xPos+","+yPos+"): rawId="+appliance.ID+" effectiveId="+effectiveId+" altId="+altId+" rot="+rotation+" extra="+extraData);
+                }
+            }
+        }
+
+        // Scan the current game wall layout and verify it matches the imported state.
+        // Returns true if compatible, false (with diagnostics logged) if not.
+        // door/hatch mismatches are tolerated; extra game walls that the import doesn't mention are ignored.
+        private bool VerifyWallLayout(PUTState importedState, Bounds bounds)
+        {
+            var currentWalls = new Dictionary<string, string>();
+            for (float roomH = bounds.max.z; roomH >= bounds.min.z; roomH -= 1f)
+            {
+                int yPos = 0 - (int)(roomH - bounds.max.z);
+                for (float roomW = bounds.min.x; roomW <= bounds.max.x; roomW += 1f)
+                {
+                    int xPos = (int)(roomW - bounds.min.x);
+                    Vector3 gridPos = new Vector3(roomW, 0f, roomH);
+
+                    if (roomW < bounds.max.x)
+                    {
+                        Vector3 rightCell = gridPos + (Vector3)LayoutHelpers.Directions[3];
+                        string feature = checkGridFeatures(gridPos, rightCell);
+                        if (feature != null) currentWalls[$"v,{xPos + 1},{yPos}"] = feature;
+                    }
+                    if (roomH >= bounds.min.z)
+                    {
+                        Vector3 belowCell = gridPos + (Vector3)LayoutHelpers.Directions[1];
+                        string feature = checkGridFeatures(gridPos, belowCell);
+                        if (feature != null && !(roomH == bounds.min.z && feature == "wall"))
+                            currentWalls[$"h,{xPos},{yPos + 1}"] = feature;
+                    }
+                }
+            }
+
+            var wallMismatches = new List<string>();
+            foreach (var kv in importedState.walls)
+            {
+                currentWalls.TryGetValue(kv.Key, out string currentType);
+                bool typesMatch = currentType == kv.Value ||
+                    (currentType != null && WallTypesCompatible(kv.Value, currentType));
+                if (!typesMatch)
+                    wallMismatches.Add($"import has {kv.Key}={kv.Value}, game has {currentType ?? "nothing"}");
+            }
+
+            if (wallMismatches.Count > 0)
+            {
+                PlateUpTool_Integration.TDbg("Import aborted: wall layout does not match (" + wallMismatches.Count + " differences)");
+                foreach (var m in wallMismatches) PlateUpTool_Integration.TDbg("  " + m);
+                return false;
+            }
+
+            PlateUpTool_Integration.TDbg("Wall layout matches (" + currentWalls.Count + " walls)");
+            return true;
+        }
+
+        // door and hatch are interchangeable: the game auto-converts doors adjacent to appliances into hatches
+        private static bool WallTypesCompatible(string a, string b) =>
+            (a == "door" || a == "hatch") && (b == "door" || b == "hatch");
+
+        // Return the enum member name for a given appliance value, or null if not found.
         public static string GetApplianceEnumName(int value)
         {
             var t = typeof(KitchenLib.References._ApplianceReferences);
@@ -490,6 +1190,7 @@ namespace PlateUpTool_Integration
             return matches.Length > 0 ? matches[0] : null;
         }
 
+        // Look for a feature or calculate walls on the grid between two cells, return a string representing the feature
         private string checkGridFeatures(Vector3 from, Vector3 to)
         {
             CLayoutFeature feature;
@@ -527,6 +1228,7 @@ namespace PlateUpTool_Integration
             }
         }
 
+        // Look for an explicit feature on the grid between two cells
         private bool TryGetFeature(Vector3 from, Vector3 to, out CLayoutFeature feature)
         {
             var EM = base.EntityManager;
