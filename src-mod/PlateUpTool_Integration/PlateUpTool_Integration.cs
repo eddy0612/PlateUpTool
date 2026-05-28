@@ -9,7 +9,7 @@ namespace PlateUpTool_Integration
         // ========= Constants ===========
         public const string MOD_ID = "com.eddy0612.plateuptool";
         public const string MOD_NAME = "PlateUpTool";
-        public const string MOD_VERSION = "0.0.1";
+        public const string MOD_VERSION = "0.0.2";
 
         // ========= Class wide variables ===========
         internal static KitchenLib.Logging.KitchenLogger Logger;
@@ -58,59 +58,6 @@ namespace PlateUpTool_Integration
             Events.PlayerPauseView_SetupMenusEvent += (s, args) => {
                 args.addMenu.Invoke(args.instance, new object[] { typeof(PUT_Menu<MenuAction>), new PUT_Menu<MenuAction>(args.instance.ButtonContainer, args.module_list) });
             };
-
-/*
-            Events.PlayerPauseView_SetupMenusEvent = (EventHandler<PlayerPauseView_SetupMenusArgs>)Delegate.Combine(
-                Events.PlayerPauseView_SetupMenusEvent,
-                (EventHandler<PlayerPauseView_SetupMenusArgs>)delegate (object s, PlayerPauseView_SetupMenusArgs args)
-                  {
-                      args.addActionButton("Open design in PlateUpTool", delegate {
-                          ExportToPUT();
-                      });
-                  }
-            );
-
-
-            Events.MainMenu_SetupEvent = (EventHandler<MainMenu_SetupArgs>)Delegate.Combine(
-                Events.MainMenu_SetupEvent,
-                (EventHandler<MainMenu_SetupArgs>)delegate (object s, MainMenu_SetupArgs args)
-                  {
-                      // Get the MenuAction type from the method parameters
-                      var methodParams = args.addActionButton.GetParameters();
-                      var menuActionType = methodParams[1].ParameterType;
-
-                      // Create a delegate that matches the signature
-                      var delegateMethod = new Action<int>((int player_id) => {
-                          TDbg("PlateUpTool menu item clicked!");
-                      });
-
-                      // Create MenuAction without calling constructor (for structs/classes with no constructor)
-                      var buttonAction = FormatterServices.GetUninitializedObject(menuActionType);
-
-                      // Try to set the Action field or property
-                      var actionField = menuActionType.GetField("Action");
-                      if (actionField != null)
-                      {
-                          actionField.SetValue(buttonAction, delegateMethod);
-                      }
-                      else
-                      {
-                          // Try as property
-                          var actionProperty = menuActionType.GetProperty("Action");
-                          if (actionProperty != null)
-                          {
-                              actionProperty.SetValue(buttonAction, delegateMethod, null);
-                          }
-                      }
-
-                      args.addActionButton.Invoke(args.instance, new object[] {
-                          "Open design in PlateUpTool",
-                          buttonAction,
-                          0  // player_id parameter
-                      });
-                  }
-            );
-*/
         }
 
     }
