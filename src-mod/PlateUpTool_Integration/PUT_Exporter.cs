@@ -398,6 +398,14 @@ namespace PlateUpTool_Integration
             }
             PlateUpTool_Integration.TDbg("In kitchen mode so continuing");
 
+            // Ensure we are in prep mode
+            if (!(GameInfo.IsPreparationTime))
+            {
+                PlateUpTool_Integration.TDbg("Not in prep mode, doing nothing");
+                return;
+            }
+            PlateUpTool_Integration.TDbg("In prep mode so continuing");
+
             _instance?.GetOrCreate<PUT_DummyComponentImport>();
         }
 
