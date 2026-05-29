@@ -226,6 +226,21 @@ function encodeState(stateObj) {
       w.write(aY & 0xFF, 8)
     }
   }
+
+  // Per-cell additionalData lists (appended after labels for backward compat)
+  const sgCells = []
+  cells.forEach((c, i) => { if (Array.isArray(c.additionalData) && c.additionalData.length > 0) sgCells.push({ c, i }) })
+  const sgCount = Math.min(255, sgCells.length)
+  w.write(sgCount, 8)
+  for (let s = 0; s < sgCount; s++) {
+    const { c, i } = sgCells[s]
+    w.write(i & 0xFF, 8)
+    w.write((i >> 8) & 0xFF, 8)
+    const items = (c.additionalData || []).slice(0, 255)
+    w.write(items.length, 8)
+    for (const id of items) w.write(id >>> 0, 32)
+  }
+
   return base64urlEncode(w.finish())
 }
 
@@ -328,6 +343,27 @@ function decodeState(encoded) {
     } catch (e) {
       // ignore malformed trailing label data
     }
+
+    // Smart grabber filter lists (optional trailing section — backward-compat)
+    try {
+      if (r._i < r._b.length || r._bits > 0) {
+        const sgCount = r.read(8)
+        for (let si = 0; si < sgCount; si++) {
+          const idxLo = r.read(8)
+          const idxHi = r.read(8)
+          const cellIdx = idxLo | (idxHi << 8)
+          const itemCount = r.read(8)
+          const items = []
+          for (let ii = 0; ii < itemCount; ii++) {
+            const id = (r.read(32) << 0) // signed int32
+            items.push(id)
+          }
+          if (cellIdx < gridCells.length) {
+            gridCells[cellIdx].additionalData = items
+          }
+        }
+      }
+    } catch (e) { /* ignore malformed trailing SG data */ }
 
     return { tabs, URLVersion, roomWidth, roomHeight, walls, gridCells, labels }
   } catch {

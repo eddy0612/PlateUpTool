@@ -23,7 +23,7 @@ namespace PlateUpTool_Integration
         // ======================================================================================================================
         // State model matching src/store/restaurant.js DEFAULT_STATE
         public class PUTTab { public string id; public string label; public PUTTab() {} public PUTTab(string id, string label) { this.id = id; this.label = label; } }
-        public class PUTGridCell { public int x; public int y; public int applianceId; public int rotation; public int extraData; public List<string> tabIds; public string iid; }
+        public class PUTGridCell { public int x; public int y; public int applianceId; public int rotation; public int extraData; public List<string> tabIds; public string iid; public List<int> additionalData; }
         public class PUTLabel { public string id; public int? x; public int? y; public int? x2; public int? y2; public string text; public string anchorIid; public int? anchorX; public int? anchorY; }
         public class PUTState {
             public List<PUTTab> tabs = new List<PUTTab>() { new PUTTab("complete","Preview"), new PUTTab("structure","Structure"), new PUTTab("main","Generated") };
@@ -46,6 +46,7 @@ namespace PlateUpTool_Integration
             public int altId;                // canonical alias from MapGameId (0 = none)
             public int rotation;             // 0-3
             public int extraData;            // teleporter GroupID or 0
+            public List<int> additionalData;  // non-null when appliance is a configured smart grabber
             public Entity entity;
         }
 
@@ -64,8 +65,8 @@ namespace PlateUpTool_Integration
         private void SetURLVersion(int o) { exportState.URLVersion = o; }
         private void SetTabs(List<PUTTab> tabs) { exportState.tabs = tabs ?? new List<PUTTab>(); }
         private void ClearCells() { exportState.gridCells.Clear(); }
-        private void AddCell(int x, int y, int applianceId, int rotation = 0, int extraData = 0, List<string> tabIds = null, string iid = null) {
-            exportState.gridCells.Add(new PUTGridCell { x = x, y = y, applianceId = applianceId, rotation = rotation, extraData = extraData, tabIds = tabIds ?? new List<string>(), iid = iid });
+        private void AddCell(int x, int y, int applianceId, int rotation = 0, int extraData = 0, List<string> tabIds = null, string iid = null, List<int> additionalData = null) {
+            exportState.gridCells.Add(new PUTGridCell { x = x, y = y, applianceId = applianceId, rotation = rotation, extraData = extraData, tabIds = tabIds ?? new List<string>(), iid = iid, additionalData = additionalData });
         }
         private void ClearWalls() { exportState.walls.Clear(); }
         private void AddWall(char orient, int x, int y, string type) { exportState.walls[$"{orient},{x},{y}"] = type; }
@@ -216,6 +217,26 @@ namespace PlateUpTool_Integration
                 }
             }
 
+            // Per-cell additionalData lists (appended after labels for backward compat;
+            // older decoders that stop after labels will simply ignore this section).
+            var sgEntries = cells
+                .Select((c, i) => new { c, i })
+                .Where(x => x.c.additionalData != null && x.c.additionalData.Count > 0)
+                .ToList();
+            int sgCount = Math.Min(255, sgEntries.Count);
+            w.Write(sgCount, 8);
+            for (int si = 0; si < sgCount; si++)
+            {
+                var entry = sgEntries[si];
+                w.Write(entry.i & 0xFF, 8);
+                w.Write((entry.i >> 8) & 0xFF, 8);
+                var items = entry.c.additionalData;
+                int itemCount = Math.Min(255, items.Count);
+                w.Write(itemCount, 8);
+                for (int ii = 0; ii < itemCount; ii++)
+                    w.Write(items[ii], 32);
+            }
+
             var packed = w.Finish();
             return Base64UrlEncode(packed);
         }
@@ -339,6 +360,28 @@ namespace PlateUpTool_Integration
                 if ((lflags & 2) != 0) { anchorX = r.Read(8); anchorY = r.Read(8); }
                 state.labels.Add(new PUTLabel { x2 = lx2, y2 = ly2, text = Encoding.UTF8.GetString(textBytes), anchorIid = anchorIid, anchorX = anchorX, anchorY = anchorY });
             }
+
+            // Per-cell additionalData lists (optional trailing section — backward-compat)
+            try
+            {
+                if (!r.IsEOF)
+                {
+                    int sgCount = r.Read(8);
+                    for (int si = 0; si < sgCount && !r.IsEOF; si++)
+                    {
+                        int idxLo   = r.Read(8);
+                        int idxHi   = r.Read(8);
+                        int cellIdx = idxLo | (idxHi << 8);
+                        int itemCount = r.Read(8);
+                        var items = new List<int>();
+                        for (int ii = 0; ii < itemCount; ii++)
+                            items.Add(r.Read(32));
+                        if (cellIdx < state.gridCells.Count)
+                            state.gridCells[cellIdx].additionalData = items;
+                    }
+                }
+            }
+            catch { /* ignore malformed trailing SG data */ }
 
             return state;
         }
@@ -466,6 +509,7 @@ namespace PlateUpTool_Integration
                         bool posnResult = base.EntityManager.RequireComponent<CPosition>(primaryOccupant, out position);
                         int forceAction = 0;
                         int forceExtraData = 0;
+                        List<int> forceAdditionalData = null;
 
 
                         // ===================================================================================
@@ -514,16 +558,17 @@ namespace PlateUpTool_Integration
                         }
                         if (base.EntityManager.HasComponent<CConveyPushItems>(primaryOccupant))
                         {
-                            PlateUpTool_Integration.TDbg("Smart grabber?");
                             var sgData = base.EntityManager.GetComponentData<CConveyPushItems>(primaryOccupant);
-                            PlateUpTool_Integration.TDbg("GrabSpecificType: " + sgData.GrabSpecificType);
-                            PlateUpTool_Integration.TDbg("SpecificType: " + sgData.SpecificType);
-                            PlateUpTool_Integration.TDbg("SpecificComponents:");
+                            PlateUpTool_Integration.TDbg("CConveyPushItems: GrabSpecificType=" + sgData.GrabSpecificType + " SpecificType=" + sgData.SpecificType);
                             KitchenData.ItemList il = sgData.SpecificComponents;
-                            for (int i = 0; i < il.Count; i++)
+                            if (il.Count > 0)
                             {
-                                var item = il[i];
-                                PlateUpTool_Integration.TDbg(" - " + item.ToString());
+                                forceAdditionalData = new List<int>();
+                                for (int i = 0; i < il.Count; i++)
+                                {
+                                    forceAdditionalData.Add(il[i]);
+                                    PlateUpTool_Integration.TDbg("Smart grabber item[" + i + "]: " + il[i]);
+                                }
                             }
                         }
 
@@ -607,7 +652,7 @@ namespace PlateUpTool_Integration
                             else
                             {
                                 PlateUpTool_Integration.TDbg("Adding: (" + xPos + "," + yPos + ") = " + applianceName + " which maps to " + convertedApplianceId + ", rot=" + rotation);
-                                AddCell(xPos, yPos, convertedApplianceId, rotation, forceExtraData, new System.Collections.Generic.List<string> { "main" });
+                                AddCell(xPos, yPos, convertedApplianceId, rotation, forceExtraData, new System.Collections.Generic.List<string> { "main" }, null, forceAdditionalData);
                             }
                         }
                     }  /* End of handling appliances */
@@ -648,8 +693,9 @@ namespace PlateUpTool_Integration
             }
             string urlState = EncodeStateForUrl();
             PlateUpTool_Integration.TDbg("Finished, state for my app: " + urlState);
-            Process.Start("https://eddy0612.github.io/PlateUpTool/#state=" + urlState);
-            //Process.Start("http://localhost:5173/#state=" + urlState);
+            //Process.Start("https://eddy0612.github.io/PlateUpTool/#state=" + urlState);
+            //Process.Start("https://eddy0612.github.io/PlateUpTool/dev/#state=" + urlState);
+            Process.Start("http://localhost:5173/#state=" + urlState);
         }
 
         // ===================================================================================================
@@ -761,14 +807,37 @@ namespace PlateUpTool_Integration
         // Returns true if id is one of the three ice-cream flavour overrides.
         private static bool IsIceCream(int id) => id == ID_ICECREAM_CHOC || id == ID_ICECREAM_STRAW || id == ID_ICECREAM_VAN;
 
+        // Returns true if a cell/appliance carries a non-empty additionalData list.
+        private static bool HasAdditionalData(List<int> items) => items != null && items.Count > 0;
+
+        // Order-independent equality check for two additionalData lists.
+        private static bool AdditionalDataMatch(List<int> a, List<int> b)
+        {
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+            if (a.Count != b.Count) return false;
+            var sortedA = a.OrderBy(x => x).ToList();
+            var sortedB = b.OrderBy(x => x).ToList();
+            for (int i = 0; i < sortedA.Count; i++)
+                if (sortedA[i] != sortedB[i]) return false;
+            return true;
+        }
+
         // Exact match: same applianceId + same extraData. Rotation is always correctable so
         // is not used as a matching criterion. Cross-ID matches (any grabber, any flavour) are
         // handled as correctable loose matches in the second pass.
+        // When the imported cell has no additionalData we prefer game appliances that also have
+        // no additionalData (same-kind preference), falling back to any match if none found.
         private static GameAppliance FindExactMatch(PUTGridCell imp, List<GameAppliance> available)
         {
-            return available.FirstOrDefault(g =>
+            var candidates = available.Where(g =>
                 (g.applianceId == imp.applianceId || (g.altId != 0 && g.altId == imp.applianceId)) &&
-                g.extraData   == imp.extraData);
+                g.extraData   == imp.extraData).ToList();
+            if (candidates.Count == 0) return null;
+            // Prefer a game appliance whose additionalData state mirrors the import's
+            if (!HasAdditionalData(imp.additionalData))
+                return candidates.FirstOrDefault(g => !HasAdditionalData(g.additionalData)) ?? candidates[0];
+            return candidates[0];
         }
 
         // Loose match rules (correctable alternatives, used when no exact match was found):
@@ -1003,8 +1072,12 @@ namespace PlateUpTool_Integration
                 needsMove + " need to be moved");
         }
 
-        // Two-pass greedy match: pass 1 finds exact matches (sorted by applianceId for
-        // determinism), pass 2 finds correctable alternatives for what remains.
+        // Three-pass greedy match:
+        //   Pass 0 – imported cells with additionalData are matched against game appliances
+        //            with the exact same additionalData set (order-independent).  Only after
+        //            ALL strict matches are resolved do unresolved cells fall through.
+        //   Pass 1 – exact match (same applianceId + same extraData) for everything else.
+        //   Pass 2 – loose / correctable match for whatever remains.
         // Returns the full pairings list, or null if any imported appliance cannot be matched.
         private static List<ImportPairing> MatchAppliances(
             List<PUTGridCell> imported,
@@ -1012,13 +1085,43 @@ namespace PlateUpTool_Integration
         {
             var remaining = new List<GameAppliance>(available);
             var pairings  = new List<ImportPairing>();
-            var unmatched = new List<PUTGridCell>();
 
             PlateUpTool_Integration.TDbg("MatchAppliances: " + imported.Count + " imported, " + available.Count + " game appliances");
             PlateUpTool_Integration.TDbg("  Imported IDs: " + string.Join(", ", imported.Select(c => c.applianceId + "@(" + c.x + "," + c.y + ")").ToArray()));
             PlateUpTool_Integration.TDbg("  Game IDs:     " + string.Join(", ", available.Select(g => g.applianceId + (g.altId != 0 ? "/alt" + g.altId : "") + "@(" + g.putX + "," + g.putY + ")").ToArray()));
 
-            foreach (var imp in imported.OrderBy(c => c.applianceId))
+            // Pass 0: strict additionalData matching
+            var strictUnmatched = new List<PUTGridCell>(); // cells with additionalData and no strict partner yet
+            var noAdditional    = new List<PUTGridCell>(); // cells without additionalData
+            foreach (var imp in imported)
+            {
+                if (HasAdditionalData(imp.additionalData))
+                {
+                    var match = remaining.FirstOrDefault(g =>
+                        (g.applianceId == imp.applianceId || (g.altId != 0 && g.altId == imp.applianceId)) &&
+                        g.extraData == imp.extraData &&
+                        AdditionalDataMatch(g.additionalData, imp.additionalData));
+                    if (match != null)
+                    {
+                        PlateUpTool_Integration.TDbg("  Strict additionalData match: imp=" + imp.applianceId + "@(" + imp.x + "," + imp.y + ") data=[" + string.Join(",", imp.additionalData) + "] -> game@(" + match.putX + "," + match.putY + ")");
+                        pairings.Add(new ImportPairing(imp, match));
+                        remaining.Remove(match);
+                    }
+                    else
+                    {
+                        PlateUpTool_Integration.TDbg("  No strict additionalData match for imp=" + imp.applianceId + "@(" + imp.x + "," + imp.y + ") data=[" + string.Join(",", imp.additionalData) + "] -> deferring to loose passes");
+                        strictUnmatched.Add(imp);
+                    }
+                }
+                else
+                {
+                    noAdditional.Add(imp);
+                }
+            }
+
+            // Pass 1: exact match for cells without additionalData and those that had no strict partner
+            var unmatched = new List<PUTGridCell>();
+            foreach (var imp in noAdditional.Concat(strictUnmatched).OrderBy(c => c.applianceId))
             {
                 var match = FindExactMatch(imp, remaining);
                 if (match != null)
@@ -1034,6 +1137,7 @@ namespace PlateUpTool_Integration
                 }
             }
 
+            // Pass 2: loose / correctable match for anything still unmatched
             foreach (var imp in unmatched)
             {
                 var match = FindLooseMatch(imp, remaining);
@@ -1113,6 +1217,19 @@ namespace PlateUpTool_Integration
                     string rotStr = position.Rotation.ToOrientation().ToString();
                     int rotation = rotStr == "Right" ? 1 : rotStr == "Left" ? 3 : rotStr == "Down" ? 2 : 0;
 
+                    List<int> sgItems = null;
+                    if (base.EntityManager.HasComponent<CConveyPushItems>(occupant))
+                    {
+                        var sgData = base.EntityManager.GetComponentData<CConveyPushItems>(occupant);
+                        KitchenData.ItemList il = sgData.SpecificComponents;
+                        if (il.Count > 0)
+                        {
+                            sgItems = new List<int>();
+                            for (int i = 0; i < il.Count; i++)
+                                sgItems.Add(il[i]);
+                        }
+                    }
+
                     gameAppliances.Add(new GameAppliance {
                         putX = xPos, putY = yPos,
                         worldX = roomW, worldZ = roomH,
@@ -1120,6 +1237,7 @@ namespace PlateUpTool_Integration
                         altId     = altId,
                         rotation = rotation,
                         extraData = extraData,
+                        additionalData = sgItems,
                         entity = occupant
                     });
                     PlateUpTool_Integration.TDbg("ScanGrid ("+xPos+","+yPos+"): rawId="+appliance.ID+" effectiveId="+effectiveId+" altId="+altId+" rot="+rotation+" extra="+extraData);
