@@ -8,6 +8,8 @@ namespace PlateUpTool_Integration
 
     public class PUT_Menu<T> : KLMenu<T>
     {
+        // Toggle to enable/disable the Dump Data menu action
+        private const bool ENABLE_DUMP_DATA = true;
         public PUT_Menu(Transform container, ModuleList module_list) : base(container, module_list) { }
         internal PUT_Exporter myPUT_Exporter = new PUT_Exporter();
 
@@ -23,6 +25,12 @@ namespace PlateUpTool_Integration
             AddButton("Import design from clipboard", delegate {
                 ImportFromPUT();
             });
+            if (ENABLE_DUMP_DATA)
+            {
+                AddButton("Dump Data", delegate {
+                    DumpData();
+                });
+            }
             AddButton("Back", delegate {
                 RequestPreviousMenu();
             });
@@ -49,11 +57,24 @@ namespace PlateUpTool_Integration
             try
             {
                 myPUT_Exporter.ImportDesign();
-                PlateUpTool_Integration.TDbg("Imported from clipboard into PlateUpTool successfully.");
+                PlateUpTool_Integration.TDbg("Queued up imported from clipboard into PlateUpTool successfully.");
             }
             catch (Exception ex)
             {
                 PlateUpTool_Integration.TError("Failed to import into PlateUpTool: " + ex.Message);
+            }
+        }
+        void DumpData()
+        {
+            PlateUpTool_Integration.TDbg("Dumping game data to log...");
+            try
+            {
+                myPUT_Exporter.DumpDataDesign();
+                PlateUpTool_Integration.TDbg("DumpData completed.");
+            }
+            catch (Exception ex)
+            {
+                PlateUpTool_Integration.TError("Failed to dump data: " + ex.Message);
             }
         }
     }
