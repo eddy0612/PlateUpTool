@@ -397,6 +397,8 @@ namespace PlateUpTool_Integration
         private List<GameAppliance> cachedGameAppliances = null;
         private List<Vector3> cachedEmptyCells = null;
         private PUTState cachedImportedState = null;
+        // Cached SPerformTableUpdate singleton entity to detect changes
+        private Entity cachedSPerformTableUpdateEntity = Entity.Null;
 
         static int STAGE0_IDLE = 0;
         static int STAGE1_WAITTOSTART = 1;
@@ -451,7 +453,7 @@ namespace PlateUpTool_Integration
             _instance?.GetOrCreate<PUT_DummyComponent>();
         }
 
-        // Trigger DumpData flow (creates a singleton marker consumed in OnUpdate)
+        // Trigger DumpData flow
         public void DumpDataDesign()
         {
             PlateUpTool_Integration.TDbg("DumpDataDesign called.");
@@ -461,13 +463,6 @@ namespace PlateUpTool_Integration
         public void ImportDesign()
         {
             PlateUpTool_Integration.TDbg("ImportDesign called.");
-
-            if (HasSingleton<SPerformTableUpdate>())
-            {
-                PlateUpTool_Integration.TDbg("SPerformTableUpdate found - ImportDesign");
-            } else {
-               PlateUpTool_Integration.TDbg("SPerformTableUpdate not found - ImportDesign");
-            }
 
             // We cannot reimport whilst an import is already going on
             if (ImportStage != STAGE0_IDLE)
@@ -498,12 +493,39 @@ namespace PlateUpTool_Integration
 
         protected override void OnUpdate()
         {
+            /*
             if (HasSingleton<SPerformTableUpdate>())
             {
                 PlateUpTool_Integration.TDbg("SPerformTableUpdate found - OnUpdate");
+                try
+                {
+                    if (TryGetSingletonEntity<SPerformTableUpdate>(out var stEntity))
+                    {
+                        PlateUpTool_Integration.TDbg("SPerformTableUpdate singleton entity: " + stEntity.ToString());
+                        try
+                        {
+                            var stData = base.EntityManager.GetComponentData<SPerformTableUpdate>(stEntity);
+                            PlateUpTool_Integration.TDbg("SPerformTableUpdate data: " + stData.ToString());
+                            DumpObjectFields(stData, 1, "SPerformTableUpdate: ");
+                        }
+                        catch (Exception ex)
+                        {
+                            PlateUpTool_Integration.TDbg("Failed to read SPerformTableUpdate component data: " + ex.Message);
+                        }
+                    }
+                    else
+                    {
+                        PlateUpTool_Integration.TDbg("TryGetSingletonEntity<SPerformTableUpdate> returned false");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    PlateUpTool_Integration.TDbg("Error while logging SPerformTableUpdate: " + ex.Message);
+                }
             } else {
                PlateUpTool_Integration.TDbg("SPerformTableUpdate not found - OnUpdate");
             }
+            */
 
             if (TryGetSingletonEntity<PUT_DummyComponent>(out var value))
             {
@@ -515,11 +537,38 @@ namespace PlateUpTool_Integration
             {
                 PlateUpTool_Integration.TDbg("OnUpdate called - found object2");
 
-                // Is there a SPerformTableUpdate singleton existing - if so we dont want to change anything until its gone
-	            if (HasSingleton<SPerformTableUpdate>())
+                // Is there a SPerformTableUpdate singleton existing - if so we usually don't want to change anything until it's gone.
+                // However, only defer if the singleton entity is the same as the one we previously observed. If the singleton
+                // entity is different (indicating a new/changed update run), cache it and allow this OnUpdate to proceed.
+                try
                 {
-                    PlateUpTool_Integration.TDbg("SPerformTableUpdate found - deferring to next OnUpdate");
-                    return;
+                    if (TryGetSingletonEntity<SPerformTableUpdate>(out var stEntity))
+                    {
+                        if (cachedSPerformTableUpdateEntity != Entity.Null && cachedSPerformTableUpdateEntity == stEntity)
+                        {
+                            PlateUpTool_Integration.TDbg("SPerformTableUpdate found (same as cached) - deferring to next OnUpdate");
+                            return;
+                        }
+                        else
+                        {
+                            cachedSPerformTableUpdateEntity = stEntity;
+                            PlateUpTool_Integration.TDbg("SPerformTableUpdate singleton is new/different - caching " + stEntity.ToString() + " and allowing proceed");
+                            // allow proceeding for this new singleton
+                        }
+                    }
+                    else
+                    {
+                        // No singleton currently; clear cached marker so future singletons are recognized
+                        if (cachedSPerformTableUpdateEntity != Entity.Null)
+                        {
+                            PlateUpTool_Integration.TDbg("SPerformTableUpdate singleton cleared; resetting cache");
+                            cachedSPerformTableUpdateEntity = Entity.Null;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    PlateUpTool_Integration.TDbg("Error while checking SPerformTableUpdate singleton: " + ex.Message);
                 }
 
                 // When we get here we know there is no Singleton at the moment
@@ -1318,9 +1367,100 @@ namespace PlateUpTool_Integration
             // For now, FixUpTableChairs is a simple pass-through that receives all imported chairs.
             FixUpTableChairs(cachedPairings, cachedImportedChairs);
 
+            // After fixing up chairs' rotations, disable any chairs that point at imported tables.
+            DisableTableChairs(cachedPairings, cachedImportedChairs);
+
             // Finished stage2 — signal completion
             ImportStage = STAGE3_WAITONCHAIRS;
             return false;
+        }
+
+        // Re-enumerate the world and disable ghost chairs that point at a table which
+        // is one of the imported tables (i.e. present in `pairings`). Chairs that point
+        // at tables we did not touch are ignored.
+        private void DisableTableChairs(List<ImportPairing> pairings, List<PUTGridCell> importedChairs)
+        {
+            PlateUpTool_Integration.TDbg("DisableTableChairs: scanning world for chairs pointing at imported tables");
+
+            if (pairings == null || pairings.Count == 0)
+            {
+                PlateUpTool_Integration.TDbg("DisableTableChairs: no pairings provided, nothing to do");
+                return;
+            }
+
+            // Build set of table entities that were part of the import
+            var importedTableEntities = new HashSet<Entity>();
+            foreach (var p in pairings)
+            {
+                if (p.game.entity == Entity.Null) continue;
+                try
+                {
+                    if (base.EntityManager.HasComponent<CApplianceTable>(p.game.entity))
+                        importedTableEntities.Add(p.game.entity);
+                }
+                catch { }
+            }
+
+            if (importedTableEntities.Count == 0)
+            {
+                PlateUpTool_Integration.TDbg("DisableTableChairs: no imported tables found in pairings");
+                return;
+            }
+
+            var bounds = base.Bounds;
+
+            for (float roomH = bounds.max.z; roomH >= bounds.min.z; roomH -= 1f)
+            {
+                for (float roomW = bounds.min.x; roomW <= bounds.max.x; roomW += 1f)
+                {
+                    Vector3 gridPos = new Vector3(roomW, 0f, roomH);
+                    Entity occupant = TileManager.GetPrimaryOccupant(gridPos);
+                    if (occupant == Entity.Null) continue;
+
+                    // Only interested in ghost chairs
+                    if (!base.EntityManager.HasComponent<CApplianceGhostChair>(occupant)) continue;
+
+                    CApplianceGhostChair ghostChair;
+                    CPosition position;
+                    bool hasGhost = base.EntityManager.RequireComponent<CApplianceGhostChair>(occupant, out ghostChair);
+                    bool hasPos = base.EntityManager.RequireComponent<CPosition>(occupant, out position);
+                    if (!hasGhost || !hasPos)
+                    {
+                        PlateUpTool_Integration.TDbg("DisableTableChairs: occupant at " + gridPos + " missing ghost/position components");
+                        continue;
+                    }
+
+                    string rotStr = position.Rotation.ToOrientation().ToString();
+                    int rot = rotStr == "Right" ? 1 : rotStr == "Left" ? 3 : rotStr == "Down" ? 2 : 0;
+
+                    // Compute the adjacent world position in the direction the chair is facing
+                    Vector3 targetPos;
+                    switch (rot)
+                    {
+                        case 1: targetPos = position.Position + new Vector3(1f, 0f, 0f); break; // Right
+                        case 2: targetPos = position.Position + new Vector3(0f, 0f, -1f); break; // Down
+                        case 3: targetPos = position.Position + new Vector3(-1f, 0f, 0f); break; // Left
+                        default: targetPos = position.Position + new Vector3(0f, 0f, 1f); break; // Up
+                    }
+
+                    Entity targetOcc = TileManager.GetPrimaryOccupant(targetPos);
+                    if (targetOcc == Entity.Null) continue;
+
+                    if (importedTableEntities.Contains(targetOcc))
+                    {
+                        try
+                        {
+                            ghostChair.IsDisabled = true;
+                            base.EntityManager.SetComponentData(occupant, ghostChair);
+                            PlateUpTool_Integration.TDbg("Disabled ghost chair at " + gridPos + " because it points to imported table " + targetOcc);
+                        }
+                        catch (Exception ex)
+                        {
+                            PlateUpTool_Integration.TDbg("Failed to disable ghost chair at " + gridPos + ": " + ex.Message);
+                        }
+                    }
+                }
+            }
         }
 
         // ===================================================================================================
