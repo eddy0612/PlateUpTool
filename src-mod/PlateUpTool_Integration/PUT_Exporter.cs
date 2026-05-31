@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Unity.Entities;
 using UnityEngine;
 using System.Diagnostics;
+using System.Reflection;
 //using KitchenData;
 
 namespace PlateUpTool_Integration
@@ -390,6 +391,21 @@ namespace PlateUpTool_Integration
         // ======================================================================================================================
         private static PUT_Exporter _instance;
 
+        // Cached import state between stages
+        private List<ImportPairing> cachedPairings = null;
+        private List<PUTGridCell> cachedImportedChairs = null;
+        private List<GameAppliance> cachedGameAppliances = null;
+        private List<Vector3> cachedEmptyCells = null;
+        private PUTState cachedImportedState = null;
+
+        static int STAGE0_IDLE = 0;
+        static int STAGE1_WAITTOSTART = 1;
+        static int STAGE2_WAITONTABLES = 2;
+        static int STAGE3_WAITONCHAIRS = 3;
+        private static int ImportStage = STAGE0_IDLE;
+
+
+
         static int ID_GRABBER_L = 367215780;
         static int ID_GRABBER_R = -961856961;
         static int ID_GRABBER_S = -331651461;    // GrabberRotatingS (the bidirectional one)
@@ -398,6 +414,7 @@ namespace PlateUpTool_Integration
         static int ID_ICECREAM_VAN = 26405173;
         static int ID_ICECREAM = -1533430406;
 
+        // DumpData menu toggle is handled in the menu implementation
         [StructLayout(LayoutKind.Sequential, Size = 1)]
         protected struct PUT_DummyComponent : IComponentData, IModComponent
         {
@@ -405,6 +422,11 @@ namespace PlateUpTool_Integration
 
         [StructLayout(LayoutKind.Sequential, Size = 1)]
         protected struct PUT_DummyComponentImport : IComponentData, IModComponent
+        {
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = 1)]
+        protected struct PUT_DumpComponent : IComponentData, IModComponent
         {
         }
 
@@ -429,9 +451,30 @@ namespace PlateUpTool_Integration
             _instance?.GetOrCreate<PUT_DummyComponent>();
         }
 
+        // Trigger DumpData flow (creates a singleton marker consumed in OnUpdate)
+        public void DumpDataDesign()
+        {
+            PlateUpTool_Integration.TDbg("DumpDataDesign called.");
+            _instance?.GetOrCreate<PUT_DumpComponent>();
+        }
+
         public void ImportDesign()
         {
             PlateUpTool_Integration.TDbg("ImportDesign called.");
+
+            if (HasSingleton<SPerformTableUpdate>())
+            {
+                PlateUpTool_Integration.TDbg("SPerformTableUpdate found - ImportDesign");
+            } else {
+               PlateUpTool_Integration.TDbg("SPerformTableUpdate not found - ImportDesign");
+            }
+
+            // We cannot reimport whilst an import is already going on
+            if (ImportStage != STAGE0_IDLE)
+            {
+                PlateUpTool_Integration.TDbg("Already at import stage " + ImportStage + " - aborting");
+                return;
+            }
 
             // Ensure we are in the Kitchen mode
             if (!(GameInfo.CurrentScene == SceneType.Kitchen))
@@ -448,12 +491,20 @@ namespace PlateUpTool_Integration
                 return;
             }
             PlateUpTool_Integration.TDbg("In prep mode so continuing");
+            ImportStage = STAGE1_WAITTOSTART;
 
             _instance?.GetOrCreate<PUT_DummyComponentImport>();
         }
 
         protected override void OnUpdate()
         {
+            if (HasSingleton<SPerformTableUpdate>())
+            {
+                PlateUpTool_Integration.TDbg("SPerformTableUpdate found - OnUpdate");
+            } else {
+               PlateUpTool_Integration.TDbg("SPerformTableUpdate not found - OnUpdate");
+            }
+
             if (TryGetSingletonEntity<PUT_DummyComponent>(out var value))
             {
                 PlateUpTool_Integration.TDbg("OnUpdate called - found object");
@@ -462,9 +513,67 @@ namespace PlateUpTool_Integration
             }
             if (TryGetSingletonEntity<PUT_DummyComponentImport>(out var value2))
             {
-                PlateUpTool_Integration.TDbg("OnUpdate called - found object");
-                ReallyImport();
-                base.EntityManager.DestroyEntity(value2);
+                PlateUpTool_Integration.TDbg("OnUpdate called - found object2");
+
+                // Is there a SPerformTableUpdate singleton existing - if so we dont want to change anything until its gone
+	            if (HasSingleton<SPerformTableUpdate>())
+                {
+                    PlateUpTool_Integration.TDbg("SPerformTableUpdate found - deferring to next OnUpdate");
+                    return;
+                }
+
+                // When we get here we know there is no Singleton at the moment
+                PlateUpTool_Integration.TDbg("Handing stage appropriately:");
+                if (ImportStage == STAGE1_WAITTOSTART && ReallyImportStage1()) {
+
+                    // A true response means we gave up for some reason, so abandon this import
+                    PlateUpTool_Integration.TDbg("Failed at stage 1, abandoning");
+                    base.EntityManager.DestroyEntity(value2);
+                    ImportStage = STAGE0_IDLE;
+
+                } else if (ImportStage == STAGE2_WAITONTABLES && ReallyImportStage2()) {
+
+                    // A true response means we gave up for some reason, so abandon this import
+                    PlateUpTool_Integration.TDbg("Failed at stage 2, abandoning");
+                    base.EntityManager.DestroyEntity(value2);
+                    ImportStage = STAGE0_IDLE;
+
+                } else if (ImportStage == STAGE3_WAITONCHAIRS) {
+
+                    // Clean up cached info
+                    try
+                    {
+                        cachedPairings = null;
+                        cachedImportedChairs = null;
+                        cachedGameAppliances = null;
+                        cachedEmptyCells = null;
+                        cachedImportedState = null;
+                        PlateUpTool_Integration.TDbg("Cleared cached import data");
+                    }
+                    catch { }
+
+                    // A true response means we gave up for some reason, so abandon this import
+                    base.EntityManager.DestroyEntity(value2);
+                    ImportStage = STAGE0_IDLE;
+
+                } else {
+
+                    // Now create a SPerformTableUpdate singleton to force table updates
+                    PlateUpTool_Integration.TDbg("SPerformTableUpdate created");
+        		    /*Entity entity = */ base.EntityManager.CreateEntity(typeof(SPerformTableUpdate));
+		            /*base.EntityManager.SetComponentData(entity, new SPerformTableUpdate
+		            {
+    			        EnforcePaths = true,
+			            PathingSource = SPerformTableUpdate.DefaultPathingSource
+		            });*/
+                }
+            }
+
+            if (TryGetSingletonEntity<PUT_DumpComponent>(out var value3))
+            {
+                PlateUpTool_Integration.TDbg("OnUpdate called - found dump object3");
+                ReallyDump();
+                base.EntityManager.DestroyEntity(value3);
             }
         }
 
@@ -699,13 +808,428 @@ namespace PlateUpTool_Integration
         }
 
         // ===================================================================================================
-        // Export logic
+        // Dump data implementation: walk the room and log a tree of components per primary occupant
         // ===================================================================================================
-        protected void ReallyImport()
+        protected void ReallyDump()
+        {
+            Bounds bounds = base.Bounds;
+            PlateUpTool_Integration.TDbg("DumpData: Screen bounds: " + bounds);
+
+            for (float roomH = bounds.max.z; roomH >= bounds.min.z; roomH -= 1f)
+            {
+                int yPos = 0 - (int)(roomH - bounds.max.z);
+                for (float roomW = bounds.min.x; roomW <= bounds.max.x; roomW += 1f)
+                {
+                    int xPos = (int)(roomW - bounds.min.x);
+                    Vector3 gridPos = new Vector3(roomW, 0f, roomH);
+                    Entity primaryOccupant = TileManager.GetPrimaryOccupant(gridPos);
+
+                    string coordPrefix = "[" + xPos + "," + yPos + "] ";
+                    PlateUpTool_Integration.TDbg(coordPrefix + "Looking at grid (" + roomW + ", " + roomH + ") == (" + xPos + "," + yPos + ")");
+                    PlateUpTool_Integration.TDbg(coordPrefix + "Found: " + (primaryOccupant != Entity.Null ? primaryOccupant.ToString() : "nothing"));
+
+                    if (primaryOccupant == Entity.Null)
+                    {
+                        PlateUpTool_Integration.TDbg(coordPrefix + "    (empty)");
+                        continue;
+                    }
+
+                    // List component types attached to the entity
+                    try
+                    {
+                        var compTypes = base.EntityManager.GetComponentTypes(primaryOccupant);
+                        foreach (var ct in compTypes)
+                        {
+                            // Resolve a friendly component type name
+                            string typeName = GetComponentTypeName(ct);
+                            PlateUpTool_Integration.TDbg(coordPrefix + "    " + typeName);
+
+                            // Try to dump managed component data if possible
+                            try
+                            {
+                                var managedType = GetManagedTypeFromComponentType(ct);
+                                if (managedType != null)
+                                {
+                                    PlateUpTool_Integration.TDbg(coordPrefix + "        managedType = " + (managedType.FullName ?? managedType.Name));
+
+                                    // Determine if this is a DynamicBuffer<T> or an IBufferElementData element type
+                                    Type elementType = null;
+                                    bool isBuffer = false;
+                                    try
+                                    {
+                                        if (managedType.IsGenericType)
+                                        {
+                                            var gd = managedType.GetGenericTypeDefinition();
+                                            if (gd.FullName != null && gd.FullName.Contains("DynamicBuffer"))
+                                            {
+                                                elementType = managedType.GetGenericArguments()[0];
+                                                isBuffer = true;
+                                            }
+                                        }
+                                        if (!isBuffer)
+                                        {
+                                            // If the managed type itself implements IBufferElementData, it's an element type
+                                            if (managedType.GetInterfaces().Any(i => i.Name == "IBufferElementData" || i.FullName == "Unity.Entities.IBufferElementData"))
+                                            {
+                                                elementType = managedType;
+                                                isBuffer = true;
+                                            }
+                                        }
+                                    }
+                                    catch { }
+
+                                    var emType = typeof(EntityManager);
+
+                                    if (isBuffer && elementType != null)
+                                    {
+                                            // Prefer calling our generic helper DumpBufferElements<T> which uses GetBuffer<T> in a strongly-typed context
+                                            try
+                                            {
+                                                var dm = this.GetType().GetMethod("DumpBufferElements", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                                                if (dm != null)
+                                                {
+                                                    var gdm = dm.MakeGenericMethod(elementType);
+                                                    gdm.Invoke(this, new object[] { primaryOccupant, coordPrefix });
+                                                    // helper did the dump; continue to next component
+                                                    continue;
+                                                }
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                PlateUpTool_Integration.TDbg(coordPrefix + "        (DumpBufferElements reflection failed: " + ex.Message + ")");
+                                            }
+
+                                            // Use GetBuffer<elementType>(entity) (fallback)
+                                        // First try to find GetBuffer<T>(Entity) on 'this' system (some code calls GetBuffer directly)
+                                        MethodInfo getBufferMethod = null;
+                                        var runtimeEmType = base.EntityManager.GetType();
+                                        try
+                                        {
+                                            var thisType = this.GetType();
+                                            Type search = thisType;
+                                            while (search != null)
+                                            {
+                                                getBufferMethod = search.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                                                    .FirstOrDefault(m => m.Name == "GetBuffer" && m.IsGenericMethod);
+                                                if (getBufferMethod != null) break;
+                                                search = search.BaseType;
+                                            }
+                                        }
+                                        catch { }
+
+                                        // If not found on the system, try EntityManager instance methods / extension methods as a fallback
+                                        if (getBufferMethod == null)
+                                        {
+                                            try
+                                            {
+                                                getBufferMethod = runtimeEmType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                                                    .FirstOrDefault(m => m.Name == "GetBuffer" && m.IsGenericMethod);
+                                            }
+                                            catch { }
+
+                                            if (getBufferMethod == null)
+                                            {
+                                                foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                                                {
+                                                    Type[] types = null;
+                                                    try { types = asm.GetTypes(); } catch { continue; }
+                                                    foreach (var t in types)
+                                                    {
+                                                        try
+                                                        {
+                                                            var m = t.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                                                                .FirstOrDefault(mm => mm.Name == "GetBuffer" && mm.IsGenericMethod);
+                                                            if (m != null)
+                                                            {
+                                                                var ps = m.GetParameters();
+                                                                if (ps.Length >= 1 && ps[0].ParameterType.IsAssignableFrom(runtimeEmType))
+                                                                {
+                                                                    getBufferMethod = m;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                        catch { }
+                                                    }
+                                                    if (getBufferMethod != null) break;
+                                                }
+                                            }
+                                        }
+
+                                        if (getBufferMethod != null)
+                                        {
+                                            try
+                                            {
+                                                var gb = getBufferMethod.MakeGenericMethod(elementType);
+                                                object bufferObj = null;
+                                                var ps = getBufferMethod.GetParameters();
+                                                object[] args = null;
+                                                if (getBufferMethod.IsStatic)
+                                                {
+                                                    // Determine whether the static method expects SystemBase (this) or EntityManager as first arg
+                                                    var thisType = this.GetType();
+                                                    Type firstParam = ps.Length > 0 ? ps[0].ParameterType : null;
+                                                    bool firstAcceptsThis = firstParam != null && firstParam.IsAssignableFrom(thisType);
+                                                    bool firstAcceptsEm = firstParam != null && firstParam.IsAssignableFrom(runtimeEmType);
+
+                                                    if (ps.Length >= 2)
+                                                    {
+                                                        if (firstAcceptsThis)
+                                                            args = new object[] { this, primaryOccupant };
+                                                        else if (firstAcceptsEm)
+                                                            args = new object[] { base.EntityManager, primaryOccupant };
+                                                    }
+                                                    else if (ps.Length == 1)
+                                                    {
+                                                        if (firstAcceptsThis)
+                                                            args = new object[] { this };
+                                                        else if (firstAcceptsEm)
+                                                            args = new object[] { base.EntityManager };
+                                                    }
+
+                                                    // Fallback: try sensible combos
+                                                    if (args == null)
+                                                    {
+                                                        var tried = new List<Exception>();
+                                                        try
+                                                        {
+                                                            args = new object[] { base.EntityManager, primaryOccupant };
+                                                            bufferObj = gb.Invoke(null, args);
+                                                        }
+                                                        catch (Exception ex1)
+                                                        {
+                                                            tried.Add(ex1);
+                                                            try
+                                                            {
+                                                                args = new object[] { this, primaryOccupant };
+                                                                bufferObj = gb.Invoke(null, args);
+                                                            }
+                                                            catch (Exception ex2)
+                                                            {
+                                                                tried.Add(ex2);
+                                                                throw new AggregateException("Failed invocation attempts", tried);
+                                                            }
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        bufferObj = gb.Invoke(null, args);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    // Instance method: invoke on the declaring type instance (could be SystemBase or EntityManager)
+                                                    var declaring = getBufferMethod.DeclaringType;
+                                                    if (declaring != null && declaring.IsAssignableFrom(this.GetType()))
+                                                    {
+                                                        args = new object[] { primaryOccupant };
+                                                        bufferObj = gb.Invoke(this, args);
+                                                    }
+                                                    else if (declaring != null && declaring.IsAssignableFrom(runtimeEmType))
+                                                    {
+                                                        args = new object[] { primaryOccupant };
+                                                        bufferObj = gb.Invoke(base.EntityManager, args);
+                                                    }
+                                                    else
+                                                    {
+                                                        // Last resort: try invoking on EntityManager
+                                                        args = new object[] { primaryOccupant };
+                                                        bufferObj = gb.Invoke(base.EntityManager, args);
+                                                    }
+                                                }
+
+                                                var enumerable = bufferObj as System.Collections.IEnumerable;
+                                                if (enumerable != null)
+                                                {
+                                                    int bi = 0;
+                                                    foreach (var elem in enumerable)
+                                                    {
+                                                        PlateUpTool_Integration.TDbg(coordPrefix + "        [" + bi + "]");
+                                                        DumpObjectFields(elem, 3, coordPrefix);
+                                                        bi++;
+                                                    }
+                                                    if (bi == 0)
+                                                        PlateUpTool_Integration.TDbg(coordPrefix + "        (buffer is empty)");
+                                                }
+                                                else
+                                                {
+                                                    PlateUpTool_Integration.TDbg(coordPrefix + "        (buffer read but not enumerable)");
+                                                }
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                PlateUpTool_Integration.TDbg(coordPrefix + "        (failed to read buffer via GetBuffer: " + ex.Message + ")");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            PlateUpTool_Integration.TDbg(coordPrefix + "        (GetBuffer<T> not found via reflection)");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // Fall back to GetComponentData<managedType>
+                                        try
+                                        {
+                                            var method = emType.GetMethods().FirstOrDefault(m => m.Name == "GetComponentData" && m.IsGenericMethod && m.GetParameters().Length == 1);
+                                            if (method != null)
+                                            {
+                                                var gen = method.MakeGenericMethod(managedType);
+                                                object compObj = gen.Invoke(base.EntityManager, new object[] { primaryOccupant });
+                                                DumpObjectFields(compObj, 2, coordPrefix);
+                                            }
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            PlateUpTool_Integration.TDbg(coordPrefix + "        (failed to read component data: " + ex.Message + ")");
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                PlateUpTool_Integration.TDbg(coordPrefix + "        (failed to read component data: " + ex.Message + ")");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        PlateUpTool_Integration.TDbg(coordPrefix + "    (failed to enumerate components: " + ex.Message + ")");
+                    }
+                }
+            }
+        }
+
+        // Attempt to get the managed Type for a ComponentType (if available)
+        private Type GetManagedTypeFromComponentType(ComponentType ct)
+        {
+            try
+            {
+                // Some versions expose GetManagedType(), others do not
+                var mi = typeof(ComponentType).GetMethod("GetManagedType", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                if (mi != null)
+                {
+                    return mi.Invoke(ct, null) as Type;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        // Resolve a friendly name for a ComponentType: prefer the managed type name, then try internal fields/properties, else fallback
+        private string GetComponentTypeName(ComponentType ct)
+        {
+            try
+            {
+                var mt = GetManagedTypeFromComponentType(ct);
+                if (mt != null) return mt.FullName ?? mt.Name;
+
+                var ctType = ct.GetType();
+                var fields = ctType.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+                foreach (var f in fields)
+                {
+                    if (f.FieldType == typeof(Type))
+                    {
+                        var v = f.GetValue(ct) as Type;
+                        if (v != null) return v.FullName ?? v.Name;
+                    }
+                    if (f.FieldType == typeof(string))
+                    {
+                        var s = f.GetValue(ct) as string;
+                        if (!string.IsNullOrEmpty(s)) return s;
+                    }
+                }
+                var props = ctType.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+                foreach (var p in props)
+                {
+                    if (p.PropertyType == typeof(Type))
+                    {
+                        var v = p.GetValue(ct) as Type;
+                        if (v != null) return v.FullName ?? v.Name;
+                    }
+                    if (p.PropertyType == typeof(string))
+                    {
+                        var s = p.GetValue(ct) as string;
+                        if (!string.IsNullOrEmpty(s)) return s;
+                    }
+                }
+            }
+            catch { }
+            return ct.ToString();
+        }
+
+        // Dump public fields and properties of an object with indentation
+        private void DumpObjectFields(object obj, int indentLevel, string prefix)
+        {
+            if (obj == null)
+            {
+                PlateUpTool_Integration.TDbg(prefix + new string(' ', indentLevel * 4) + "(null)");
+                return;
+            }
+            var t = obj.GetType();
+            var indent = new string(' ', indentLevel * 4);
+            var fields = t.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            foreach (var f in fields)
+            {
+                try
+                {
+                    object val = f.GetValue(obj);
+                    PlateUpTool_Integration.TDbg(prefix + indent + f.Name + " = " + (val != null ? val.ToString() : "null"));
+                }
+                catch (Exception ex)
+                {
+                    PlateUpTool_Integration.TDbg(prefix + indent + f.Name + " = (error: " + ex.Message + ")");
+                }
+            }
+            var props = t.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            foreach (var p in props)
+            {
+                if (p.GetIndexParameters().Length > 0) continue;
+                try
+                {
+                    object val = p.GetValue(obj);
+                    PlateUpTool_Integration.TDbg(prefix + indent + p.Name + " = " + (val != null ? val.ToString() : "null"));
+                }
+                catch { }
+            }
+        }
+
+        // Generic helper to read a DynamicBuffer<T> via the strongly-typed GetBuffer<T> and dump each element.
+        // Invoked via reflection with the concrete element type to avoid calling GetBuffer via reflection directly.
+        private void DumpBufferElements<T>(Entity entity, string coordPrefix) where T : struct, IBufferElementData
+        {
+            try
+            {
+                DynamicBuffer<T> buffer = GetBuffer<T>(entity);
+                int bi = 0;
+                foreach (var elem in buffer)
+                {
+                    PlateUpTool_Integration.TDbg(coordPrefix + "        [" + bi + "]");
+                    DumpObjectFields(elem, 3, coordPrefix);
+                    bi++;
+                }
+                if (bi == 0)
+                    PlateUpTool_Integration.TDbg(coordPrefix + "        (buffer is empty)");
+            }
+            catch (Exception ex)
+            {
+                PlateUpTool_Integration.TDbg(coordPrefix + "        (failed in DumpBufferElements<" + typeof(T).Name + ">: " + ex.Message + ")");
+            }
+        }
+
+        // ===================================================================================================
+        // Import logic
+        // - Most appliances can be moved or updates safely
+        // - Tables have to be moved before chairs are adjusted, and between these two we need the
+        //       TablesUpdateGroup to run. That fixes tablesets, tablesetparts, chairs, ghostchairs etc
+        // - Chairs dont exist, the only thing we can do is turn them, and when we do we need to update
+        //       the target
+        // ===================================================================================================
+        protected bool ReallyImportStage1()
         {
             // *** Can we store smart grabber programming?
 
-            PlateUpTool_Integration.TDbg("Called to import from the clipboard");
+            PlateUpTool_Integration.TDbg("Called to import from the clipboard, stage1");
 
             // Initial verification stage:
             // - Verify there is something on the clipboard which is a 'complete' export
@@ -713,7 +1237,7 @@ namespace PlateUpTool_Integration
             if (string.IsNullOrEmpty(clipboardText))
             {
                 PlateUpTool_Integration.TDbg("Clipboard is empty, aborting import");
-                return;
+                return true;
             }
 
             // Support both a raw encoded state and a full URL containing #state=
@@ -730,7 +1254,7 @@ namespace PlateUpTool_Integration
             catch (Exception ex)
             {
                 PlateUpTool_Integration.TDbg("Failed to decode clipboard state: " + ex.Message);
-                return;
+                return true;
             }
 
             PlateUpTool_Integration.TDbg("Decoded import: " + importedState.roomWidth + "x" + importedState.roomHeight +
@@ -746,50 +1270,57 @@ namespace PlateUpTool_Integration
             {
                 PlateUpTool_Integration.TDbg("Import aborted: imported layout is " + importedState.roomWidth + "x" + importedState.roomHeight +
                     " but current room is " + width + "x" + height);
-                return;
+                return true;
             }
             PlateUpTool_Integration.TDbg("Room dimensions match: " + width + "x" + height);
 
             // - Verify all walls/doors/hatches in the clipboard version match
             if (!VerifyWallLayout(importedState, bounds))
-                return;
+                return true;
 
-            // Build list of all imported appliances
-            var importedAppliances = importedState.gridCells.ToList();
-            PlateUpTool_Integration.TDbg("Imported appliances: " + importedAppliances.Count);
-
-            // Scan the game grid to build the working lists for the import
-            ScanGameGrid(bounds,
-                out var gameAppliances,
-                out var chairApplianceIds,
-                out var emptyCells);
-
-            // Partition imported list into non-chairs and chairs
-            var importedNonChairs = importedAppliances.Where(c => !chairApplianceIds.Contains(c.applianceId)).ToList();
-            var importedChairs    = importedAppliances.Where(c =>  chairApplianceIds.Contains(c.applianceId)).ToList();
-
-            PlateUpTool_Integration.TDbg("Game appliances: " + gameAppliances.Count +
-                ", chair IDs: " + chairApplianceIds.Count + ", empty cells: " + emptyCells.Count);
-            PlateUpTool_Integration.TDbg("Import non-chairs: " + importedNonChairs.Count +
-                ", import chairs: " + importedChairs.Count);
-
-            // Verify that every imported non-chair appliance has a game appliance to fulfil it.
-            // MatchAppliances does a two-pass greedy match (exact then correctable) and returns the
-            // pairings for the placement loop, or null if anything is unresolvable.
-            var pairings = MatchAppliances(importedNonChairs, gameAppliances);
-            if (pairings == null)
+            // Cache imported state for stage2 and prepare pairings
+            cachedImportedState = importedState;
+            if (!PrepareImportPairings(importedState, bounds))
             {
-                PlateUpTool_Integration.TDbg("Import aborted: appliance inventory does not match (see above for details)");
-                return;
+                PlateUpTool_Integration.TDbg("Import aborted during preparation (see above for details)");
+                return true;
             }
-            PlateUpTool_Integration.TDbg("All " + pairings.Count + " non-chair appliances matched");
 
-            LogImportStats(pairings);
+            // Place the non-chair appliances now (chairs are handled in stage2)
+            LogImportStats(cachedPairings);
+            PlaceAppliances(cachedPairings, bounds, cachedEmptyCells, cachedGameAppliances);
 
-            PlaceAppliances(pairings, bounds, emptyCells, gameAppliances);
+            // Move to stage 2 to allow table updates, then finish chairs
+            ImportStage = STAGE2_WAITONTABLES;
+            return false;
+        }
 
-            FixUpTableChairs(pairings, importedChairs);
+        protected bool ReallyImportStage2()
+        {
+            PlateUpTool_Integration.TDbg("Called to finish import, stage 2");
 
+            // Ensure we have prepared data (in case it wasn't cached for some reason)
+            Bounds bounds = base.Bounds;
+            if (cachedPairings == null || cachedImportedChairs == null)
+            {
+                if (cachedImportedState == null)
+                {
+                    PlateUpTool_Integration.TDbg("No cached import state available for stage2, aborting");
+                    return true;
+                }
+                if (!PrepareImportPairings(cachedImportedState, bounds))
+                {
+                    PlateUpTool_Integration.TDbg("Failed to prepare import data for stage2, aborting");
+                    return true;
+                }
+            }
+
+            // For now, FixUpTableChairs is a simple pass-through that receives all imported chairs.
+            FixUpTableChairs(cachedPairings, cachedImportedChairs);
+
+            // Finished stage2 — signal completion
+            ImportStage = STAGE3_WAITONCHAIRS;
+            return false;
         }
 
         // ===================================================================================================
@@ -1001,40 +1532,106 @@ namespace PlateUpTool_Integration
         // Only tables present in the import are updated; unmatched tables are left as-is.
         private void FixUpTableChairs(List<ImportPairing> pairings, List<PUTGridCell> importedChairs)
         {
-            // Index imported chairs by grid position for O(1) adjacency checks.
-            var chairByPos = new Dictionary<(int, int), PUTGridCell>();
-            foreach (var chair in importedChairs)
-                chairByPos[(chair.x, chair.y)] = chair;
+            PlateUpTool_Integration.TDbg("FixUpTableChairs: processing imported chairs");
 
-            foreach (var p in pairings)
+            if (importedChairs == null || importedChairs.Count == 0)
             {
-                if (!base.EntityManager.HasComponent<CApplianceTable>(p.game.entity))
-                    continue;
+                PlateUpTool_Integration.TDbg("No imported chairs to process");
+                return;
+            }
 
-                int tx = p.imported.x;
-                int ty = p.imported.y;
+            var bounds = base.Bounds;
 
-                // A chair at an adjacent cell "points at" this table when its rotation faces
-                // away from the table centre (chair faces the same direction as its offset):
-                //   Up    cell (ty-1): chair faces Up    (rotation 0)
-                //   Down  cell (ty+1): chair faces Down  (rotation 2)
-                //   Left  cell (tx-1): chair faces Left  (rotation 3)
-                //   Right cell (tx+1): chair faces Right (rotation 1)
-                bool upChair    = HasChairFacing(chairByPos, tx,   ty - 1, 0);
-                bool downChair  = HasChairFacing(chairByPos, tx,   ty + 1, 2);
-                bool leftChair  = HasChairFacing(chairByPos, tx - 1, ty,   3);
-                bool rightChair = HasChairFacing(chairByPos, tx + 1, ty,   1);
+            foreach (var impChair in importedChairs)
+            {
+                try
+                {
+                    Vector3 worldPos = PutToWorld(impChair.x, impChair.y, bounds);
+                    Entity occupant = TileManager.GetPrimaryOccupant(worldPos);
+                    if (occupant == Entity.Null)
+                    {
+                        PlateUpTool_Integration.TDbg("No occupant at imported chair location (" + impChair.x + "," + impChair.y + ") - skipping");
+                        continue;
+                    }
 
-                var tableData = base.EntityManager.GetComponentData<CApplianceTable>(p.game.entity);
-                tableData.PreventSittingUp    = !upChair;
-                tableData.PreventSittingDown  = !downChair;
-                tableData.PreventSittingLeft  = !leftChair;
-                tableData.PreventSittingRight = !rightChair;
-                base.EntityManager.SetComponentData(p.game.entity, tableData);
+                    CApplianceChair applianceChair;
+                    CApplianceGhostChair applianceGhostChair;
+                    CPosition position;
 
-                PlateUpTool_Integration.TDbg("FixUpTableChairs entity=" + p.game.entity +
-                    " up=" + upChair + " down=" + downChair +
-                    " left=" + leftChair + " right=" + rightChair);
+                    bool hasChair = base.EntityManager.RequireComponent<CApplianceChair>(occupant, out applianceChair);
+                    bool hasGhost = base.EntityManager.RequireComponent<CApplianceGhostChair>(occupant, out applianceGhostChair);
+                    bool hasPos   = base.EntityManager.RequireComponent<CPosition>(occupant, out position);
+
+                    if (!hasChair || !hasGhost || !hasPos)
+                    {
+                        PlateUpTool_Integration.TDbg("Occupant at (" + impChair.x + "," + impChair.y + ") missing components: " +
+                            (hasChair ? "" : "CApplianceChair ") + (hasGhost ? "" : "CApplianceGhostChair ") + (hasPos ? "" : "CPosition "));
+                        continue;
+                    }
+
+                    string rotStr = position.Rotation.ToOrientation().ToString();
+                    int currentRot = rotStr == "Right" ? 1 : rotStr == "Left" ? 3 : rotStr == "Down" ? 2 : 0;
+                    int desiredRot = impChair.rotation;
+                    if (currentRot == desiredRot)
+                    {
+                        PlateUpTool_Integration.TDbg("Chair at (" + impChair.x + "," + impChair.y + ") already at desired rotation " + desiredRot + " - skipping");
+                        continue;
+                    }
+
+                    // Read ghost chair table candidates buffer
+                    try
+                    {
+                        if (!base.EntityManager.HasComponent<Kitchen.CGhostChairTableCandidates>(occupant))
+                        {
+                            PlateUpTool_Integration.TDbg("No CGhostChairTableCandidates buffer present for occupant " + occupant + " at (" + impChair.x + "," + impChair.y + ")");
+                            continue;
+                        }
+
+                        DynamicBuffer<Kitchen.CGhostChairTableCandidates> buffer = GetBuffer<Kitchen.CGhostChairTableCandidates>(occupant);
+                        if (buffer.Length == 0)
+                        {
+                            PlateUpTool_Integration.TDbg("No CGhostChairTableCandidates buffer entries for occupant " + occupant + " at (" + impChair.x + "," + impChair.y + ")");
+                            continue;
+                        }
+
+                        bool found = false;
+                        Quaternion desiredQuat = RotationToQuaternion(desiredRot);
+                        for (int i = 0; i < buffer.Length; i++)
+                        {
+                            var entry = buffer[i];
+                            if (entry.Rotation == desiredQuat)
+                            {
+                                // Log previous & new table if possible
+                                try { PlateUpTool_Integration.TDbg("Found candidate: Rotation=" + entry.Rotation + " Table=" + entry.Table); } catch { }
+                                try { PlateUpTool_Integration.TDbg("Previous ghost table=" + applianceGhostChair.Table); } catch { }
+
+                                applianceGhostChair.Table = entry.Table;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found)
+                        {
+                            PlateUpTool_Integration.TDbg("No CGhostChairTableCandidates entry matched for chair at " + impChair.x + "," + impChair.y + " rot=" + desiredRot);
+                            continue;
+                        }
+
+                        // Apply position rotation and update ghost chair component
+                        position.Rotation = RotationToQuaternion(desiredRot);
+                        base.EntityManager.SetComponentData(occupant, position);
+                        base.EntityManager.SetComponentData(occupant, applianceGhostChair);
+                        PlateUpTool_Integration.TDbg("Adjusted chair at " + impChair.x + "," + impChair.y + " from rot=" + currentRot + " to rot=" + desiredRot);
+                    }
+                    catch (Exception ex)
+                    {
+                        PlateUpTool_Integration.TDbg("Failed to read CGhostChairTableCandidates for occupant " + occupant + " at (" + impChair.x + "," + impChair.y + "): " + ex.Message);
+                        continue;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    PlateUpTool_Integration.TDbg("Error processing imported chair at (" + impChair.x + "," + impChair.y + "): " + ex.Message);
+                }
             }
         }
 
@@ -1070,6 +1667,47 @@ namespace PlateUpTool_Integration
                 "Import stats: " + noChange + " need no changes, " +
                 attrOnly + " need rotation/attribute fix only, " +
                 needsMove + " need to be moved");
+        }
+
+        // Prepare import pairings and cache relevant lists for stage2 processing.
+        // Returns true on success, false on failure (import should be aborted).
+        private bool PrepareImportPairings(PUTState importedState, Bounds bounds)
+        {
+            // Build list of all imported appliances
+            var importedAppliances = importedState.gridCells.ToList();
+            PlateUpTool_Integration.TDbg("Imported appliances: " + importedAppliances.Count);
+
+            // Scan the game grid to build the working lists for the import
+            ScanGameGrid(bounds,
+                out var gameAppliances,
+                out var chairApplianceIds,
+                out var emptyCells);
+
+            // Partition imported list into non-chairs and chairs
+            var importedNonChairs = importedAppliances.Where(c => !chairApplianceIds.Contains(c.applianceId)).ToList();
+            var importedChairs    = importedAppliances.Where(c =>  chairApplianceIds.Contains(c.applianceId)).ToList();
+
+            PlateUpTool_Integration.TDbg("Game appliances: " + gameAppliances.Count +
+                ", chair IDs: " + chairApplianceIds.Count + ", empty cells: " + emptyCells.Count);
+            PlateUpTool_Integration.TDbg("Import non-chairs: " + importedNonChairs.Count +
+                ", import chairs: " + importedChairs.Count);
+
+            // Verify that every imported non-chair appliance has a game appliance to fulfil it.
+            var pairings = MatchAppliances(importedNonChairs, gameAppliances);
+            if (pairings == null)
+            {
+                PlateUpTool_Integration.TDbg("Import aborted: appliance inventory does not match (see above for details)");
+                return false;
+            }
+            PlateUpTool_Integration.TDbg("All " + pairings.Count + " non-chair appliances matched");
+
+            // Cache for stage2
+            cachedPairings = pairings;
+            cachedImportedChairs = importedChairs;
+            cachedGameAppliances = gameAppliances;
+            cachedEmptyCells = emptyCells;
+
+            return true;
         }
 
         // Three-pass greedy match:
