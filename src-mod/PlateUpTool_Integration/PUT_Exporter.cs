@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Unity.Entities;
+using Unity.Collections;
 using UnityEngine;
 using System.Diagnostics;
 using System.Reflection;
@@ -1388,18 +1389,36 @@ namespace PlateUpTool_Integration
                 return;
             }
 
+            PlateUpTool_Integration.TDbg("DisableTableChairs: provided pairings count = " + pairings.Count + ", importedChairs count = " + (importedChairs == null ? 0 : importedChairs.Count));
+            var bounds = base.Bounds;
+            PlateUpTool_Integration.TDbg("DisableTableChairs: bounds = " + bounds + ", min.x=" + bounds.min.x + ", max.x=" + bounds.max.x + ", min.z=" + bounds.min.z + ", max.z=" + bounds.max.z);
+            int roomWidth = Mathf.RoundToInt(bounds.max.x - bounds.min.x + 1f);
+            int roomHeight = Mathf.RoundToInt(bounds.max.z - bounds.min.z + 1f);
+            PlateUpTool_Integration.TDbg("DisableTableChairs: computed room size = " + roomWidth + " x " + roomHeight + " (putX in [0," + (roomWidth-1) + "], putY in [0," + (roomHeight-1) + "])");
+
             // Build set of table entities that were part of the import
             var importedTableEntities = new HashSet<Entity>();
             foreach (var p in pairings)
             {
-                if (p.game.entity == Entity.Null) continue;
+                if (p.game.entity == Entity.Null)
+                {
+                    PlateUpTool_Integration.TDbg("DisableTableChairs: pairing has null game.entity, skipping");
+                    continue;
+                }
                 try
                 {
-                    if (base.EntityManager.HasComponent<CApplianceTable>(p.game.entity))
+                    bool isTable = base.EntityManager.HasComponent<CApplianceTable>(p.game.entity);
+                    PlateUpTool_Integration.TDbg("DisableTableChairs: pairing -> game.entity=" + p.game.entity + " isTable=" + isTable);
+                    if (isTable)
                         importedTableEntities.Add(p.game.entity);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    PlateUpTool_Integration.TDbg("DisableTableChairs: error inspecting pairing entity " + p.game.entity + ": " + ex.Message);
+                }
             }
+
+            PlateUpTool_Integration.TDbg("DisableTableChairs: discovered " + importedTableEntities.Count + " imported table entities");
 
             if (importedTableEntities.Count == 0)
             {
@@ -1407,18 +1426,29 @@ namespace PlateUpTool_Integration
                 return;
             }
 
-            var bounds = base.Bounds;
-
             for (float roomH = bounds.max.z; roomH >= bounds.min.z; roomH -= 1f)
             {
                 for (float roomW = bounds.min.x; roomW <= bounds.max.x; roomW += 1f)
                 {
                     Vector3 gridPos = new Vector3(roomW, 0f, roomH);
                     Entity occupant = TileManager.GetPrimaryOccupant(gridPos);
-                    if (occupant == Entity.Null) continue;
+
+                    if (occupant == Entity.Null)
+                    {
+                        // Nothing here
+                        continue;
+                    }
+
+                    int putX = Mathf.RoundToInt(gridPos.x - bounds.min.x);
+                    int putY = Mathf.RoundToInt(bounds.max.z - gridPos.z);
+                    PlateUpTool_Integration.TDbg("DisableTableChairs: found occupant " + occupant + " at worldPos=" + gridPos + " -> put coords (" + putX + "," + putY + ") computed with min.x=" + bounds.min.x + ", max.z=" + bounds.max.z + ", expected put ranges X[0," + (roomWidth-1) + "] Y[0," + (roomHeight-1) + "]");
 
                     // Only interested in ghost chairs
-                    if (!base.EntityManager.HasComponent<CApplianceGhostChair>(occupant)) continue;
+                    if (!base.EntityManager.HasComponent<CApplianceGhostChair>(occupant))
+                    {
+                        PlateUpTool_Integration.TDbg("DisableTableChairs: occupant " + occupant + " at " + gridPos + " is not a ghost chair, skipping");
+                        continue;
+                    }
 
                     CApplianceGhostChair ghostChair;
                     CPosition position;
@@ -1426,12 +1456,13 @@ namespace PlateUpTool_Integration
                     bool hasPos = base.EntityManager.RequireComponent<CPosition>(occupant, out position);
                     if (!hasGhost || !hasPos)
                     {
-                        PlateUpTool_Integration.TDbg("DisableTableChairs: occupant at " + gridPos + " missing ghost/position components");
+                        PlateUpTool_Integration.TDbg("DisableTableChairs: occupant " + occupant + " at " + gridPos + " missing ghost/position components");
                         continue;
                     }
 
                     string rotStr = position.Rotation.ToOrientation().ToString();
                     int rot = rotStr == "Right" ? 1 : rotStr == "Left" ? 3 : rotStr == "Down" ? 2 : 0;
+                    PlateUpTool_Integration.TDbg("DisableTableChairs: ghost chair " + occupant + " at " + gridPos + " has rotation string '" + rotStr + "' -> rot=" + rot + ", position=" + position.Position);
 
                     // Compute the adjacent world position in the direction the chair is facing
                     Vector3 targetPos;
@@ -1444,20 +1475,35 @@ namespace PlateUpTool_Integration
                     }
 
                     Entity targetOcc = TileManager.GetPrimaryOccupant(targetPos);
-                    if (targetOcc == Entity.Null) continue;
+                    int tPutX = Mathf.RoundToInt(targetPos.x - bounds.min.x);
+                    int tPutY = Mathf.RoundToInt(bounds.max.z - targetPos.z);
+                    PlateUpTool_Integration.TDbg("DisableTableChairs: ghost chair " + occupant + " at " + gridPos + " (put:" + putX + "," + putY + ") is pointing to worldPos=" + targetPos + " (put:" + tPutX + "," + tPutY + ") -> target occupant=" + targetOcc + ", computed with min.x=" + bounds.min.x + ", max.z=" + bounds.max.z);
 
-                    if (importedTableEntities.Contains(targetOcc))
+                    if (targetOcc == Entity.Null)
+                    {
+                        PlateUpTool_Integration.TDbg("DisableTableChairs: no occupant found at target position " + targetPos + " (chair " + occupant + ")");
+                        continue;
+                    }
+
+                    bool pointsAtImported = importedTableEntities.Contains(targetOcc);
+                    PlateUpTool_Integration.TDbg("DisableTableChairs: target occupant " + targetOcc + " isImportedTable=" + pointsAtImported);
+
+                    if (pointsAtImported)
                     {
                         try
                         {
                             ghostChair.IsDisabled = true;
                             base.EntityManager.SetComponentData(occupant, ghostChair);
-                            PlateUpTool_Integration.TDbg("Disabled ghost chair at " + gridPos + " because it points to imported table " + targetOcc);
+                            PlateUpTool_Integration.TDbg("Disabled ghost chair entity " + occupant + " at " + gridPos + " because it points to imported table entity " + targetOcc + " (targetPos=" + targetPos + ")");
                         }
                         catch (Exception ex)
                         {
-                            PlateUpTool_Integration.TDbg("Failed to disable ghost chair at " + gridPos + ": " + ex.Message);
+                            PlateUpTool_Integration.TDbg("Failed to disable ghost chair entity " + occupant + " at " + gridPos + ": " + ex.Message);
                         }
+                    }
+                    else
+                    {
+                        PlateUpTool_Integration.TDbg("DisableTableChairs: ghost chair " + occupant + " at " + gridPos + " points to a table we did not import (target=" + targetOcc + ") - leaving enabled");
                     }
                 }
             }
@@ -1562,9 +1608,7 @@ namespace PlateUpTool_Integration
             }
             occupantMap.Remove(OccupantKey(fromPos));
             occupantMap[OccupantKey(toPos)] = occupant;
-            var evictPos = base.EntityManager.GetComponentData<CPosition>(occupant);
-            evictPos.Position = toPos;
-            base.EntityManager.SetComponentData(occupant, evictPos);
+            MoveEntityTo(occupant, toPos);
             PlateUpTool_Integration.TDbg("Evicted occupant from " + fromPos + " -> " + toPos);
         }
 
@@ -1576,12 +1620,56 @@ namespace PlateUpTool_Integration
             emptyCells.Add(fromPos);
             occupantMap.Remove(OccupantKey(fromPos));
             occupantMap[OccupantKey(targetPos)] = appliance.entity;
-            var movePos = base.EntityManager.GetComponentData<CPosition>(appliance.entity);
-            movePos.Position = targetPos;
-            base.EntityManager.SetComponentData(appliance.entity, movePos);
+            MoveEntityTo(appliance.entity, targetPos);
             PlateUpTool_Integration.TDbg("Moved appliance (id=" + appliance.applianceId + ") from " + fromPos + " -> " + targetPos);
             appliance.worldX = targetPos.x;
             appliance.worldZ = targetPos.z;
+        }
+
+        // Common helper to move an entity to a new world position and perform any
+        // extra actions required for table-set parts.
+        private void MoveEntityTo(Entity entity, Vector3 targetPos)
+        {
+            try
+            {
+                if (!base.EntityManager.Exists(entity))
+                {
+                    PlateUpTool_Integration.TDbg("MoveEntityTo: entity " + entity + " does not exist");
+                    return;
+                }
+
+                // Update CPosition
+                if (base.EntityManager.HasComponent<CPosition>(entity))
+                {
+                    var pos = base.EntityManager.GetComponentData<CPosition>(entity);
+                    pos.Position = targetPos;
+                    base.EntityManager.SetComponentData(entity, pos);
+                }
+                else
+                {
+                    PlateUpTool_Integration.TDbg("MoveEntityTo: entity " + entity + " missing CPosition component");
+                }
+
+                // If this entity is part of a table set, perform extra actions (log/dump for now)
+                if (base.EntityManager.HasComponent<CPartOfTableSet>(entity))
+                {
+                    PlateUpTool_Integration.TDbg("MoveEntityTo: entity " + entity + " is part of a table set — performing table-set handling");
+                    CPartOfTableSet PoS;
+                    base.EntityManager.RequireComponent<CPartOfTableSet>(entity, out PoS);
+
+                    NativeArray<CTableSetParts> allParts = GetBuffer<CTableSetParts>(PoS).ToNativeArray(Allocator.Temp);
+                    for (int i = 0; i < allParts.Length; i++)
+                    {
+                        base.EntityManager.RemoveComponent<CPartOfTableSet>(allParts[i]);
+                    }
+                    allParts.Dispose();
+                    base.EntityManager.DestroyEntity(PoS);
+                }
+            }
+            catch (Exception ex)
+            {
+                PlateUpTool_Integration.TDbg("MoveEntityTo: error moving entity " + entity + " to " + targetPos + ": " + ex.Message);
+            }
         }
 
         // Reverse of the read in ScanGameGrid: 0=Up, 1=Right, 2=Down, 3=Left
