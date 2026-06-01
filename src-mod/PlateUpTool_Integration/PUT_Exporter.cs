@@ -574,21 +574,26 @@ namespace PlateUpTool_Integration
 
                 // When we get here we know there is no Singleton at the moment
                 PlateUpTool_Integration.TDbg("Handing stage appropriately:");
-                if (ImportStage == STAGE1_WAITTOSTART && ReallyImportStage1()) {
+                int EntryStage = ImportStage;
+                if (EntryStage == STAGE1_WAITTOSTART) {
+                    if (ReallyImportStage1()) {
 
-                    // A true response means we gave up for some reason, so abandon this import
-                    PlateUpTool_Integration.TDbg("Failed at stage 1, abandoning");
-                    base.EntityManager.DestroyEntity(value2);
-                    ImportStage = STAGE0_IDLE;
+                        // A true response means we gave up for some reason, so abandon this import
+                        PlateUpTool_Integration.TDbg("Failed at stage 1, abandoning");
+                        base.EntityManager.DestroyEntity(value2);
+                        ImportStage = STAGE0_IDLE;
+                    }
 
-                } else if (ImportStage == STAGE2_WAITONTABLES && ReallyImportStage2()) {
+                } else if (EntryStage == STAGE2_WAITONTABLES) {
+                    if (ReallyImportStage2()) {
 
-                    // A true response means we gave up for some reason, so abandon this import
-                    PlateUpTool_Integration.TDbg("Failed at stage 2, abandoning");
-                    base.EntityManager.DestroyEntity(value2);
-                    ImportStage = STAGE0_IDLE;
+                        // A true response means we gave up for some reason, so abandon this import
+                        PlateUpTool_Integration.TDbg("Failed at stage 2, abandoning");
+                        base.EntityManager.DestroyEntity(value2);
+                        ImportStage = STAGE0_IDLE;
+                    }
 
-                } else if (ImportStage == STAGE3_WAITONCHAIRS) {
+                } else if (EntryStage == STAGE3_WAITONCHAIRS) {
 
                     // Clean up cached info
                     try
@@ -610,12 +615,6 @@ namespace PlateUpTool_Integration
 
                     // Now create a SPerformTableUpdate singleton to force table updates
                     PlateUpTool_Integration.TDbg("SPerformTableUpdate created");
-        		    /*Entity entity = */ base.EntityManager.CreateEntity(typeof(SPerformTableUpdate));
-		            /*base.EntityManager.SetComponentData(entity, new SPerformTableUpdate
-		            {
-    			        EnforcePaths = true,
-			            PathingSource = SPerformTableUpdate.DefaultPathingSource
-		            });*/
                 }
             }
 
@@ -776,15 +775,7 @@ namespace PlateUpTool_Integration
                         // For each appliance, we want to extract which way its pointing so we can honour
                         // that in the tool. The rotation is stored as an enum but we want to convert it to a
                         // number to pass to PUT, so convert it here
-                        string rotationStr = position.Rotation.ToOrientation().ToString();
-                        int rotation = 0;
-                        switch (rotationStr)
-                        {
-                            case "Right": rotation = 1; break;
-                            case "Left": rotation = 3; break;
-                            case "Down": rotation = 2; break;
-                            default: rotation = 0; break;
-                        }
+                        int rotation = OrientationToRotation(position.Rotation.ToOrientation());
 
                         // Log out some diagnostics to help with debugging any issues with the export
                         PlateUpTool_Integration.TDbg("-- " + applResult + " and " + posnResult);
@@ -1408,9 +1399,10 @@ namespace PlateUpTool_Integration
                 try
                 {
                     bool isTable = base.EntityManager.HasComponent<CApplianceTable>(p.game.entity);
-                    PlateUpTool_Integration.TDbg("DisableTableChairs: pairing -> game.entity=" + p.game.entity + " isTable=" + isTable);
-                    if (isTable)
+                    if (isTable) {
+                        PlateUpTool_Integration.TDbg("DisableTableChairs: table pairing -> game.entity=" + p.game.entity);
                         importedTableEntities.Add(p.game.entity);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -1425,6 +1417,13 @@ namespace PlateUpTool_Integration
                 PlateUpTool_Integration.TDbg("DisableTableChairs: no imported tables found in pairings");
                 return;
             }
+
+            // Build a position set so we know which chairs the import WANTS to keep enabled.
+            var importedChairPositions = new HashSet<(int, int)>();
+            if (importedChairs != null)
+                foreach (var c in importedChairs)
+                    importedChairPositions.Add((c.x, c.y));
+            PlateUpTool_Integration.TDbg("DisableTableChairs: importedChairPositions count = " + importedChairPositions.Count);
 
             for (float roomH = bounds.max.z; roomH >= bounds.min.z; roomH -= 1f)
             {
@@ -1441,14 +1440,14 @@ namespace PlateUpTool_Integration
 
                     int putX = Mathf.RoundToInt(gridPos.x - bounds.min.x);
                     int putY = Mathf.RoundToInt(bounds.max.z - gridPos.z);
-                    PlateUpTool_Integration.TDbg("DisableTableChairs: found occupant " + occupant + " at worldPos=" + gridPos + " -> put coords (" + putX + "," + putY + ") computed with min.x=" + bounds.min.x + ", max.z=" + bounds.max.z + ", expected put ranges X[0," + (roomWidth-1) + "] Y[0," + (roomHeight-1) + "]");
 
                     // Only interested in ghost chairs
                     if (!base.EntityManager.HasComponent<CApplianceGhostChair>(occupant))
                     {
-                        PlateUpTool_Integration.TDbg("DisableTableChairs: occupant " + occupant + " at " + gridPos + " is not a ghost chair, skipping");
+                        //PlateUpTool_Integration.TDbg("DisableTableChairs: occupant " + occupant + " at " + gridPos + " is not a ghost chair, skipping");
                         continue;
                     }
+                    PlateUpTool_Integration.TDbg("DisableTableChairs: found GhostChair " + occupant + " at worldPos=" + gridPos + " -> put coords (" + putX + "," + putY + ")");
 
                     CApplianceGhostChair ghostChair;
                     CPosition position;
@@ -1460,50 +1459,38 @@ namespace PlateUpTool_Integration
                         continue;
                     }
 
-                    string rotStr = position.Rotation.ToOrientation().ToString();
-                    int rot = rotStr == "Right" ? 1 : rotStr == "Left" ? 3 : rotStr == "Down" ? 2 : 0;
-                    PlateUpTool_Integration.TDbg("DisableTableChairs: ghost chair " + occupant + " at " + gridPos + " has rotation string '" + rotStr + "' -> rot=" + rot + ", position=" + position.Position);
-
-                    // Compute the adjacent world position in the direction the chair is facing
-                    Vector3 targetPos;
-                    switch (rot)
-                    {
-                        case 1: targetPos = position.Position + new Vector3(1f, 0f, 0f); break; // Right
-                        case 2: targetPos = position.Position + new Vector3(0f, 0f, -1f); break; // Down
-                        case 3: targetPos = position.Position + new Vector3(-1f, 0f, 0f); break; // Left
-                        default: targetPos = position.Position + new Vector3(0f, 0f, 1f); break; // Up
-                    }
-
-                    Entity targetOcc = TileManager.GetPrimaryOccupant(targetPos);
-                    int tPutX = Mathf.RoundToInt(targetPos.x - bounds.min.x);
-                    int tPutY = Mathf.RoundToInt(bounds.max.z - targetPos.z);
-                    PlateUpTool_Integration.TDbg("DisableTableChairs: ghost chair " + occupant + " at " + gridPos + " (put:" + putX + "," + putY + ") is pointing to worldPos=" + targetPos + " (put:" + tPutX + "," + tPutY + ") -> target occupant=" + targetOcc + ", computed with min.x=" + bounds.min.x + ", max.z=" + bounds.max.z);
+                    // ghostChair.Table already holds the entity reference — no need to derive the
+                    // table position from the chair's rotation.
+                    Entity targetOcc = ghostChair.Table;
+                    PlateUpTool_Integration.TDbg("DisableTableChairs: ghost chair " + occupant + " at " + gridPos + " (put:" + putX + "," + putY + ") orientation=" + position.Rotation.ToOrientation() + " table=" + targetOcc);
 
                     if (targetOcc == Entity.Null)
                     {
-                        PlateUpTool_Integration.TDbg("DisableTableChairs: no occupant found at target position " + targetPos + " (chair " + occupant + ")");
+                        PlateUpTool_Integration.TDbg("DisableTableChairs: no table entity for ghost chair " + occupant + " at " + gridPos);
                         continue;
                     }
 
                     bool pointsAtImported = importedTableEntities.Contains(targetOcc);
-                    PlateUpTool_Integration.TDbg("DisableTableChairs: target occupant " + targetOcc + " isImportedTable=" + pointsAtImported);
+                    PlateUpTool_Integration.TDbg("DisableTableChairs: table entity " + targetOcc + " isImportedTable=" + pointsAtImported);
 
                     if (pointsAtImported)
                     {
+                        // Enable or disable based on whether the import wants a chair here.
+                        bool shouldBeEnabled = importedChairPositions.Contains((putX, putY));
                         try
                         {
-                            ghostChair.IsDisabled = true;
+                            ghostChair.IsDisabled = !shouldBeEnabled;
                             base.EntityManager.SetComponentData(occupant, ghostChair);
-                            PlateUpTool_Integration.TDbg("Disabled ghost chair entity " + occupant + " at " + gridPos + " because it points to imported table entity " + targetOcc + " (targetPos=" + targetPos + ")");
+                            PlateUpTool_Integration.TDbg((shouldBeEnabled ? "Enabled" : "Disabled") + " ghost chair entity " + occupant + " at " + gridPos + " (put:" + putX + "," + putY + ") table=" + targetOcc);
                         }
                         catch (Exception ex)
                         {
-                            PlateUpTool_Integration.TDbg("Failed to disable ghost chair entity " + occupant + " at " + gridPos + ": " + ex.Message);
+                            PlateUpTool_Integration.TDbg("Failed to update ghost chair entity " + occupant + " at " + gridPos + ": " + ex.Message);
                         }
                     }
                     else
                     {
-                        PlateUpTool_Integration.TDbg("DisableTableChairs: ghost chair " + occupant + " at " + gridPos + " points to a table we did not import (target=" + targetOcc + ") - leaving enabled");
+                        PlateUpTool_Integration.TDbg("DisableTableChairs: ghost chair " + occupant + " at " + gridPos + " points to a table we did not import (target=" + targetOcc + ") - leaving as-is");
                     }
                 }
             }
@@ -1608,7 +1595,7 @@ namespace PlateUpTool_Integration
             }
             occupantMap.Remove(OccupantKey(fromPos));
             occupantMap[OccupantKey(toPos)] = occupant;
-            MoveEntityTo(occupant, toPos);
+            MoveEntityInGame(occupant, toPos, fromPos);
             PlateUpTool_Integration.TDbg("Evicted occupant from " + fromPos + " -> " + toPos);
         }
 
@@ -1620,7 +1607,7 @@ namespace PlateUpTool_Integration
             emptyCells.Add(fromPos);
             occupantMap.Remove(OccupantKey(fromPos));
             occupantMap[OccupantKey(targetPos)] = appliance.entity;
-            MoveEntityTo(appliance.entity, targetPos);
+            MoveEntityInGame(appliance.entity, targetPos, fromPos);
             PlateUpTool_Integration.TDbg("Moved appliance (id=" + appliance.applianceId + ") from " + fromPos + " -> " + targetPos);
             appliance.worldX = targetPos.x;
             appliance.worldZ = targetPos.z;
@@ -1628,7 +1615,7 @@ namespace PlateUpTool_Integration
 
         // Common helper to move an entity to a new world position and perform any
         // extra actions required for table-set parts.
-        private void MoveEntityTo(Entity entity, Vector3 targetPos)
+        private void MoveEntityInGame(Entity entity, Vector3 targetPos, Vector3 fromPos)
         {
             try
             {
@@ -1644,13 +1631,16 @@ namespace PlateUpTool_Integration
                     var pos = base.EntityManager.GetComponentData<CPosition>(entity);
                     pos.Position = targetPos;
                     base.EntityManager.SetComponentData(entity, pos);
+
+                    TileManager.SetOccupant(fromPos, default(Entity));
+                    TileManager.SetOccupant(targetPos, entity);
                 }
                 else
                 {
                     PlateUpTool_Integration.TDbg("MoveEntityTo: entity " + entity + " missing CPosition component");
                 }
 
-                // If this entity is part of a table set, perform extra actions (log/dump for now)
+                // If this entity is part of a table set, clear out the TableSet so it gets rebuilt
                 if (base.EntityManager.HasComponent<CPartOfTableSet>(entity))
                 {
                     PlateUpTool_Integration.TDbg("MoveEntityTo: entity " + entity + " is part of a table set — performing table-set handling");
@@ -1672,16 +1662,35 @@ namespace PlateUpTool_Integration
             }
         }
 
-        // Reverse of the read in ScanGameGrid: 0=Up, 1=Right, 2=Down, 3=Left
-        private static Quaternion RotationToQuaternion(int rotation)
+        // Map the PUT int rotation (0=Up, 1=Right, 2=Down, 3=Left) to the game's Orientation enum.
+        private static Orientation RotationToOrientation(int rotation)
         {
             switch (rotation)
             {
-                case 1: return Quaternion.Euler(0f,  90f, 0f);
-                case 2: return Quaternion.Euler(0f, 180f, 0f);
-                case 3: return Quaternion.Euler(0f, 270f, 0f);
-                default: return Quaternion.identity;
+                case 1: return Orientation.Right;
+                case 2: return Orientation.Down;
+                case 3: return Orientation.Left;
+                default: return Orientation.Up;
             }
+        }
+
+        // Map the game's Orientation enum back to a PUT int rotation (0=Up, 1=Right, 2=Down, 3=Left).
+        private static int OrientationToRotation(Orientation orientation)
+        {
+            switch (orientation)
+            {
+                case Orientation.Right: return 1;
+                case Orientation.Down:  return 2;
+                case Orientation.Left:  return 3;
+                default:                return 0; // Up
+            }
+        }
+
+        // Write a PUT int rotation back to a CPosition.Rotation quaternion using the game's
+        // canonical ToRotation() so the value is consistent with what the game produces.
+        private static Unity.Mathematics.quaternion RotationToQuaternion(int rotation)
+        {
+            return RotationToOrientation(rotation).ToRotation();
         }
 
         // Correct the rotation and attributes of an entity to match the imported cell.
@@ -1755,9 +1764,13 @@ namespace PlateUpTool_Integration
             }
         }
 
-        // For each table entity in pairings, set its CApplianceTable Prevent flags based on
-        // whether the imported layout has a chair in each adjacent cell pointing back at the table.
-        // Only tables present in the import are updated; unmatched tables are left as-is.
+        // For each imported chair, find the ghost chair entity at its world position and correct its
+        // rotation by picking the matching entry from the CGhostChairTableCandidates buffer (which
+        // maps each possible facing to its target table). The ghost chair's Table reference is updated
+        // to match, IsDisabled is cleared, and position.Rotation is written back.
+        // Chairs already at the desired rotation are left unchanged (their IsDisabled state is handled
+        // separately by DisableTableChairs). The pairings parameter is unused here but kept for
+        // symmetry with DisableTableChairs.
         private void FixUpTableChairs(List<ImportPairing> pairings, List<PUTGridCell> importedChairs)
         {
             PlateUpTool_Integration.TDbg("FixUpTableChairs: processing imported chairs");
@@ -1797,8 +1810,7 @@ namespace PlateUpTool_Integration
                         continue;
                     }
 
-                    string rotStr = position.Rotation.ToOrientation().ToString();
-                    int currentRot = rotStr == "Right" ? 1 : rotStr == "Left" ? 3 : rotStr == "Down" ? 2 : 0;
+                    int currentRot = OrientationToRotation(position.Rotation.ToOrientation());
                     int desiredRot = impChair.rotation;
                     if (currentRot == desiredRot)
                     {
@@ -1823,11 +1835,14 @@ namespace PlateUpTool_Integration
                         }
 
                         bool found = false;
-                        Quaternion desiredQuat = RotationToQuaternion(desiredRot);
+                        Orientation desiredOrientation = RotationToOrientation(desiredRot);
+                        PlateUpTool_Integration.TDbg("Scanning " + buffer.Length + " CGhostChairTableCandidates for desired=" + desiredOrientation + " (rot=" + desiredRot + ")");
                         for (int i = 0; i < buffer.Length; i++)
                         {
                             var entry = buffer[i];
-                            if (entry.Rotation == desiredQuat)
+                            Orientation entryOrientation = entry.Rotation.ToOrientation();
+                            PlateUpTool_Integration.TDbg("  candidate[" + i + "]: Rotation=" + entry.Rotation + " (" + entryOrientation + ") Table=" + entry.Table);
+                            if (entryOrientation == desiredOrientation)
                             {
                                 // Log previous & new table if possible
                                 try { PlateUpTool_Integration.TDbg("Found candidate: Rotation=" + entry.Rotation + " Table=" + entry.Table); } catch { }
@@ -1846,9 +1861,10 @@ namespace PlateUpTool_Integration
 
                         // Apply position rotation and update ghost chair component
                         position.Rotation = RotationToQuaternion(desiredRot);
+                        applianceGhostChair.IsDisabled = false;
                         base.EntityManager.SetComponentData(occupant, position);
                         base.EntityManager.SetComponentData(occupant, applianceGhostChair);
-                        PlateUpTool_Integration.TDbg("Adjusted chair at " + impChair.x + "," + impChair.y + " from rot=" + currentRot + " to rot=" + desiredRot);
+                        PlateUpTool_Integration.TDbg("Adjusted chair at " + impChair.x + "," + impChair.y + " from rot=" + currentRot + " to rot=" + desiredRot + ", cleared IsDisabled");
                     }
                     catch (Exception ex)
                     {
@@ -2106,7 +2122,7 @@ namespace PlateUpTool_Integration
                         additionalData = sgItems,
                         entity = occupant
                     });
-                    PlateUpTool_Integration.TDbg("ScanGrid ("+xPos+","+yPos+"): rawId="+appliance.ID+" effectiveId="+effectiveId+" altId="+altId+" rot="+rotation+" extra="+extraData);
+                    PlateUpTool_Integration.TDbg("Scan game grid ("+xPos+","+yPos+"): rawId="+appliance.ID+" effectiveId="+effectiveId+" altId="+altId+" rot="+rotation+" extra="+extraData);
                 }
             }
         }
