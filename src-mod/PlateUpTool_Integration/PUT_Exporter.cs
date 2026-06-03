@@ -13,7 +13,7 @@ using Unity.Collections;
 using UnityEngine;
 using System.Diagnostics;
 using System.Reflection;
-//using KitchenData;
+using KitchenData;
 
 namespace PlateUpTool_Integration
 {
@@ -656,7 +656,7 @@ namespace PlateUpTool_Integration
                     // Note I believe this is always an appliance - some things can share the same square such
                     // as wall art or decorations but I dont care about those for the purposes of the tool.
                     Vector3 gridPos = new Vector3(roomW, 0f, roomH);
-                    Entity primaryOccupant = TileManager.GetPrimaryOccupant(gridPos);
+                    Entity primaryOccupant = TileManager.GetOccupant(gridPos, OccupancyLayer.Default);
 
                     PlateUpTool_Integration.TDbg("Found: " + (primaryOccupant != Entity.Null ? primaryOccupant.ToString() : "nothing"));
                     if (primaryOccupant != Entity.Null)
@@ -843,9 +843,9 @@ namespace PlateUpTool_Integration
             }
             string urlState = EncodeStateForUrl();
             PlateUpTool_Integration.TDbg("Finished, state for my app: " + urlState);
-            //Process.Start("https://eddy0612.github.io/PlateUpTool/#state=" + urlState);
-            //Process.Start("https://eddy0612.github.io/PlateUpTool/dev/#state=" + urlState);
-            Process.Start("http://localhost:5173/#state=" + urlState);
+            //System.Diagnostics.Process.Start("https://eddy0612.github.io/PlateUpTool/#state=" + urlState);
+            //System.Diagnostics.Process.Start("https://eddy0612.github.io/PlateUpTool/dev/#state=" + urlState);
+            System.Diagnostics.Process.Start("http://localhost:5173/#state=" + urlState);
         }
 
         // ===================================================================================================
@@ -863,7 +863,7 @@ namespace PlateUpTool_Integration
                 {
                     int xPos = (int)(roomW - bounds.min.x);
                     Vector3 gridPos = new Vector3(roomW, 0f, roomH);
-                    Entity primaryOccupant = TileManager.GetPrimaryOccupant(gridPos);
+                    Entity primaryOccupant = TileManager.GetOccupant(gridPos, OccupancyLayer.Default);
 
                     string coordPrefix = "[" + xPos + "," + yPos + "] ";
                     PlateUpTool_Integration.TDbg(coordPrefix + "Looking at grid (" + roomW + ", " + roomH + ") == (" + xPos + "," + yPos + ")");
@@ -1430,7 +1430,7 @@ namespace PlateUpTool_Integration
                 for (float roomW = bounds.min.x; roomW <= bounds.max.x; roomW += 1f)
                 {
                     Vector3 gridPos = new Vector3(roomW, 0f, roomH);
-                    Entity occupant = TileManager.GetPrimaryOccupant(gridPos);
+                    Entity occupant = TileManager.GetOccupant(gridPos, OccupancyLayer.Default);
 
                     if (occupant == Entity.Null)
                     {
@@ -1570,6 +1570,28 @@ namespace PlateUpTool_Integration
             return new Vector3(bounds.min.x + putX, 0f, bounds.max.z - putY);
         }
 
+        // Helper to produce a concise "(put=X,Y)" string from a world-space position
+        // and room bounds (inverse of PutToWorld). Also provide an overload for
+        // when PUT ints are already available.
+        private static string PutCoordsToString(Vector3 pos, Bounds bounds)
+        {
+            int putX = Mathf.RoundToInt(pos.x - bounds.min.x);
+            int putY = Mathf.RoundToInt(bounds.max.z - pos.z);
+            return "(put=" + putX + "," + putY + " world=" + PosToString(pos) + ")";
+        }
+
+        private static string PutCoordsToString(int putX, int putY, Bounds bounds)
+        {
+            Vector3 world = PutToWorld(putX, putY, bounds);
+            return "(put=" + putX + "," + putY + " world=" + PosToString(world) + ")";
+        }
+
+        // Small helper to format a Vector3 to concise string matching existing logs.
+        private static string PosToString(Vector3 pos)
+        {
+            return "(" + pos.x + "," + pos.y + "," + pos.z + ")";
+        }
+
         // Evict whatever occupies fromPos to the first available empty cell.
         // emptyCells and occupantMap are kept in sync.
         // Returns a dictionary key from a world-space position using integer rounding,
@@ -1577,7 +1599,7 @@ namespace PlateUpTool_Integration
         private static (int, int) OccupantKey(Vector3 pos) =>
             (Mathf.RoundToInt(pos.x), Mathf.RoundToInt(pos.z));
 
-        private void EvictToEmpty(Vector3 fromPos, List<Vector3> emptyCells, Dictionary<(int, int), Entity> occupantMap)
+        private void EvictToEmpty(Vector3 fromPos, Bounds bounds, List<Vector3> emptyCells, Dictionary<(int, int), Entity> occupantMap, List<GameAppliance> gameAppliances)
         {
             if (emptyCells.Count == 0)
             {
@@ -1596,11 +1618,20 @@ namespace PlateUpTool_Integration
             occupantMap.Remove(OccupantKey(fromPos));
             occupantMap[OccupantKey(toPos)] = occupant;
             MoveEntityInGame(occupant, toPos, fromPos);
-            PlateUpTool_Integration.TDbg("Evicted occupant from " + fromPos + " -> " + toPos);
+            // If we have a GameAppliance for this entity, update its stored world and PUT coords
+            var ga = gameAppliances?.FirstOrDefault(g => g.entity == occupant);
+            if (ga != null)
+            {
+                ga.worldX = toPos.x;
+                ga.worldZ = toPos.z;
+                ga.putX = Mathf.RoundToInt(toPos.x - bounds.min.x);
+                ga.putY = Mathf.RoundToInt(bounds.max.z - toPos.z);
+            }
+            PlateUpTool_Integration.TDbg("Evicted occupant from " + PutCoordsToString(fromPos, bounds) + " -> " + PutCoordsToString(toPos, bounds));
         }
 
         // Move appliance to targetPos and keep emptyCells and occupantMap in sync.
-        private void MoveAppliance(GameAppliance appliance, Vector3 targetPos, List<Vector3> emptyCells, Dictionary<(int, int), Entity> occupantMap)
+        private void MoveAppliance(GameAppliance appliance, Vector3 targetPos, Bounds bounds, List<Vector3> emptyCells, Dictionary<(int, int), Entity> occupantMap)
         {
             Vector3 fromPos = new Vector3(appliance.worldX, 0f, appliance.worldZ);
             emptyCells.Remove(targetPos);
@@ -1608,9 +1639,13 @@ namespace PlateUpTool_Integration
             occupantMap.Remove(OccupantKey(fromPos));
             occupantMap[OccupantKey(targetPos)] = appliance.entity;
             MoveEntityInGame(appliance.entity, targetPos, fromPos);
-            PlateUpTool_Integration.TDbg("Moved appliance (id=" + appliance.applianceId + ") from " + fromPos + " -> " + targetPos);
+            int toPutX = Mathf.RoundToInt(targetPos.x - bounds.min.x);
+            int toPutY = Mathf.RoundToInt(bounds.max.z - targetPos.z);
+            PlateUpTool_Integration.TDbg("Moved appliance (id=" + appliance.applianceId + ") from " + PutCoordsToString(appliance.putX, appliance.putY, bounds) + " -> " + PutCoordsToString(targetPos, bounds));
             appliance.worldX = targetPos.x;
             appliance.worldZ = targetPos.z;
+            appliance.putX = toPutX;
+            appliance.putY = toPutY;
         }
 
         // Common helper to move an entity to a new world position and perform any
@@ -1632,8 +1667,8 @@ namespace PlateUpTool_Integration
                     pos.Position = targetPos;
                     base.EntityManager.SetComponentData(entity, pos);
 
-                    TileManager.SetOccupant(fromPos, default(Entity));
-                    TileManager.SetOccupant(targetPos, entity);
+                    TileManager.SetOccupant(fromPos, default(Entity), OccupancyLayer.Default);
+                    TileManager.SetOccupant(targetPos, entity, OccupancyLayer.Default);
                 }
                 else
                 {
@@ -1754,10 +1789,10 @@ namespace PlateUpTool_Integration
                     if (currentOccupant != Entity.Null)
                     {
                         // Something else is blocking the target cell — move it out of the way first.
-                        PlateUpTool_Integration.TDbg("Evicting occupant entity " + currentOccupant.Index + ":" + currentOccupant.Version + " from " + targetPos);
-                        EvictToEmpty(targetPos, emptyCells, occupantMap);
+                        PlateUpTool_Integration.TDbg("Evicting occupant entity " + currentOccupant.Index + ":" + currentOccupant.Version + " from " + targetPos + " " + PutCoordsToString(p.imported.x, p.imported.y, bounds));
+                        EvictToEmpty(targetPos, bounds, emptyCells, occupantMap, gameAppliances);
                     }
-                    MoveAppliance(p.game, targetPos, emptyCells, occupantMap);
+                    MoveAppliance(p.game, targetPos, bounds, emptyCells, occupantMap);
                 }
 
                 FixUpAppliance(p.game.entity, p.imported);
@@ -1788,7 +1823,7 @@ namespace PlateUpTool_Integration
                 try
                 {
                     Vector3 worldPos = PutToWorld(impChair.x, impChair.y, bounds);
-                    Entity occupant = TileManager.GetPrimaryOccupant(worldPos);
+                    Entity occupant = TileManager.GetOccupant(worldPos, OccupancyLayer.Default);
                     if (occupant == Entity.Null)
                     {
                         PlateUpTool_Integration.TDbg("No occupant at imported chair location (" + impChair.x + "," + impChair.y + ") - skipping");
@@ -2059,7 +2094,7 @@ namespace PlateUpTool_Integration
                 {
                     int xPos = (int)(roomW - bounds.min.x);
                     Vector3 gridPos = new Vector3(roomW, 0f, roomH);
-                    Entity occupant = TileManager.GetPrimaryOccupant(gridPos);
+                    Entity occupant = TileManager.GetOccupant(gridPos, OccupancyLayer.Default);
 
                     if (occupant == Entity.Null)
                     {
