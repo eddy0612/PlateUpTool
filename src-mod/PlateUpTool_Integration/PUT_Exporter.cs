@@ -2003,6 +2003,22 @@ namespace PlateUpTool_Integration
             cachedPairings = pairings;
             cachedImportedChairs = importedChairs;
             cachedGameAppliances = gameAppliances;
+
+            // Reorder empty cells so that world positions which are also empty
+            // in the imported grid are processed first. This avoids moving an
+            // appliance out of the way only to later move over it again.
+            var importedOccupied = new HashSet<(int, int)>(importedAppliances.Select(c => (c.x, c.y)));
+            emptyCells.Sort((va, vb) => {
+                int ax = Mathf.RoundToInt(va.x - bounds.min.x);
+                int ay = Mathf.RoundToInt(bounds.max.z - va.z);
+                int bx = Mathf.RoundToInt(vb.x - bounds.min.x);
+                int by = Mathf.RoundToInt(bounds.max.z - vb.z);
+                bool aOcc = importedOccupied.Contains((ax, ay));
+                bool bOcc = importedOccupied.Contains((bx, by));
+                if (aOcc == bOcc) return 0;
+                return aOcc ? 1 : -1;
+            });
+
             cachedEmptyCells = emptyCells;
 
             return true;
