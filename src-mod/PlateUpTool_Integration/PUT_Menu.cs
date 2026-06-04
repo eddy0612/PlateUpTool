@@ -2,6 +2,7 @@
 using Kitchen.Modules;
 using KitchenLib;
 using System;
+using System.Runtime.Serialization;
 
 namespace PlateUpTool_Integration
 {
@@ -9,7 +10,6 @@ namespace PlateUpTool_Integration
     public class PUT_Menu<T> : KLMenu<T>
     {
         // Toggle to enable/disable the Dump Data menu action
-        private const bool ENABLE_DUMP_DATA = true;
         public PUT_Menu(Transform container, ModuleList module_list) : base(container, module_list) { }
         internal PUT_Exporter myPUT_Exporter = new PUT_Exporter();
 
@@ -20,17 +20,25 @@ namespace PlateUpTool_Integration
             New<SpacerElement>();
             New<SpacerElement>();
             AddButton("Open design in PlateUpTool", delegate {
-                ExportToPUT();
+                ExportToPUT(1);
             });
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ENABLE_DEBUG")))
+            {
+                AddButton("Open design in PlateUpTool (localhost)", delegate {
+                    ExportToPUT(2);
+                });
+                AddButton("Open design in PlateUpTool (dev)", delegate {
+                    ExportToPUT(3);
+                });
+            }
             AddButton("Import design from clipboard", delegate {
                 ImportFromPUT();
             });
-            if (ENABLE_DUMP_DATA)
-            {
-                AddButton("Dump Data", delegate {
-                    DumpData();
-                });
-            }
+            New<SpacerElement>();
+            AddButton("Capture diagnostic data", delegate {
+                DumpData();
+            });
+
             AddButton("Back", delegate {
                 RequestPreviousMenu();
             });
@@ -38,12 +46,12 @@ namespace PlateUpTool_Integration
             PlateUpTool_Integration.TDbg("Set up menu...");
         }
 
-        void ExportToPUT()
+        void ExportToPUT(int option)
         {
             PlateUpTool_Integration.TDbg("Exporting to PlateUpTool...");
             try
             {
-                myPUT_Exporter.ExportDesign();
+                myPUT_Exporter.ExportDesign(option);
                 PlateUpTool_Integration.TDbg("Exported to PlateUpTool successfully.");
             }
             catch (Exception ex)

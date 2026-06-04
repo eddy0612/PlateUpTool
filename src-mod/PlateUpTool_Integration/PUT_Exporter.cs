@@ -391,6 +391,7 @@ namespace PlateUpTool_Integration
         // Above code all produced by AI to represent the state object maintained in the JavaScript web based tool
         // ======================================================================================================================
         private static PUT_Exporter _instance;
+        private static int ExportOption = 1;
 
         // Cached import state between stages
         private List<ImportPairing> cachedPairings = null;
@@ -441,7 +442,7 @@ namespace PlateUpTool_Integration
             _instance = this;
         }
 
-        public void ExportDesign()
+        public void ExportDesign(int option)
         {
             PlateUpTool_Integration.TDbg("ExportDesign called.");
 
@@ -449,10 +450,11 @@ namespace PlateUpTool_Integration
             if (!(GameInfo.CurrentScene == SceneType.Kitchen))
             {
                 PlateUpTool_Integration.TDbg("Not in kitchen mode so doing nothing");
+                UserFeedback("Must be in a restaurant to export");
                 return;
             }
             PlateUpTool_Integration.TDbg("In kitchen mode so continuing");
-
+            ExportOption = option;
             _instance?.GetOrCreate<PUT_DummyComponent>();
         }
 
@@ -461,6 +463,7 @@ namespace PlateUpTool_Integration
         {
             PlateUpTool_Integration.TDbg("DumpDataDesign called.");
             _instance?.GetOrCreate<PUT_DumpComponent>();
+            UserFeedback("Info written to player.log");
         }
 
         public void ImportDesign()
@@ -471,6 +474,7 @@ namespace PlateUpTool_Integration
             if (ImportStage != STAGE0_IDLE)
             {
                 PlateUpTool_Integration.TDbg("Already at import stage " + ImportStage + " - aborting");
+                UserFeedback("Please let the previous import complete first");
                 return;
             }
 
@@ -478,6 +482,7 @@ namespace PlateUpTool_Integration
             if (!(GameInfo.CurrentScene == SceneType.Kitchen))
             {
                 PlateUpTool_Integration.TDbg("Not in kitchen mode so doing nothing");
+                UserFeedback("Must be in a restaurant to be able to import");
                 return;
             }
             PlateUpTool_Integration.TDbg("In kitchen mode so continuing");
@@ -486,6 +491,7 @@ namespace PlateUpTool_Integration
             if (!(GameInfo.IsPreparationTime))
             {
                 PlateUpTool_Integration.TDbg("Not in prep mode, doing nothing");
+                UserFeedback("Must be in prepare mode to be able to import");
                 return;
             }
             PlateUpTool_Integration.TDbg("In prep mode so continuing");
@@ -496,40 +502,6 @@ namespace PlateUpTool_Integration
 
         protected override void OnUpdate()
         {
-            /*
-            if (HasSingleton<SPerformTableUpdate>())
-            {
-                PlateUpTool_Integration.TDbg("SPerformTableUpdate found - OnUpdate");
-                try
-                {
-                    if (TryGetSingletonEntity<SPerformTableUpdate>(out var stEntity))
-                    {
-                        PlateUpTool_Integration.TDbg("SPerformTableUpdate singleton entity: " + stEntity.ToString());
-                        try
-                        {
-                            var stData = base.EntityManager.GetComponentData<SPerformTableUpdate>(stEntity);
-                            PlateUpTool_Integration.TDbg("SPerformTableUpdate data: " + stData.ToString());
-                            DumpObjectFields(stData, 1, "SPerformTableUpdate: ");
-                        }
-                        catch (Exception ex)
-                        {
-                            PlateUpTool_Integration.TDbg("Failed to read SPerformTableUpdate component data: " + ex.Message);
-                        }
-                    }
-                    else
-                    {
-                        PlateUpTool_Integration.TDbg("TryGetSingletonEntity<SPerformTableUpdate> returned false");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    PlateUpTool_Integration.TDbg("Error while logging SPerformTableUpdate: " + ex.Message);
-                }
-            } else {
-               PlateUpTool_Integration.TDbg("SPerformTableUpdate not found - OnUpdate");
-            }
-            */
-
             if (TryGetSingletonEntity<PUT_DummyComponent>(out var value))
             {
                 PlateUpTool_Integration.TDbg("OnUpdate called - found object");
@@ -571,6 +543,7 @@ namespace PlateUpTool_Integration
                 }
                 catch (Exception ex)
                 {
+                    UserFeedback("Unexpected error checkinjg singleton");
                     PlateUpTool_Integration.TDbg("Error while checking SPerformTableUpdate singleton: " + ex.Message);
                 }
 
@@ -868,9 +841,13 @@ namespace PlateUpTool_Integration
             }
             string urlState = EncodeStateForUrl();
             PlateUpTool_Integration.TDbg("Finished, state for my app: " + urlState);
-            //System.Diagnostics.Process.Start("https://eddy0612.github.io/PlateUpTool/#state=" + urlState);
-            //System.Diagnostics.Process.Start("https://eddy0612.github.io/PlateUpTool/dev/#state=" + urlState);
-            System.Diagnostics.Process.Start("http://localhost:5173/#state=" + urlState);
+            if (ExportOption == 2) {
+                System.Diagnostics.Process.Start("http://localhost:5173/#state=" + urlState);
+            } else if (ExportOption == 3) {
+                System.Diagnostics.Process.Start("https://eddy0612.github.io/PlateUpTool/dev/#state=" + urlState);
+            } else {
+                System.Diagnostics.Process.Start("https://eddy0612.github.io/PlateUpTool/#state=" + urlState);
+            }
         }
 
         // ===================================================================================================
@@ -1305,22 +1282,29 @@ namespace PlateUpTool_Integration
                 if (string.IsNullOrEmpty(clipboardText))
                 {
                     PlateUpTool_Integration.TDbg("Clipboard contains neither a PNG image nor text, aborting import");
+                    UserFeedback("Clipboard does not contain anything");
                     return true;
                 }
 
                 // Support both a raw encoded state and a full URL containing #state=
                 string encodedState = clipboardText;
-                int stateMarker = clipboardText.IndexOf("#state=");
-                if (stateMarker >= 0)
+                int stateMarker = clipboardText.IndexOf("/#state=");
+                if (stateMarker >= 0) {
                     encodedState = clipboardText.Substring(stateMarker + 7);
 
-                try
-                {
-                    importedState = DecodeStateFromUrl(encodedState);
-                }
-                catch (Exception ex)
-                {
-                    PlateUpTool_Integration.TDbg("Failed to decode clipboard state: " + ex.Message);
+                    try
+                    {
+                        importedState = DecodeStateFromUrl(encodedState);
+                    }
+                    catch (Exception ex)
+                    {
+                        PlateUpTool_Integration.TDbg("Failed to decode clipboard state: " + ex.Message);
+                        UserFeedback("Failed to decode clipboard start - please report");
+                        return true;
+                    }
+                } else {
+                    PlateUpTool_Integration.TDbg("Failed to decode clipboard as text or png");
+                    UserFeedback("Failed to decode clipboard data as PlateUpTool URL or Picture - please report");
                     return true;
                 }
 
@@ -1338,19 +1322,24 @@ namespace PlateUpTool_Integration
             {
                 PlateUpTool_Integration.TDbg("Import aborted: imported layout is " + importedState.roomWidth + "x" + importedState.roomHeight +
                     " but current room is " + width + "x" + height);
+                UserFeedback("Imported design is for a different room size, cannot continue");
                 return true;
             }
             PlateUpTool_Integration.TDbg("Room dimensions match: " + width + "x" + height);
 
             // - Verify all walls/doors/hatches in the clipboard version match
-            if (!VerifyWallLayout(importedState, bounds))
+            if (!VerifyWallLayout(importedState, bounds)) {
+                PlateUpTool_Integration.TDbg("Hatches, walls and doors in imported data do not match this room");
+                UserFeedback("Hatches, walls and doors in imported data do not match this room");
                 return true;
+            }
 
             // Cache imported state for stage2 and prepare pairings
             cachedImportedState = importedState;
             if (!PrepareImportPairings(importedState, bounds))
             {
                 PlateUpTool_Integration.TDbg("Import aborted during preparation (see above for details)");
+                // User feedback was inside routine
                 return true;
             }
 
@@ -1374,10 +1363,12 @@ namespace PlateUpTool_Integration
                 if (cachedImportedState == null)
                 {
                     PlateUpTool_Integration.TDbg("No cached import state available for stage2, aborting");
+                    UserFeedback("Cached info missing - Please report");
                     return true;
                 }
                 if (!PrepareImportPairings(cachedImportedState, bounds))
                 {
+                    // User feedback from inside the room
                     PlateUpTool_Integration.TDbg("Failed to prepare import data for stage2, aborting");
                     return true;
                 }
@@ -2058,6 +2049,7 @@ namespace PlateUpTool_Integration
             if (pairings == null)
             {
                 PlateUpTool_Integration.TDbg("Import aborted: appliance inventory does not match (see above for details)");
+                UserFeedback("Cannot proceed as there as appliances in the imported data not available in this room");
                 return false;
             }
             PlateUpTool_Integration.TDbg("All " + pairings.Count + " non-chair appliances matched");
@@ -2411,6 +2403,10 @@ namespace PlateUpTool_Integration
                 }
             }
             return false;
+        }
+
+        private void UserFeedback(string msg) {
+            PlateUpTool_Integration.TDbg("UserFeedback: " + msg);
         }
     }
 }
