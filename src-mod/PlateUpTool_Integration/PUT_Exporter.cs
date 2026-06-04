@@ -1616,15 +1616,61 @@ namespace PlateUpTool_Integration
                 PlateUpTool_Integration.TDbg("EvictToEmpty: no empty cell available, cannot evict from " + fromPos);
                 return;
             }
+            // Default selection: first empty cell
+            int chosenIdx = 0;
             Vector3 toPos = emptyCells[0];
-            emptyCells.RemoveAt(0);
-            emptyCells.Add(fromPos);   // fromPos will be free once the move completes
+
+            // Fetch occupant early so we can inspect its components while choosing
+            // a suitable empty cell. If there's no occupant, bail out now.
             Entity occupant;
             if (!occupantMap.TryGetValue(OccupantKey(fromPos), out occupant))
             {
                 PlateUpTool_Integration.TDbg("EvictToEmpty: no entity in map at " + fromPos);
                 return;
             }
+
+            // If the occupant must be against a wall, prefer an empty cell that has
+            // a neighbouring feature (wall/door/hatch). Also set rotation so the
+            // appliance faces the wall when moved.
+            if (base.EntityManager.HasComponent<CMustHaveWall>(occupant))
+            {
+                // Direction indices used by LayoutHelpers.Directions: 0=Up,1=Down,2=Left,3=Right
+                int[] dirToRotation = new int[] { 0, 2, 3, 1 };
+                bool found = false;
+                for (int i = 0; i < emptyCells.Count; i++)
+                {
+                    var candidate = emptyCells[i];
+                    // Check each side for a feature (wall/door/hatch). checkGridFeatures returns null when no feature.
+                    for (int d = 0; d < 4; d++)
+                    {
+                        Vector3 neighbour = candidate + (Vector3)LayoutHelpers.Directions[d];
+                        string feature = checkGridFeatures(candidate, neighbour);
+                        // Require an actual wall (not door/hatch) for CMustHaveWall
+                        if (feature == "wall")
+                        {
+                            chosenIdx = i;
+                            toPos = candidate;
+                            found = true;
+                            // Set rotation on the occupant so it will face the wall when moved
+                            int rot = dirToRotation[d];
+                            if (base.EntityManager.HasComponent<CPosition>(occupant))
+                            {
+                                var pos = base.EntityManager.GetComponentData<CPosition>(occupant);
+                                pos.Rotation = RotationToQuaternion(rot);
+                                base.EntityManager.SetComponentData(occupant, pos);
+                            }
+                            // Also update stored GameAppliance rotation if present
+                            var gaFound = gameAppliances?.FirstOrDefault(g => g.entity == occupant);
+                            if (gaFound != null) gaFound.rotation = rot;
+                            PlateUpTool_Integration.TDbg("EvictToEmpty: selected wall-adjacent empty cell " + PutCoordsToString(toPos, bounds) + " with rotation=" + rot);
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+            }
+            emptyCells.RemoveAt(chosenIdx);
+            emptyCells.Add(fromPos);   // fromPos will be free once the move completes
             occupantMap.Remove(OccupantKey(fromPos));
             occupantMap[OccupantKey(toPos)] = occupant;
             MoveEntityInGame(occupant, toPos, fromPos);
