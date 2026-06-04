@@ -741,6 +741,21 @@ namespace PlateUpTool_Integration
                         }
 
                         // -----------------------------------------------------------------------------------
+                        // Blueprint stores - capture the stored appliance ID, whether it has been copied,
+                        // and the price so they can be restored on import. Encoded as [ApplianceID, HasBeenCopied, Price]
+                        // -----------------------------------------------------------------------------------
+                        if (base.EntityManager.HasComponent<CBlueprintStore>(primaryOccupant))
+                        {
+                            var bpData = base.EntityManager.GetComponentData<CBlueprintStore>(primaryOccupant);
+                            PlateUpTool_Integration.TDbg("CBlueprintStore: ApplianceID=" + bpData.ApplianceID + " HasBeenCopied=" + bpData.HasBeenCopied + " Price=" + bpData.Price);
+                            forceAdditionalData = new List<int> {
+                                bpData.ApplianceID,
+                                bpData.HasBeenCopied ? 1 : 0,
+                                (int)bpData.Price
+                            };
+                        }
+
+                        // -----------------------------------------------------------------------------------
                         // Teleporters - these are in pairs, and their number is represented in the GroupID
                         // attribute. Extract that and pass it over to PUT so we can keep the same pairings
                         // -----------------------------------------------------------------------------------
@@ -2215,17 +2230,26 @@ namespace PlateUpTool_Integration
                     string rotStr = position.Rotation.ToOrientation().ToString();
                     int rotation = rotStr == "Right" ? 1 : rotStr == "Left" ? 3 : rotStr == "Down" ? 2 : 0;
 
-                    List<int> sgItems = null;
+                    List<int> adItems = null;
                     if (base.EntityManager.HasComponent<CConveyPushItems>(occupant))
                     {
                         var sgData = base.EntityManager.GetComponentData<CConveyPushItems>(occupant);
                         KitchenData.ItemList il = sgData.SpecificComponents;
                         if (il.Count > 0)
                         {
-                            sgItems = new List<int>();
+                            adItems = new List<int>();
                             for (int i = 0; i < il.Count; i++)
-                                sgItems.Add(il[i]);
+                                adItems.Add(il[i]);
                         }
+                    }
+                    if (base.EntityManager.HasComponent<CBlueprintStore>(occupant))
+                    {
+                        var bpData = base.EntityManager.GetComponentData<CBlueprintStore>(occupant);
+                        adItems = new List<int> {
+                            bpData.ApplianceID,
+                            bpData.HasBeenCopied ? 1 : 0,
+                            (int)bpData.Price
+                        };
                     }
 
                     gameAppliances.Add(new GameAppliance {
@@ -2235,7 +2259,7 @@ namespace PlateUpTool_Integration
                         altId     = altId,
                         rotation = rotation,
                         extraData = extraData,
-                        additionalData = sgItems,
+                        additionalData = adItems,
                         entity = occupant
                     });
                     PlateUpTool_Integration.TDbg("Scan game grid ("+xPos+","+yPos+"): rawId="+appliance.ID+" effectiveId="+effectiveId+" altId="+altId+" rot="+rotation+" extra="+extraData);
