@@ -404,7 +404,9 @@ namespace PlateUpTool_Integration
         static int STAGE0_IDLE = 0;
         static int STAGE1_WAITTOSTART = 1;
         static int STAGE2_WAITONTABLES = 2;
-        static int STAGE3_WAITONCHAIRS = 3;
+        static int STAGE3_GIVECHANCETOFIXUP = 3;
+        static int STAGE3_GIVECHANCETOFIXUP_2 = 333;
+        static int STAGE4_WAITONCHAIRS = 4;
         private static int ImportStage = STAGE0_IDLE;
 
 
@@ -573,7 +575,7 @@ namespace PlateUpTool_Integration
                 }
 
                 // When we get here we know there is no Singleton at the moment
-                PlateUpTool_Integration.TDbg("Handing stage appropriately:");
+                PlateUpTool_Integration.TDbg("Handing stage " + ImportStage + " appropriately:");
                 int EntryStage = ImportStage;
                 if (EntryStage == STAGE1_WAITTOSTART) {
                     if (ReallyImportStage1()) {
@@ -585,15 +587,23 @@ namespace PlateUpTool_Integration
                     }
 
                 } else if (EntryStage == STAGE2_WAITONTABLES) {
+                    // Give it a complete loop through to sort out residual ghostchairs
+                    ImportStage = STAGE3_GIVECHANCETOFIXUP;
+
+                } else if (EntryStage == STAGE3_GIVECHANCETOFIXUP) {
+                    // Give it another complete loop through to sort out residual ghostchairs
+                    ImportStage = STAGE3_GIVECHANCETOFIXUP_2;
+
+                } else if (EntryStage == STAGE3_GIVECHANCETOFIXUP_2) {
                     if (ReallyImportStage2()) {
 
                         // A true response means we gave up for some reason, so abandon this import
-                        PlateUpTool_Integration.TDbg("Failed at stage 2, abandoning");
+                        PlateUpTool_Integration.TDbg("Failed at import stage 2, abandoning");
                         base.EntityManager.DestroyEntity(value2);
                         ImportStage = STAGE0_IDLE;
                     }
 
-                } else if (EntryStage == STAGE3_WAITONCHAIRS) {
+                } else if (EntryStage == STAGE4_WAITONCHAIRS) {
 
                     // Clean up cached info
                     try
@@ -1363,7 +1373,7 @@ namespace PlateUpTool_Integration
             DisableTableChairs(cachedPairings, cachedImportedChairs);
 
             // Finished stage2 — signal completion
-            ImportStage = STAGE3_WAITONCHAIRS;
+            ImportStage = STAGE4_WAITONCHAIRS;
             return false;
         }
 
@@ -1634,10 +1644,14 @@ namespace PlateUpTool_Integration
         private void MoveAppliance(GameAppliance appliance, Vector3 targetPos, Bounds bounds, List<Vector3> emptyCells, Dictionary<(int, int), Entity> occupantMap)
         {
             Vector3 fromPos = new Vector3(appliance.worldX, 0f, appliance.worldZ);
+
+            // Switch which cell is considered empty
             emptyCells.Remove(targetPos);
             emptyCells.Add(fromPos);
             occupantMap.Remove(OccupantKey(fromPos));
             occupantMap[OccupantKey(targetPos)] = appliance.entity;
+
+            // Now move the entity into the destination cell
             MoveEntityInGame(appliance.entity, targetPos, fromPos);
             int toPutX = Mathf.RoundToInt(targetPos.x - bounds.min.x);
             int toPutY = Mathf.RoundToInt(bounds.max.z - targetPos.z);
@@ -1776,7 +1790,7 @@ namespace PlateUpTool_Integration
                 Vector3 targetPos = PutToWorld(p.imported.x, p.imported.y, bounds);
                 Entity currentOccupant;
                 occupantMap.TryGetValue(OccupantKey(targetPos), out currentOccupant);
-                PlateUpTool_Integration.TDbg("Pairing imp=" + p.imported.applianceId + "@(" + p.imported.x + "," + p.imported.y + ") target=" + targetPos + " mapOccupant=" + currentOccupant.Index + ":" + currentOccupant.Version + " gameEntity=" + p.game.entity.Index + ":" + p.game.entity.Version);
+                PlateUpTool_Integration.TDbg("Pairing imp=" + p.imported.applianceId + "@(" + PutCoordsToString(targetPos, bounds) + ") mapOccupant=" + currentOccupant.Index + ":" + currentOccupant.Version + " gameEntity=" + p.game.entity.Index + ":" + p.game.entity.Version);
 
                 if (currentOccupant == p.game.entity)
                 {
@@ -1789,7 +1803,7 @@ namespace PlateUpTool_Integration
                     if (currentOccupant != Entity.Null)
                     {
                         // Something else is blocking the target cell — move it out of the way first.
-                        PlateUpTool_Integration.TDbg("Evicting occupant entity " + currentOccupant.Index + ":" + currentOccupant.Version + " from " + targetPos + " " + PutCoordsToString(p.imported.x, p.imported.y, bounds));
+                        PlateUpTool_Integration.TDbg("Evicting occupant entity " + currentOccupant.Index + ":" + currentOccupant.Version + " from " + PutCoordsToString(targetPos, bounds));
                         EvictToEmpty(targetPos, bounds, emptyCells, occupantMap, gameAppliances);
                     }
                     MoveAppliance(p.game, targetPos, bounds, emptyCells, occupantMap);
@@ -1842,6 +1856,7 @@ namespace PlateUpTool_Integration
                     {
                         PlateUpTool_Integration.TDbg("Occupant at (" + impChair.x + "," + impChair.y + ") missing components: " +
                             (hasChair ? "" : "CApplianceChair ") + (hasGhost ? "" : "CApplianceGhostChair ") + (hasPos ? "" : "CPosition "));
+                        ReallyDump();
                         continue;
                     }
 
