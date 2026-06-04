@@ -411,13 +411,13 @@ namespace PlateUpTool_Integration
 
 
 
-        static int ID_GRABBER_L = 367215780;
-        static int ID_GRABBER_R = -961856961;
-        static int ID_GRABBER_S = -331651461;    // GrabberRotatingS (the bidirectional one)
-        static int ID_ICECREAM_CHOC = -46968470;
-        static int ID_ICECREAM_STRAW = -2094600179;
-        static int ID_ICECREAM_VAN = 26405173;
-        static int ID_ICECREAM = -1533430406;
+        private const int ID_GRABBER_L = 367215780;
+        private const int ID_GRABBER_R = -961856961;
+        private const int ID_GRABBER_S = -331651461;    // GrabberRotatingS (the bidirectional one)
+        private const int ID_ICECREAM_CHOC = -46968470;
+        private const int ID_ICECREAM_STRAW = -2094600179;
+        private const int ID_ICECREAM_VAN = 26405173;
+        private const int ID_ICECREAM = -1533430406;
 
         // DumpData menu toggle is handled in the menu implementation
         [StructLayout(LayoutKind.Sequential, Size = 1)]
@@ -1753,10 +1753,14 @@ namespace PlateUpTool_Integration
 
             // Fix grabber direction — ID_GRABBER_L/R are the export-side representations of
             // CConveyPushRotatable.Target; ID_GRABBER_S uses normal rotation only.
-            if (target.applianceId == ID_GRABBER_L || target.applianceId == ID_GRABBER_R)
+            if (IsRotatingGrabber(target.applianceId))
             {
                 var grabber = base.EntityManager.GetComponentData<CConveyPushRotatable>(entity);
-                grabber.Target = target.applianceId == ID_GRABBER_L ? Orientation.Left : Orientation.Right;
+                switch (target.applianceId) {
+                    case ID_GRABBER_L: grabber.Target = Orientation.Left; break;
+                    case ID_GRABBER_R: grabber.Target = Orientation.Right; break;
+                    default: grabber.Target = Orientation.Up; break;
+                }
                 base.EntityManager.SetComponentData(entity, grabber);
                 PlateUpTool_Integration.TDbg("FixUp entity " + entity + ": grabber target set to " + grabber.Target);
             }
