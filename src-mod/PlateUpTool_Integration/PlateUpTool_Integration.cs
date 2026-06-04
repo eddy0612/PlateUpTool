@@ -36,18 +36,7 @@ namespace PlateUpTool_Integration
         {
             Logger = InitLogger();
             TDbg("Initialize start");
-
-            /*
-            // Using the PreferenceSystem mod to add a button to the mod's settings menu.
-            PrefManager = new PreferenceSystemManager("com.eddy0612.plateuptool_integration", "plateuptool_integration");
-            PrefManager.AddLabel("Excport to PlateUpTool").AddButton("Open Menu", (Action<int>)delegate
-            {
-                TDbg("Menu Clicked");
-            }, 0, 1f, 0.2f);
-            PrefManager.RegisterMenu((MenuType)1);
-            */
             initPauseMenu();
-
             TDbg("Initialized");
         }
 
