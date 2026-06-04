@@ -1293,38 +1293,40 @@ namespace PlateUpTool_Integration
         // ===================================================================================================
         protected bool ReallyImportStage1()
         {
-            // *** Can we store smart grabber programming?
-
             PlateUpTool_Integration.TDbg("Called to import from the clipboard, stage1");
 
-            // Initial verification stage:
-            // - Verify there is something on the clipboard which is a 'complete' export
-            string clipboardText = (GUIUtility.systemCopyBuffer ?? "").Trim();
-            if (string.IsNullOrEmpty(clipboardText))
+            // Try PNG clipboard first (handles exported images, and Discord-shared images
+            // via stego LSBs).  Fall back to text clipboard (#state= URL or raw encoded
+            // state string) if no suitable PNG is found.
+            PUTState importedState = TryImportFromPngClipboard();
+            if (importedState == null)
             {
-                PlateUpTool_Integration.TDbg("Clipboard is empty, aborting import");
-                return true;
-            }
+                string clipboardText = (GUIUtility.systemCopyBuffer ?? "").Trim();
+                if (string.IsNullOrEmpty(clipboardText))
+                {
+                    PlateUpTool_Integration.TDbg("Clipboard contains neither a PNG image nor text, aborting import");
+                    return true;
+                }
 
-            // Support both a raw encoded state and a full URL containing #state=
-            string encodedState = clipboardText;
-            int stateMarker = clipboardText.IndexOf("#state=");
-            if (stateMarker >= 0)
-                encodedState = clipboardText.Substring(stateMarker + 7);
+                // Support both a raw encoded state and a full URL containing #state=
+                string encodedState = clipboardText;
+                int stateMarker = clipboardText.IndexOf("#state=");
+                if (stateMarker >= 0)
+                    encodedState = clipboardText.Substring(stateMarker + 7);
 
-            PUTState importedState;
-            try
-            {
-                importedState = DecodeStateFromUrl(encodedState);
-            }
-            catch (Exception ex)
-            {
-                PlateUpTool_Integration.TDbg("Failed to decode clipboard state: " + ex.Message);
-                return true;
-            }
+                try
+                {
+                    importedState = DecodeStateFromUrl(encodedState);
+                }
+                catch (Exception ex)
+                {
+                    PlateUpTool_Integration.TDbg("Failed to decode clipboard state: " + ex.Message);
+                    return true;
+                }
 
-            PlateUpTool_Integration.TDbg("Decoded import: " + importedState.roomWidth + "x" + importedState.roomHeight +
-                ", " + importedState.gridCells.Count + " cells, " + importedState.walls.Count + " walls");
+                PlateUpTool_Integration.TDbg("Decoded text state: " + importedState.roomWidth + "x" + importedState.roomHeight +
+                    ", " + importedState.gridCells.Count + " cells, " + importedState.walls.Count + " walls");
+            }
 
             // - Verify the room dimensions match
             Bounds bounds = base.Bounds;
@@ -2194,6 +2196,22 @@ namespace PlateUpTool_Integration
 
                     if (occupant == Entity.Null)
                     {
+                        // Skip the tile if it's the space immediately next to an outside front door
+                        bool skipOutsideFrontDoor = false;
+                        for (int d = 0; d < 4; d++)
+                        {
+                            Vector3 neighbour = gridPos + (Vector3)LayoutHelpers.Directions[d];
+                            CLayoutFeature feature;
+                            if (TryGetFeature(gridPos, neighbour, out feature))
+                            {
+                                if (feature.Type == FeatureType.FrontDoor && TileManager.GetRoom(neighbour) != TileManager.GetRoom(gridPos))
+                                {
+                                    skipOutsideFrontDoor = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (skipOutsideFrontDoor) continue;
                         emptyCells.Add(gridPos);
                         continue;
                     }
