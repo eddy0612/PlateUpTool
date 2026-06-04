@@ -865,7 +865,8 @@ namespace PlateUpTool_Integration
                 {
                     int xPos = (int)(roomW - bounds.min.x);
                     Vector3 gridPos = new Vector3(roomW, 0f, roomH);
-                    Entity primaryOccupant = TileManager.GetOccupant(gridPos, OccupancyLayer.Default);
+                    //Entity primaryOccupant = TileManager.GetOccupant(gridPos, OccupancyLayer.Default);
+                    Entity primaryOccupant = TileManager.GetPrimaryOccupant(gridPos); // So if square empty, show wall/light etc
 
                     string coordPrefix = "[" + xPos + "," + yPos + "] ";
                     PlateUpTool_Integration.TDbg(coordPrefix + "Looking at grid (" + roomW + ", " + roomH + ") == (" + xPos + "," + yPos + ")");
@@ -1290,7 +1291,8 @@ namespace PlateUpTool_Integration
                 string encodedState = clipboardText;
                 int stateMarker = clipboardText.IndexOf("/#state=");
                 if (stateMarker >= 0) {
-                    encodedState = clipboardText.Substring(stateMarker + 7);
+                    encodedState = clipboardText.Substring(stateMarker + 8);
+                    PlateUpTool_Integration.TDbg("Clipboard Text: " + encodedState);
 
                     try
                     {
@@ -1299,12 +1301,12 @@ namespace PlateUpTool_Integration
                     catch (Exception ex)
                     {
                         PlateUpTool_Integration.TDbg("Failed to decode clipboard state: " + ex.Message);
-                        UserFeedback("Failed to decode clipboard start - please report");
+                        UserFeedback("Failed to decode clipboard state - please report if unexpected");
                         return true;
                     }
                 } else {
                     PlateUpTool_Integration.TDbg("Failed to decode clipboard as text or png");
-                    UserFeedback("Failed to decode clipboard data as PlateUpTool URL or Picture - please report");
+                    UserFeedback("Failed to decode clipboard data as PlateUpTool URL or Picture - please report if unexpected");
                     return true;
                 }
 
@@ -1758,6 +1760,17 @@ namespace PlateUpTool_Integration
                     allParts.Dispose();
                     base.EntityManager.DestroyEntity(PoS);
                 }
+
+                // If this entity is a decoration then move its indicator as well
+                if (base.EntityManager.HasComponent<CGivesDecoration>(entity) &&
+                    base.EntityManager.HasComponent<CHasIndicator>(entity)) {
+                    PlateUpTool_Integration.TDbg("MoveEntityTo: entity " + entity + " is a decoration - move the indicator");
+                    var indic = base.EntityManager.GetComponentData<CHasIndicator>(entity);
+                    var position = base.EntityManager.GetComponentData<CPosition>(indic.Indicator);
+                    position.Position = targetPos;
+                    base.EntityManager.SetComponentData(indic.Indicator, position);
+                }
+
             }
             catch (Exception ex)
             {
@@ -2407,6 +2420,7 @@ namespace PlateUpTool_Integration
 
         private void UserFeedback(string msg) {
             PlateUpTool_Integration.TDbg("UserFeedback: " + msg);
+            PUT_Menu<MenuAction>._this.showError(msg);
         }
     }
 }
