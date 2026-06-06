@@ -1,13 +1,34 @@
 Change Note:
-Initial release of the PlateUpTool planner integration mod
+Second release of the PlateUpTool planner integration mod
 
 Title:
 PlateUpTool Planner integration
 
 Description:
-Adds a menu under "Mod Preferences" which when clicked will open a web page to the PlateUpTool planner, prepopulated with the design of your restaurant. 
+Adds a menu under "Mod Preferences" for PlateUptool. NOTE: Some people find the option appears under Options->Preference System->PlateUpTool - I think it depends on what other mods you have installed.
 
-This should transfer all layout (walls, hatches, doors) plus all non-cosmetic details. Rotating grabbers will be in the right positions, teleporters will remain grouped etc
+This mod provides two main options
+- Open design in PlateupTool : When clicked will open a web page to the PlateUpTool planner, prepopulated with the design of your restaurant. 
+- Import design from clipboard : When clicked will try to import your design and make your restaurant look like it was when you copied it to clipboard from the web tool
+
+Ever been on a run and needed to do a large reorganization of your restaurant, or even just simply move a selection of appliances over a few spaces to make space for the latest card or appliance you have bought?  Its easy!  Just export to web tool, use group selection to highlight lots of cells, and drag them over - manipulate them however you like, then reimport them... its very satisfying!
+
+Note: Currently this only handles base game - modded appliances/recipes unlikely to work for now.
+
+Export information
+==================
+This should transfer all layout (walls, hatches, doors) plus all non-cosmetic details. Rotating grabbers will be in the right positions, teleporters will remain grouped etc.  Internally it also passes through which blueprints are in cabinets, and any programmed smart grabbers meaning when reimported it tries to match what you did with those in the editor
+
+When editing - if you want to reimport later DO NOT ADD appliances. Importing will only work if you have everything you need. Feel free to remove and replace rotating grabbers with the right rotation but the numbers must match.
+
+Import information
+==================
+In the PlateUpTool Share menu, either copy "Share via clipboard, Complete" or "Share via clipboard, URL" and then in PlateUp! click the Import design menu option. It will initially do some simple checks to ensure your layout matches what is really there, and that you have not tried to sneak in any extra appliances :-)  Assuming the checks pass, then it will shuffle your restaurant around to match what it looked like at export time
+
+WARNING: Importing is a lot harder internally to handle. This is handles all the scenarios I've tried, but of course there may always be problems - If it does not do what you want, or something goes wrong please click the 'Capture Diagnostic Data' button, and grab the file on disk at location "%appdata%\..\LocalLow\It's Happening\PlateUp\Player.log" plus a screenshot of the after effects. Please use the Feedback button to tell me about the issue either as a GitHub issue or via my discord server, passing the screenshot and the Player.log - I want to know!
+
+RECOVERY: In the unlikely event things go wrong - after grabbing the data above, exit the program without saving... Just Alt+F4 or 'x' the window. When you restart and reload the restaurant, it will either take you back to the end of previous days 'money' page, or the normal prepare phase, prior to any changes the import made.
+
 
 Preview Image:
 C:\Users\us\Cloud-Drive\to_backup\Jasons\Projects\PlateUpTool\bin-mod\ModPreview.jpg
