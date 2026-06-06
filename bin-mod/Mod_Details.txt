@@ -1,5 +1,5 @@
 Change Note:
-Second release of the PlateUpTool planner integration mod
+Second release of the PlateUpTool planner integration mod - Adds import as well
 
 Title:
 PlateUpTool Planner integration
