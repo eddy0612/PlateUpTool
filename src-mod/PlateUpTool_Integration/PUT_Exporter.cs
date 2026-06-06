@@ -1927,7 +1927,6 @@ namespace PlateUpTool_Integration
                     {
                         PlateUpTool_Integration.TDbg("Occupant at (" + impChair.x + "," + impChair.y + ") missing components: " +
                             (hasChair ? "" : "CApplianceChair ") + (hasGhost ? "" : "CApplianceGhostChair ") + (hasPos ? "" : "CPosition "));
-                        ReallyDump();
                         continue;
                     }
 
