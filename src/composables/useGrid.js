@@ -1,6 +1,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { useRestaurantStore } from '../store/restaurant'
 import { useAppliancePalette } from './useAppliancePalette'
+import { getRawAppliances } from '../appliancePalette'
 import { alert, confirm, toast } from '../utils/ui'
 
 // Module-level singletons — grid state is shared across GridView and AppliancePalette
@@ -20,10 +21,7 @@ function _loadApplianceKeepMap() {
   if (__applianceKeepMapPromise) return __applianceKeepMapPromise
   __applianceKeepMapPromise = (async () => {
     try {
-      const base = import.meta.env.BASE_URL || '/'
-      const resp = await fetch(base + 'res/appliances.json')
-      if (!resp.ok) throw new Error('Failed to load appliances.json')
-      const arr = await resp.json()
+      const arr = await getRawAppliances()
       __applianceKeepMap = new Map()
           __applianceByGameId = new Map()
           __applianceByInternalId = new Map()
