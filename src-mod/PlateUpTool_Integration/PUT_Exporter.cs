@@ -1142,6 +1142,95 @@ namespace PlateUpTool_Integration
                     }
                 }
             }
+            ReallyDumpAppliances();
+        }
+
+        // ===================================================================================================
+        // Appliance data dump
+        // ===================================================================================================
+        protected void ReallyDumpAppliances()
+        {
+            PlateUpTool_Integration.TDbg("=== DumpAppliances: enumerating all appliances from GameData ===");
+            try
+            {
+                var appliances = GameData.Main.Get<KitchenData.Appliance>();
+                int count = 0;
+                foreach (var appliance in appliances)
+                {
+                    DumpSingleAppliance(appliance, "[A" + count + "] ", 0);
+                    count++;
+                }
+                PlateUpTool_Integration.TDbg("=== DumpAppliances: total=" + count + " ===");
+            }
+            catch (Exception ex)
+            {
+                PlateUpTool_Integration.TDbg("DumpAppliances: failed to enumerate: " + ex.Message);
+            }
+        }
+
+        private void DumpSingleAppliance(KitchenData.Appliance appliance, string prefix, int depth)
+        {
+            if (appliance == null) { PlateUpTool_Integration.TDbg(prefix + "(null appliance)"); return; }
+            try
+            {
+                string name = appliance.Name ?? appliance.ID.ToString();
+                string description = "(null)";
+                try { description = appliance.Description.ToString(); } catch { }
+
+                PlateUpTool_Integration.TDbg(prefix + "ID=" + appliance.ID + " Name=" + name + " Description=" + description);
+
+                // Upgrades
+                try
+                {
+                    var upgrades = appliance.Upgrades;
+                    if (upgrades != null && upgrades.Count > 0)
+                    {
+                        PlateUpTool_Integration.TDbg(prefix + "  Upgrades (" + upgrades.Count + "):");
+                        if (depth < 2)
+                        {
+                            foreach (var u in upgrades)
+                                DumpSingleAppliance(u, prefix + "    [U] ", depth + 1);
+                        }
+                        else
+                        {
+                            PlateUpTool_Integration.TDbg(prefix + "    " + string.Join(", ", upgrades.Where(u => u != null).Select(u => u.ID + ":" + (u.Name ?? u.ID.ToString())).ToArray()));
+                        }
+                    }
+                    else
+                    {
+                        PlateUpTool_Integration.TDbg(prefix + "  Upgrades: (none)");
+                    }
+                }
+                catch (Exception ex) { PlateUpTool_Integration.TDbg(prefix + "  Upgrades: (error: " + ex.Message + ")"); }
+
+                // Enchantments
+                try
+                {
+                    var enchantments = appliance.Enchantments;
+                    if (enchantments != null && enchantments.Count > 0)
+                    {
+                        PlateUpTool_Integration.TDbg(prefix + "  Enchantments (" + enchantments.Count + "):");
+                        if (depth < 2)
+                        {
+                            foreach (var e in enchantments)
+                                DumpSingleAppliance(e, prefix + "    [E] ", depth + 1);
+                        }
+                        else
+                        {
+                            PlateUpTool_Integration.TDbg(prefix + "    " + string.Join(", ", enchantments.Where(e => e != null).Select(e => e.ID + ":" + (e.Name ?? e.ID.ToString())).ToArray()));
+                        }
+                    }
+                    else
+                    {
+                        PlateUpTool_Integration.TDbg(prefix + "  Enchantments: (none)");
+                    }
+                }
+                catch (Exception ex) { PlateUpTool_Integration.TDbg(prefix + "  Enchantments: (error: " + ex.Message + ")"); }
+            }
+            catch (Exception ex)
+            {
+                PlateUpTool_Integration.TDbg(prefix + "(error reading appliance: " + ex.Message + ")");
+            }
         }
 
         // Attempt to get the managed Type for a ComponentType (if available)
