@@ -1143,6 +1143,7 @@ namespace PlateUpTool_Integration
                 }
             }
             ReallyDumpAppliances();
+            ReallyDumpMods();
         }
 
         // ===================================================================================================
@@ -1165,6 +1166,43 @@ namespace PlateUpTool_Integration
             catch (Exception ex)
             {
                 PlateUpTool_Integration.TDbg("DumpAppliances: failed to enumerate: " + ex.Message);
+            }
+        }
+
+        // ===================================================================================================
+        // Mods data dump
+        // ===================================================================================================
+        protected void ReallyDumpMods()
+        {
+            PlateUpTool_Integration.TDbg("=== DumpMods: enumerating loaded mods ===");
+            try
+            {
+                try
+                {
+                    var mods = KitchenMods.ModPreload.Mods;
+                    int count = 0;
+                    if (mods != null)
+                    {
+                        foreach (var mod in mods)
+                        {
+                            try
+                            {
+                                PlateUpTool_Integration.TDbg("Mod[" + count + "]: Name=" + (mod != null ? (mod.Name ?? "(null)") : "(null-mod)"));
+                            }
+                            catch { }
+                            count++;
+                        }
+                    }
+                    PlateUpTool_Integration.TDbg("=== DumpMods: total=" + count + " ===");
+                }
+                catch (Exception ex)
+                {
+                    PlateUpTool_Integration.TDbg("DumpMods: failed to enumerate mods: " + ex.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                PlateUpTool_Integration.TDbg("DumpMods: unexpected error: " + ex.Message);
             }
         }
 
