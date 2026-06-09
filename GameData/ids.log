@@ -1,0 +1,435 @@
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A0] ID=505496455 Name=Heated Mixer Description=Like having an extra pair of hands
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A1] ID=-1357906425 Name=Conveyor Mixer Description=Like having an extra pair of hands
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A2] ID=-1440053805 Name=Rapid Mixer Description=Like having an extra pair of hands
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A3] ID=1329097317 Name=Mixer Description=Like having an extra pair of hands
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A4] ID=-1013770159 Name=Supplies Description=It could be full of anything until you open it
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A5] ID=2127051779 Name=Compactor Bin Description=Keeps all the things you've decided you don't like
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A6] ID=-1632826946 Name=Composter Bin Description=Keeps all the things you've decided you don't like
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A7] ID=-1855909480 Name=Expanded Bin Description=Keeps all the things you've decided you don't like
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A8] ID=481495292 Name=Starter Bin Description=Keeps all the things you've decided you don't like
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A9] ID=1551609169 Name=Bin Description=Keeps all the things you've decided you don't like
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A10] ID=1286554202 Name=Fire Extinguisher Description=Maybe you just need less fire
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A11] ID=1351951642 Name=Floor Buffer Description=Everything is better if it's shiny
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A12] ID=1765889988 Name=Kitchen Floor Protector Description=It's cheap and a little bit squidgy
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A13] ID=-1495393751 Name=Fast Mop Description=Hold this to clean spills instantly
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A14] ID=1776760557 Name=Lasting Mop Description=Hold this to clean spills instantly
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A15] ID=-1993346570 Name=Mop Description=Hold this to clean spills instantly
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A16] ID=-751458770 Name=Robot Buffer Description=All the shine, all the time
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A17] ID=-1723340146 Name=Robot Buffer Description=All the shine, all the time
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A18] ID=-2091039911 Name=Robot Mop Description=Puff and the mess is gone!
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A19] ID=-2147057861 Name=Robot Mop Description=Puff and the mess is gone!
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A20] ID=-1609758240 Name=Coffee Machine Description=Always has cups
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A21] ID=-17368064 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A22] ID=1973114260 Name=Conveyor Description=Automatically moves items
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A23] ID=-1906799936 Name=Combiner Description=It's the personal touch that makes the dish
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A24] ID=-331651461 Name=Grabber - Rotating Description=Automatically takes items. Interact during the day to change output direction
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A25] ID=-1238047163 Name=Smart Grabber Description=Automatically takes items
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A26] ID=-1029710921 Name=Grabber Description=Automatically takes items
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A27] ID=-1462602185 Name=Portioner Description=There's a very complicated hidden mechanism
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A28] ID=459840623 Name=Teleporter Description=Automatically teleports items to a connected teleporter. Requires two.
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A29] ID=-1248669347 Name=Counter Description=The real unsung hero of any kitchen
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A30] ID=1365340297 Name=Kneading Counter Description=A rolling pin might not be the best tool, but it'll do
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A31] ID=-1573577293 Name=Workstation Description=Chop chop with the chopping
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A32] ID=620400448 Name=Affordable Bin Description=Handy for throwing things away in front of people
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A33] ID=1830133512 Name=Gumball Machine Description=Small dessert to take home
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A34] ID=1724963734 Name=Neon Sign Description=Very helpful if customers don't know what to do
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A35] ID=371247235 Name=Neon Sign Description=Very helpful if customers don't know what to do
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A36] ID=230540973 Name=Ceiling Light Description=Not the most charming light
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A37] ID=-1472471467 Name=Stock Picture Description=Look at all this nice food you probably don't serve!
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A38] ID=-2108088224 Name=Dirty Floor Sign Description=Better to let customers know
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A39] ID=1569358344 Name=Barrel Description=A homely decorative barrel. Also a place to put things
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A40] ID=-60168847 Name=Bookcase Description=A cozy bookcase full of assorted books
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A41] ID=-1941237931 Name=Dartboard Description=One hundred and eighty!
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A42] ID=-441525746 Name=Fireplace Description=Warm and toasty
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A43] ID=591400026 Name=Rug Description=A lovely(?) green colour
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A44] ID=-1628995120 Name=Wall Light Description=Provides some delightful pools of light
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A45] ID=-1380985631 Name=Banner Description=In case anyone hadn't heard
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A46] ID=-4737636 Name=Fairy Lights Description=Twinkly
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A47] ID=1797739089 Name=Christmas Tree Description=Star of the show
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A48] ID=-13481890 Name=Candelabra Description=When normal lighting isn't fancy enough
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A49] ID=1233091186 Name=Chandelier Description=Even the roof is fancy now
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A50] ID=-1180623135 Name=Precious Flower Description=Exotic flowers flown in from a far away land
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A51] ID=642318074 Name=Classical Globe Description=I can see my street
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A52] ID=-1486785449 Name=Painting Description=Customers will know you're fancy if you buy this
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A53] ID=2076966627 Name=Rug Description=Red with gold tassels
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A54] ID=-972644436 Name=Statue Description=A true goliath of decoration
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A55] ID=1551024733 Name=Brand Mascot Description=A friendly face who runs the place
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A56] ID=-1339970600 Name=Tidy Plant Description=So tidy it might even set a good example
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A57] ID=908498444 Name=Ceiling Light Description=Provides some delightful pools of light
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A58] ID=744277037 Name=Abstract Lamp Description=The shapes and colours set the mood
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A59] ID=531866927 Name=Vase Description=Gives off a fancy vibe
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A60] ID=1220439284 Name=Indoor fountain Description=Don't worry about the plumbing
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A61] ID=668664567 Name=Calm Painting Description=Please enjoy this beautiful art while we burn your food
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A62] ID=756364626 Name=Plant Description=What a nice plant
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A63] ID=-648349801 Name=Rug Description=A treat for your feet
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A64] ID=-1506601664 Name=Drink Tap Description=Provides drinks with one colour
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A65] ID=-2100580689 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A66] ID=532998682 Name=Dumbwaiter Description=Connected together as if by magic
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A67] ID=892856538 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A68] ID=-544237849 Name=Beehive Description=Adjacent flowers do not disappear
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A69] ID=188952245 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A70] ID=1921027834 Name=Gas Limiter Description=Safety first, seared steaks later
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A71] ID=-770041014 Name=Gas Override Description=Now you're cooking with (more) gas
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A72] ID=-1448690107 Name=Danger Hob Description=10 minutes at 180 degrees... so 30 seconds at 3600 degrees?
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A73] ID=1266458729 Name=Safety Hob Description=Cook it with kindness
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A74] ID=1154757341 Name=Starter Hob Description=Just a pilot light
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A75] ID=862493270 Name=Hob Description=Cooks things!
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A76] ID=-441141351 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A77] ID=805530854 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A78] ID=-60938940 Name=Bookings Stand Description=Please wait here until a seat is available
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A79] ID=-63118559 Name=Hosting Stand Description=Please wait here to be seated
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A80] ID=-1813414500 Name=Display Stand Description=How long has this food been here? Months?
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A81] ID=1630557157 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A82] ID=-1324288299 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A83] ID=-374077567 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A84] ID=147181555 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A85] ID=31731938 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A86] ID=1419995156 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A87] ID=34773971 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A88] ID=-1424385600 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A89] ID=377065033 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A90] ID=-483535085 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A91] ID=1553046198 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A92] ID=1063254979 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A93] ID=1732122842 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A94] ID=-1936421857 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A95] ID=2041631136 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A96] ID=949631021 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A97] ID=-571205127 Name=Blueprint Cabinet Description=Just because you can't afford it doesn't mean you don't want it
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A98] ID=-729493805 Name=Copying Desk Description=Two of these, please
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A99] ID=-272437832 Name=Discount Desk Description=Someone has to sort through all these coupons
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A100] ID=1586911545 Name=Discount Desk Description=One of these please, except cheaper
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A101] ID=1446975727 Name=Blueprint Desk Description=The best gifts are ones you still have to pay for
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A102] ID=1139247360 Name=Research Desk Description=One of these please, except better
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A103] ID=238041352 Name=Booking Desk Description=Sometimes it's good to hurry things along
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A104] ID=-1817838704 Name=Extra Life Description=Emergency use only. Dispose of after use
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A105] ID=136867583 Name=Fast Food Terminal Description=Seat, eat and leave
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A106] ID=-246383526 Name=Specials Terminal Description=Can I interest you in something else, instead?
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A107] ID=-1610332021 Name=Ordering Terminal Description=Comes with a speedy-service guarantee
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A108] ID=944301512 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A109] ID=-1311702572 Name=Microwave Description=When you're a pro chef you don't have to prove anything
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A110] ID=-1068749602 Name=Oven Description=Unforgettably easy to use
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A111] ID=1147639502 Name=Balloons Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A112] ID=-71664252 Name=Birthday Banner Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A113] ID=-326328571 Name=Piano Description=Calm your customers by playing the piano
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A114] ID=-905438738 Name=Apples Description=Provides apples
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A115] ID=1807525572 Name=Beans Description=Provides beans
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A116] ID=269523389 Name=Bone-in Meat Description=Provides bone-in meat
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A117] ID=-1573812073 Name=Broccoli Description=Provides broccoli
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A118] ID=759552160 Name=Burger Buns Description=Provides buns for burgers
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A119] ID=385684499 Name=Patties Description=Provides patties for burgers
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A120] ID=-452101383 Name=Carrots Description=Provides carrots
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A121] ID=-117339838 Name=Cheese Description=Provides cheese
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A122] ID=961148621 Name=Eggs Description=Provides eggs
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A123] ID=-1735137431 Name=Fish Description=Provides fish ingredients, randomised each day
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A124] ID=-609358791 Name=Fish Description=Provides fish ingredients, randomised each day
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A125] ID=925796718 Name=Flour Description=Provides flour
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A126] ID=-1132411297 Name=Hot dog bun Description=Provides hot dog buns
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A127] ID=1799769627 Name=Hot Dogs Description=Provides hot dogs
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A128] ID=-1533430406 Name=Ice Cream Description=Provides ice cream
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A129] ID=-965827229 Name=Extra Ketchup Description=Less sharing, more caring
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A130] ID=1193867305 Name=Lettuce Description=Provides lettuce
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A131] ID=-484165118 Name=Meat Description=Provides meat
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A132] ID=-1097889139 Name=Mushrooms Description=Provides mushrooms
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A133] ID=-117356585 Name=Extra Mustard Description=Less sharing, more caring
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A134] ID=1834063794 Name=Nuts Description=Provides nuts
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A135] ID=-1963699221 Name=Oil Description=Provides oil
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A136] ID=-1434800013 Name=Olives Description=Provides olives
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A137] ID=-2042103798 Name=Onion Description=Provides onion
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A138] ID=44541785 Name=Potato Description=Provides potato
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A139] ID=-1201769154 Name=Rice Description=Provides rice
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A140] ID=-1507801323 Name=Thick cut meat Description=Provides thick cut meat
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A141] ID=1800865634 Name=Thin cut meat Description=Provides thin cut meat
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A142] ID=-712909563 Name=Tomato Description=Provides tomato
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A143] ID=-1506824829 Name=Turkey Description=Provides turkey
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A144] ID=-1353971407 Name=Wine Description=Provides wine
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A145] ID=-101564005 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A146] ID=-897970831 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A147] ID=-996680732 Name=Counter Description=The real unsung hero of any kitchen
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A148] ID=946079892 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A149] ID=1171429989 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A150] ID=161402590 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A151] ID=739504637 Name=Auto Plater Description=One step closer to retirement
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A152] ID=1653145961 Name=Dish Rack Description=Put them here and wait for someone else to do it
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A153] ID=434150763 Name=Dish Rack Description=Put them here and wait for someone else to do it
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A154] ID=1270423542 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A155] ID=-1474018107 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A156] ID=380220741 Name=Starter Plates Description=It's enough to get started
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A157] ID=1313469794 Name=Plates Description=More plates means less washing!
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A158] ID=-957949759 Name=Pot Stack Description=Spare pots for when you really want some soup
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A159] ID=235423916 Name=Serving Boards Description=Wood is naturally self-cleaning
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A160] ID=314862254 Name=Woks Description=Spare woks for when you've burned all the others
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A161] ID=-1291027873 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A162] ID=-214921468 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A163] ID=-2135829561 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A164] ID=-372462424 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A165] ID=933445633 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A166] ID=-1555334152 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A167] ID=1980900762 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A168] ID=1855052205 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A169] ID=-68388422 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A170] ID=-1200192498 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A171] ID=-194750543 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A172] ID=1911132834 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A173] ID=1365126444 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A174] ID=-1265562836 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A175] ID=-2046940874 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A176] ID=-923570273 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A177] ID=-488268556 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A178] ID=-548432204 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A179] ID=-758567246 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A180] ID=532701855 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A181] ID=-1857890774 Name=Freezer Description=Sometimes it's nice to put things on ice
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A182] ID=-759808000 Name=Frozen Prep Station Description=So cool that nobody will mind their food being cold
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A183] ID=1656358740 Name=Prep Station Description=Helpful for putting things in place!
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A184] ID=-262439022 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A185] ID=1890408483 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A186] ID=639111696 Name=Breadsticks Description=Something to snack on while you wait
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A187] ID=1358522063 Name=Candle Box Description=Everything tastes better by candlelight
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A188] ID=221442949 Name=Flower Pot Description=Lovely and magical
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A189] ID=1528688658 Name=Napkins Description=Now they can wipe up their own mess
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A190] ID=2080633647 Name=Sharp Cutlery Description=Anything is better than nothing
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A191] ID=446555792 Name="Specials" Menu Description=It's the same, but with fancier names
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A192] ID=938247786 Name=Chair Description=Better than standing
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A193] ID=1648733244 Name=Coffee Table Description=Comfy and not being snowed on
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A194] ID=-1979922052 Name=Chair Description=Better than standing
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A195] ID=-3721951 Name=Bar Table Description=Seats one
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A196] ID=-34659638 Name=Table - Simple Cloth Description=Seats two, opposite each other
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A197] ID=-203679687 Name=Metal Table Description=Seats up to four
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A198] ID=-2019409936 Name=Table - Fancy Cloth Description=Seats four in luxury
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A199] ID=209074140 Name=Dining Table Description=Seats up to four (possibly) happy customers
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A200] ID=1738351766 Name=Rolling Pin Description=It's for rolling things
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A201] ID=624465484 Name=Scrubbing Brush Description=Wipe the floor, scrub the dishes, don't think about it too much
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A202] ID=2023704259 Name=Sharp Knife Description=A sharp knife is a safe knife
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A203] ID=723626409 Name=Trainers Description=This product does not endorse running in kitchens
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A204] ID=1796077718 Name=Wellies Description=Comes in a very fetching yellow
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A205] ID=230848637 Name=Work Boots Description=Steel caps - usually underrated in a restaurant environment
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A206] ID=1129858275 Name=Tray Stand Description=Twice the productivity
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A207] ID=-823922901 Name=Dish Washer Description=You'll never know what you did without it
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A208] ID=-214126192 Name=Wash Basin Description=Pile 'em high and wash 'em clean
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A209] ID=1083874952 Name=Sink Description=Avoid that sinking feeling
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A210] ID=1467371088 Name=Power Sink Description=When normal amounts of water aren't enough
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A211] ID=1860904347 Name=Soaking Sink Description=This probably helps. Probably.
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A212] ID=-266993023 Name=Starter Sink Description=Avoid that sinking feeling
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A213] ID=2073091578 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A214] ID=-469149429 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A215] ID=834743908 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A216] ID=951367272 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A217] ID=1771016910 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A218] ID=-2122624266 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A219] ID=-404095277 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A220] ID=-1949016360 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A221] ID=-581219245 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A222] ID=-148578487 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A223] ID=-1125517450 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A224] ID=-233558851 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A225] ID=-342718019 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A226] ID=174737401 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A227] ID=310022384 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A228] ID=-1425710426 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A229] ID=-1807971648 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A230] ID=268640447 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A231] ID=1199575543 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A232] ID=-1451048989 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A233] ID=-1820794030 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A234] ID=871235082 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A235] ID=387240739 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A236] ID=1159228054 Name=Bin Description=Keeps all the things you've decided you don't like
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A237] ID=-626547002 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A238] ID=359655899 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A239] ID=-232172209 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A240] ID=-1528441435 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A241] ID=564388954 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A242] ID=1363960331 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A243] ID=-760874610 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A244] ID=1823459359 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A245] ID=1659152562 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A246] ID=477050702 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A247] ID=1485375733 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A248] ID=-1114059052 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A249] ID=-1518462324 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A250] ID=-62256073 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A251] ID=1636658728 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A252] ID=-1260306608 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A253] ID=1425494045 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A254] ID=-1614041568 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A255] ID=-1051912790 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A256] ID=1010867759 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A257] ID=-720353319 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A258] ID=-1997868587 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A259] ID=-1920103064 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A260] ID=-1235624607 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A261] ID=-636342486 Name=Cobwebs Description=It's fine, we put them there ourselves
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A262] ID=-1318523640 Name=Ghost Statue Description=It's not a normal statue with a bedsheet, it's art
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A263] ID=-621580281 Name=Pumpkin Description=Not just a tasty treat
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A264] ID=115181910 Name=Skeleton Description=Don't worry, it's not real
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A265] ID=976574457 Name=Corn Description=Provides corn
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A266] ID=235355384 Name=Bananas Description=Provides bananas
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A267] ID=-699333907 Name=Strawberries Description=Provides strawberries
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A268] ID=-1055654549 Name=Pumpkin Description=Provides pumpkins
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A269] ID=148543530 Name=Cherries Description=Provides cherries
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A270] ID=-1382019219 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A271] ID=-1403625488 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A272] ID=-1673904972 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A273] ID=1752654754 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A274] ID=-1748395084 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A275] ID=303858729 Name=Christmas Crackers Description=Provides crackers
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A276] ID=735786885 Name=Cranberry Description=Provides cranberry
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A277] ID=-2133205155 Name=Sugar Description=Provides sugar
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A278] ID=-667884240 Name=Conveyor Description=Automatically moves items
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A279] ID=-697441390 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A280] ID=-349733673 Name=Safety Hob Description=Cook it with kindness
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A281] ID=1836107598 Name=Safety Hob Description=Cook it with kindness
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A282] ID=369884364 Name=Safety Hob Description=Cook it with kindness
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A283] ID=-699013948 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A284] ID=555321421 Name=Rabbit Poster Description=A cute rabbit
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A285] ID=-2084684446 Name=Lantern Description=A hanging lantern
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A286] ID=-2092567672 Name=Bamboo Description=Provides bamboo
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A287] ID=595306349 Name=Seaweed Description=Provides seaweed
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A288] ID=-1210117767 Name=Mandarins Description=Provides mandarins
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A289] ID=-471813067 Name=Extra Soy Sauce Description=Less sharing, more caring
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A290] ID=-184765154 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A291] ID=-707206359 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A292] ID=1134699240 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A293] ID=-471643137 Name=Flower Arch Description=A floral gateway
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A294] ID=142298503 Name=Friends Poster Description=Make a comfy zone
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A295] ID=-2001861712 Name=Heart Balloons Description=Love is in the air
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A296] ID=-1314508999 Name=Heart Bunting Description=String me along
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A297] ID=785615801 Name=Neon Sign Description=Very helpful if customers don't know what to do
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A298] ID=645876063 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A299] ID=-916942203 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A300] ID=345407921 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A301] ID=-509190559 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A302] ID=1274763392 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A303] ID=965503721 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A304] ID=260380903 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A305] ID=-89571330 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A306] ID=2114150010 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A307] ID=143484231 Name=Cupcake Stand Description=Let them eat cupcakes
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A308] ID=801015432 Name=Ice Dispenser Description=Provides ice for coffees. Comes with cups
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A309] ID=-557736569 Name=Milk Steamer Description=Provides steamed milk for coffees. Comes with cups
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A310] ID=120342736 Name=Milk Description=Provides milk
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A311] ID=-1598460622 Name=Tea bags Description=Provides tea bags
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A312] ID=1377093570 Name=Tea cups Description=Provides tea cups
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A313] ID=-762638188 Name=Tea pots Description=Provides tea pots
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A314] ID=-660310536 Name=Cake Tin Description=Allows you to make sponge cakes
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A315] ID=-2135982034 Name=Brownie Tray Description=Allows you to make brownies
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A316] ID=-1723125645 Name=Cookie Tray Description=Allows you to make cookies
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A317] ID=-315287689 Name=Cupcake Tray Description=Allows you to make cupcakes
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A318] ID=2136474391 Name=Doughnut Tray Description=Allows you to make doughnuts
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A319] ID=783588616 Name=Chocolate Description=Provides chocolate
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A320] ID=1470180731 Name=Lemon Tree Description=Provides lemons
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A321] ID=-217313684 Name=Mixing Bowls Description=For when there's lots of things that need mixing
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A322] ID=782648278 Name=Cauldron Description=Toil and trouble
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A323] ID=-1552572658 Name=Candles Description=Spooky, yet charming
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A324] ID=-119593913 Name=Pumpkin Stack Description=Now with faces
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A325] ID=-379172217 Name=Witch Shelf Description=This one
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A326] ID=-292467039 Name=Enchanting Desk Description=A whole new world of possibility
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A327] ID=-1946127856 Name=Ghostly Clipboard Description=As long as someone's putting the work in
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A328] ID=1313278365 Name=Ghostly Knife Description=Definitely safe
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A329] ID=689268680 Name=Ghostly Rolling Pin Description=Intangible help, tangible results
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A330] ID=-560953757 Name=Ghost Scrubber Description=Just add water
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A331] ID=-1780646993 Name=Illusion Wall Description=No obstacle too tangible
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A332] ID=1150470926 Name=Instant Wand Description=Bang and the process is finished
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A333] ID=2044081363 Name=Levitation Line Description=Automatically moves items, can be walked through
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A334] ID=-1298525547 Name=Levitation Spot Description=Things can be placed here
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A335] ID=119166501 Name=Levitation Station Description=Better than throwing it on the floor
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A336] ID=-1992638820 Name=Enchanted Broom Description=Saves you from carrying buckets of water
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A337] ID=-877630314 Name=Enchanted Broom Description=Saves you from carrying buckets of water
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A338] ID=744482650 Name=Magic Mirror Description=So clear you can reach through
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A339] ID=-1696198539 Name=Magic Spring Description=Too pure to wash things in
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A340] ID=-1835366879 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A341] ID=2031496644 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A342] ID=1391464545 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A343] ID=477535207 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A344] ID=923307040 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A345] ID=-1090855913 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A346] ID=50273892 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A347] ID=-70663877 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A348] ID=-2123542635 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A349] ID=423254987 Name=Preserving Station Description=Based on the same magic as magic sand
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A350] ID=267288096 Name=Magic Apple Tree Description=An apple a day keeps the queues away
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A351] ID=29164230 Name=Pouch of Holding Description=Unclear if it's magical or just stretchy
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A352] ID=540526865 Name=Enchanted Plates Description=Compact and convenient
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A353] ID=2000892639 Name=Table - Stone Description=They're not cleaned, they're just not removed
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A354] ID=-1688921160 Name=Table - Sharing Cauldron Description=Why should fondue only be for cheese?
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A355] ID=1492264331 Name=Vanishing Circle Description=If only it worked on problems
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A356] ID=-1541798751 Name=Mince Description=Provides mince
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A357] ID=-2077197906 Name=Pasta Sheet Description=Provides pasta sheets
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A358] ID=-1339944542 Name=Lasagne Tray Description=Provides a lasagne tray
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A359] ID=-215543585 Name=Butter Description=Provides butter
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A360] ID=-182748008 Name=Spaghetti Description=Provides spaghetti
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A361] ID=509800268 Name=Dish Source Cabinet Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A362] ID=1436010410 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A363] ID=-400359294 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A364] ID=-1082709460 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A365] ID=-307800946 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A366] ID=2095304286 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A367] ID=585649337 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A368] ID=-773196462 Name=Buffet Description=Customers will take food from here directly
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A369] ID=638034870 Name=Service Counter Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A370] ID=-364231730 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A371] ID=-121110359 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A372] ID=825737084 Name=Chocolate Syrup Description=Provides chocolate syrup
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A373] ID=483880621 Name=Strawberry Syrup Description=Provides strawberry syrup
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A374] ID=602693523 Name=Sundae Glasses Description=Provides sundae glasses
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A375] ID=1872560572 Name=Strawberries Description=Provides strawberries
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A376] ID=-940358190 Name=Leftover Bags Description=You've delighted [USERNAME] long enough
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A377] ID=-2070005162 Name=Clipboard Stand Description=If you're bored of research
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A378] ID=-1673135814 Name=Ham Description=Provides slices of ham
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A379] ID=-74499940 Name=Pickle Description=Provides pickles
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A380] ID=1895329114 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A381] ID=-1889835507 Name=Present Stack Description=You can't open them, but they're full of amazing things
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A382] ID=-380823608 Name=Tinsel Description=Twinkly and wireless
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A383] ID=-602487625 Name=Christmas Tree Description=Now with tinsel!
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A384] ID=-302306254 Name=Wreath Description=A welcoming cheer
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A385] ID=-1492497486 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A386] ID=-771033261 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A387] ID=-1082534766 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A388] ID=416689423 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A389] ID=1595436560 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A390] ID=-1985766917 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A391] ID=2029957333 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A392] ID=1621490890 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A393] ID=708507454 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A394] ID=684514756 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A395] ID=1178498897 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A396] ID=1668340088 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A397] ID=-450635801 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A398] ID=745886540 Name=Taco Trays Description=Provides Taco Trays
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A399] ID=-5840756 Name=Tortillas Description=Provides tortillas
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A400] ID=-872135723 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A401] ID=-1879606524 Name= Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A402] ID=-26827118 Name=Upgrade Kit Description=It's just a lot of tape and some sharp things
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A403] ID=-305776750 Name=Repair Menu Trigger Description=
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A404] ID=-1429478351 Name=Asparagus Description=Provides Asparagus
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A405] ID=-1730837026 Name=Avocado Description=Provides Avocado
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A406] ID=1764595035 Name=Banana Description=Provides Banana
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A407] ID=-383099856 Name=Blueberries Description=Provides Blueberries
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A408] ID=895636045 Name=Noodles Description=Provides noodles
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A409] ID=743010293 Name=Butter Description=Provides Butter
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A410] ID=1179596327 Name=Chicken Description=Provides Chicken
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A411] ID=943957803 Name=Chocolate Description=Provides Chocolate
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A412] ID=1230738176 Name=Cinnamon Description=Provides Cinnamon
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A413] ID=-513909256 Name=Cocoa Powder Description=Provides Cocoa Powder
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A414] ID=990519964 Name=Crackers Description=Provides Crackers
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A415] ID=89606396 Name=Drumstick Description=Provides Drumstick
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A416] ID=-1232584574 Name=Tortillas Description=Provides tortillas
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A417] ID=943091639 Name=Garlic Description=Provides Garlic
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A418] ID=-1606497315 Name=Honey Description=Provides Honey
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A419] ID=1925531119 Name=Ice Description=Provides Ice
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A420] ID=-809522908 Name=Jalapeños Description=Provides Jalapeños
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A421] ID=-886707044 Name=Lemon Description=Provides Lemon
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A422] ID=-246158755 Name=Lime Description=Provides Lime
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A423] ID=1650604245 Name=Macaroni Description=Provides Macaroni
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A424] ID=-1396081011 Name=Marshmallow Description=Provides Marshmallow
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A425] ID=-1264647920 Name=Milk Description=Provides Milk
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A426] ID=-1437429205 Name=Oats Description=Provides Oats
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A427] ID=1587659483 Name=Orange Juice Description=Provides Orange Juice
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A428] ID=-1977263982 Name=Peppers Description=Provides Peppers
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A429] ID=-2118978079 Name=Pork Description=Provides Pork
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A430] ID=-421276901 Name=Spinach Description=Provides Spinach
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A431] ID=1243444183 Name=Strawberry Description=Provides Strawberry
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A432] ID=-2008330096 Name=Syrup Description=Provides Syrup
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A433] ID=-1164406874 Name=Vinegar Description=Provides Vinegar
+[INFO] [PlateUpTool] plateuptool_integration [I] : [A434] ID=-1475845771 Name=Heavy Cream Description=Provides heavy cream
