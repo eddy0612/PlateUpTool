@@ -145,6 +145,7 @@
     </div>
 
     <TutorialModal v-if="showTutorial" @close="showTutorial = false" />
+    <NewsModal v-if="showNews" :news="pendingNews" @close="closeNews" />
 
     <teleport to="body">
       <div v-if="showCredits" class="help-modal-backdrop" @click.self="showCredits = false">
@@ -415,6 +416,7 @@ import creditsRaw from './CREDITS.md?raw'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import TutorialModal, { hasTutorialBeenSeen } from './components/TutorialModal.vue'
+import NewsModal from './components/NewsModal.vue'
 import RestaurantSizeModal from './components/RestaurantSizeModal.vue'
 import { isDefaultState } from './store/restaurant'
 import { alert, confirm, toast } from './utils/ui'
@@ -422,7 +424,7 @@ import { useTouchDebug } from './composables/useTouchDebug'
 
 export default {
   name: 'App',
-  components: { GridView, AppliancePalette, TutorialModal, RestaurantSizeModal },
+  components: { GridView, AppliancePalette, TutorialModal, NewsModal, RestaurantSizeModal },
   setup() {
     const { state, loadFromHash, syncToHash } = useRestaurantStore()
     const _encodeState = encodeStateFn
@@ -433,6 +435,8 @@ export default {
     const showCredits = ref(false)
 
     const showTutorial = ref(false)
+    const showNews = ref(false)
+    const pendingNews = ref([])
     const showMainMenu = ref(false)
     const showSettingsSubmenu = ref(false)
     const showHelpSubmenu = ref(false)
@@ -686,9 +690,13 @@ export default {
       } catch (e) {}
       if (!hasTutorialBeenSeen()) {
         showTutorial.value = true
-      } else if (isDefaultState()) {
-        showSizeModal.value = true
-        sizeModalDismissable.value = false
+      } else {
+        // Returning user — check for unseen news, fall back to size modal
+        const newsShown = await checkAndShowNews()
+        if (!newsShown && isDefaultState()) {
+          showSizeModal.value = true
+          sizeModalDismissable.value = false
+        }
       }
       window.addEventListener('hashchange', async () => {
         // When the URL/hash changes externally, treat this as a restore operation
@@ -959,13 +967,49 @@ export default {
       sizeModalDismissable.value = false
     }
 
-    // When tutorial closes, if state is default show the size picker
-    watch(showTutorial, (v) => {
-      if (!v && isDefaultState()) { showSizeModal.value = true; sizeModalDismissable.value = false }
+    // Fetch news.json, show any unseen entries. Falls back to size modal if nothing to show.
+    async function checkAndShowNews() {
+      try {
+        const newsUrl = import.meta.env.BASE_URL + 'res/news.json'
+        const resp = await fetch(newsUrl)
+        if (resp.ok) {
+          const data = await resp.json()
+          const allNews = data.news || []
+          const seenVersions = JSON.parse(localStorage.getItem('plateuptool_news_seen') || '[]')
+          const unseen = allNews.filter(n => !seenVersions.includes(n.version))
+          if (unseen.length > 0) {
+            pendingNews.value = unseen
+            showNews.value = true
+            return true
+          }
+        }
+      } catch (e) {}
+      return false
+    }
+
+    function closeNews() {
+      try {
+        const seenVersions = JSON.parse(localStorage.getItem('plateuptool_news_seen') || '[]')
+        pendingNews.value.forEach(n => {
+          if (!seenVersions.includes(n.version)) seenVersions.push(n.version)
+        })
+        localStorage.setItem('plateuptool_news_seen', JSON.stringify(seenVersions))
+      } catch (e) {}
+      showNews.value = false
+      pendingNews.value = []
+      if (isDefaultState()) { showSizeModal.value = true; sizeModalDismissable.value = false }
+    }
+
+    // When tutorial closes, check for news first; fall back to size modal
+    watch(showTutorial, async (v) => {
+      if (!v) {
+        const newsShown = await checkAndShowNews()
+        if (!newsShown && isDefaultState()) { showSizeModal.value = true; sizeModalDismissable.value = false }
+      }
     })
 
     return {
-      startAgain, showHelp, showCredits, showTutorial, showSizeModal, sizeModalDismissable,
+      startAgain, showHelp, showCredits, showTutorial, showNews, pendingNews, closeNews, showSizeModal, sizeModalDismissable,
       showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord,
       showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, openChangeSizeModal,
       toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode,
