@@ -7,7 +7,7 @@
             <svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><rect y="1" width="20" height="2" rx="1" fill="currentColor"/><rect y="6" width="20" height="2" rx="1" fill="currentColor"/><rect y="11" width="20" height="2" rx="1" fill="currentColor"/></svg>
           </button>
 
-          <h1 class="compact-title" @touchend.prevent>PlateUp Tool</h1>
+          <h1 class="compact-title news-title-link" @touchend.prevent.stop="openAllNews" @click.stop="openAllNews" title="View what's new">PlateUp Tool</h1>
           <div v-if="showMainMenu" class="menu-dropdown" @click.stop>
             <button class="menu-item" @click="startAgain">Restart</button>
             <div class="menu-item has-sub">
@@ -72,7 +72,7 @@
             </div>
           </div>
         </div>
-        <h1 v-else @touchend.prevent>PlateUp Tool</h1>
+        <h1 v-else class="news-title-link" @touchend.prevent="openAllNews" @click="openAllNews" title="View what's new">PlateUp Tool</h1>
         <span v-if="!showCompactMenu" class="title-tagline">An online planner for your PlateUp! restaurant</span>
       </div>
       <div class="header-right" v-if="!showCompactMenu">
@@ -987,6 +987,21 @@ export default {
       return false
     }
 
+    async function openAllNews() {
+      try {
+        const newsUrl = import.meta.env.BASE_URL + 'res/news.json'
+        const resp = await fetch(newsUrl)
+        if (resp.ok) {
+          const data = await resp.json()
+          const allNews = data.news || []
+          if (allNews.length > 0) {
+            pendingNews.value = allNews
+            showNews.value = true
+          }
+        }
+      } catch (e) {}
+    }
+
     function closeNews() {
       try {
         const seenVersions = JSON.parse(localStorage.getItem('plateuptool_news_seen') || '[]')
@@ -1009,7 +1024,7 @@ export default {
     })
 
     return {
-      startAgain, showHelp, showCredits, showTutorial, showNews, pendingNews, closeNews, showSizeModal, sizeModalDismissable,
+      startAgain, showHelp, showCredits, showTutorial, showNews, pendingNews, closeNews, openAllNews, showSizeModal, sizeModalDismissable,
       showCopiedToast, creditsHtml, openDonate, openFeedback, openGitHubIssues, openDiscord,
       showFeedbackModal, copyUrl, openSaveLoadMenu, darkMode, toggleDarkMode, openChangeSizeModal,
       toggleTeleporterLines, teleporterLines, toggleLabelDisplayMode, labelDisplayMode,
@@ -1582,6 +1597,15 @@ html.dark .preview-info-banner { background: #1e1c08; border-color: #5a5010; col
 html.dark .inventory-panel { background: #1c2030; border-color: #2e3a52; }
 html.dark .inventory-header { border-bottom-color: #2e3a52; }
 html.dark .inventory-title { color: #d0daea; }
+
+/* ── News title link ── */
+.news-title-link {
+  cursor: pointer;
+  user-select: none;
+}
+.news-title-link:hover {
+  opacity: 0.75;
+}
 
 /* ── TutorialModal ── */
 html.dark .tutorial-modal { background: #1c2030; }
