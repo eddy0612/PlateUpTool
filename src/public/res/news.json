@@ -1,0 +1,47 @@
+{
+  "news": [
+    {
+      "version": "0.0",
+      "date": "2025-04-29",
+      "title": "Initial release",
+      "items": [
+        "Added support for exporting picture to clipboard which can be reimported even after going throuigh eg discord"
+      ]
+    },
+    {
+      "version": "1.0",
+      "date": "2025-05-06",
+      "title": "Mega Update",
+      "items": [
+        "Added toolbox, undo, known seeds, labels, room sizes and more"
+      ]
+    },
+    {
+      "version": "1.1",
+      "date": "2025-05-27",
+      "title": "Mobile Update",
+      "items": [
+        "Added support for mobile devices like ipads and phones"
+      ]
+    },
+    {
+      "version": "1.2",
+      "date": "2025-05-27",
+      "title": "Changes to support workshop mod",
+      "items": [
+        "MOD published on steam workshop to give option to bring up this tool based on your in game restaurant",
+        "Major internal changes to support the MOD - please let me know if you spot any issues",
+        "Exporting a tab/all tabs will trim the generated image"
+      ]
+    },
+    {
+      "version": "1.3",
+      "date": "2025-06-24",
+      "title": "News Feed & Dark Mode Polish",
+      "items": [
+        "Added a news feed — you'll now see release highlights like this just once, when new features drop.",
+        "For non-mobile users, select a single rotating grabber or flavoured icecream and use the [ and ] keys to cycle between alternatives"
+      ]
+    }
+  ]
+}
