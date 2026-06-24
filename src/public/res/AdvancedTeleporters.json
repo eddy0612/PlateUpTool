@@ -1,0 +1,34 @@
+[
+    {
+        "Keep": true,
+        "3DFilename": "Apple-681117884-Provider.png",
+        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "ItemDescription": "Conveyor Teleporter",
+        "GameID": -793372977,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "3DFilename": "Apple-681117884-Provider.png",
+        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "ItemDescription": "Grabber Teleporter",
+        "GameID": -2080566615,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "3DFilename": "Apple-681117884-Provider.png",
+        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "ItemDescription": "Distributing Teleporter",
+        "GameID": 976510972,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "3DFilename": "Apple-681117884-Provider.png",
+        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "ItemDescription": "Omni-Grabber Teleporter",
+        "GameID": 1959496181,
+        "MapGameId": -1
+    }
+]
