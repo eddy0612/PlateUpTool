@@ -1858,6 +1858,8 @@
         "flipPartner": 346,
         "gametype": "base",
         "GameID": 367215780,
+        "NextID": -331651461,
+        "PrevID": -961856961,
         "MapGameId": -1
     },
     {
@@ -1871,6 +1873,8 @@
         "flipPartner": 154,
         "gametype": "base",
         "GameID": -961856961,
+        "NextID": 367215780,
+        "PrevID": -331651461,
         "MapGameId": -1
     },
     {
@@ -1883,6 +1887,8 @@
         "Reason": "",
         "gametype": "base",
         "GameID": -331651461,
+        "NextID": -961856961,
+        "PrevID": 367215780,
         "MapGameId": -1
     },
     {
@@ -2063,6 +2069,8 @@
         "Reason": "Manually created",
         "gametype": "base",
         "GameID": -46968470,
+        "NextID": 26405173,
+        "PrevID": -2094600179,
         "MapGameId": -1
     },
     {
@@ -2075,6 +2083,8 @@
         "Reason": "Manually created",
         "gametype": "base",
         "GameID": -2094600179,
+        "NextID": -46968470,
+        "PrevID": 26405173,
         "MapGameId": -1
     },
     {
@@ -2087,6 +2097,8 @@
         "Reason": "Manually created",
         "gametype": "base",
         "GameID": 26405173,
+        "NextID": -2094600179,
+        "PrevID": -46968470,
         "MapGameId": -1
     },
     {

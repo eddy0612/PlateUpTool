@@ -229,7 +229,7 @@
               <dl>
                 <div><dt>T</dt><dd>Toggle teleporter connector lines (always show)</dd></div>
                 <div><dt>Ctrl+Z</dt><dd>Undo last change</dd></div>
-
+                <div><dt>[ / ]</dt><dd>Change appliance to alternatives (single cell selected)</dd></div>
               </dl>
             </section>
           </div>
