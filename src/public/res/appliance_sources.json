@@ -1,3 +1,5 @@
 [
-  { "id": "basegame", "src": "res/appliances.json" }
+  { "id": "base", "src": "res/appliances.json" },
+  { "id": "AutomationPlus", "src": "res/AutomationPlus.json" },
+  { "id": "AdvancedTeleporters", "src": "res/AdvancedTeleporters.json" }
 ]

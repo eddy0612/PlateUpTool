@@ -1,0 +1,50 @@
+[
+    {
+        "Keep": true,
+        "3DFilename": "Apple-681117884-Provider.png",
+        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "ItemDescription": "Smart Grabber - Rotating",
+        "GameID": -1199303928,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "3DFilename": "Apple-681117884-Provider.png",
+        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "ItemDescription": "Lazy Mixer",
+        "GameID": -1199303928,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "3DFilename": "Apple-681117884-Provider.png",
+        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "ItemDescription": "Conveyor - Fast",
+        "GameID": -510474524,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "3DFilename": "Apple-681117884-Provider.png",
+        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "ItemDescription": "Grabber Mixer",
+        "GameID": 697238931,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "3DFilename": "Apple-681117884-Provider.png",
+        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "ItemDescription": "Grabber - Merging",
+        "GameID": -1968180161,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "3DFilename": "Apple-681117884-Provider.png",
+        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "ItemDescription": "Grabber - Distributing",
+        "GameID": 1142075936,
+        "MapGameId": -1
+    }
+]
