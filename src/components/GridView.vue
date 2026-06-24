@@ -360,6 +360,7 @@ export default {
       paletteDragActive, paletteDragHoverCell, isPaletteDragDropValid,
       getTeleporterPairPos
       , skipLabelAnchorSync
+      , cycleAppliance
     } = useGrid()
 
     // --- Tab colours (10 light, differentiable) ---
@@ -1354,6 +1355,8 @@ export default {
         e.preventDefault()
         showTeleporterLinesAlways.value = !showTeleporterLinesAlways.value
       }
+      if (key === '[') { e.preventDefault(); cycleAppliance('prev') }
+      if (key === ']') { e.preventDefault(); cycleAppliance('next') }
       // Arrow keys: move selection by one cell in that direction
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         const anyActive = [...selectedCells.value].some(k => { const [x, y] = k.split(',').map(Number); return !isCellGhosted(x, y) })

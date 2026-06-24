@@ -1857,6 +1857,29 @@ function getTeleporterPairPos(x, y) {
   return null
 }
 
+// Swap the single selected cell's appliance to its PrevID (direction='prev') or NextID (direction='next').
+// Only applies when exactly one non-ghosted cell is selected and the appliance has the relevant field.
+function cycleAppliance(direction) {
+  if (!__applianceByGameId) {
+    // Map not loaded yet — trigger load and retry on next keypress
+    _loadApplianceKeepMap().catch(() => {})
+    return
+  }
+  if (selectedCells.value.size !== 1) return
+  const [key] = selectedCells.value
+  const [x, y] = key.split(',').map(Number)
+  if (isCellGhosted(x, y)) return
+  const cell = grid.value[y]?.[x]
+  if (!cell || !cell.applianceId) return
+  const current = __applianceByGameId.get(Number(cell.applianceId))
+  if (!current) return
+  const targetGameId = direction === 'prev' ? current.PrevID : current.NextID
+  if (targetGameId == null) return
+  const target = __applianceByGameId.get(Number(targetGameId))
+  if (!target || !target.Keep) return
+  cell.applianceId = Number(target.GameID)
+}
+
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, hoverLabel, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, selectedLabelIds, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveSelectionBy, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, pastePendingLabels, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, applianceMapLoading, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal, skipLabelAnchorSync }
+  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, hoverLabel, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, selectedLabelIds, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveSelectionBy, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, pastePendingLabels, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, applianceMapLoading, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal, skipLabelAnchorSync, cycleAppliance }
 }
