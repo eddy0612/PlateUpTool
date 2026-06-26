@@ -208,12 +208,21 @@ function isImageIcon(icon) {
   return /\.(png|jpg|jpeg|webp)$/i.test(icon)
 }
 
-function getApplianceLabel(applianceId) {
+function getApplianceLabel(applianceId, extraData) {
+  if (extraData != null && extraData !== 0) {
+    const altFound = palette.value.find(a => a.id === applianceId && a.alternativeKey === extraData)
+    if (altFound) return altFound.label
+  }
   const found = palette.value.find(a => a.id === applianceId)
   return found ? found.label : applianceId
 }
 
-function get2DApplianceIcon(applianceId) {
+function get2DApplianceIcon(applianceId, extraData) {
+  // If extraData indicates a specific alternative, look for that entry first
+  if (extraData != null && extraData !== 0) {
+    const altFound = palette.value.find(a => a.id === applianceId && a.alternativeKey === extraData)
+    if (altFound && altFound.icon2D) return altFound.icon2D
+  }
   const found = palette.value.find(a => a.id === applianceId)
   return found && found.icon2D ? found.icon2D : getApplianceIcon(applianceId)
 }
@@ -294,11 +303,12 @@ function _unpairTeleporterPartner(pairNum) {
 async function addToGrid(item) {
   if (state.activeTabId === 'complete' || state.activeTabId === 'structure') return
   const tabId = state.activeTabId
+  const itemExtraData = item.alternativeKey ?? 0
   if (selectedCells.value.size === 1) {
     const [key] = selectedCells.value
     const [x, y] = key.split(',').map(Number)
     if (!grid.value[y][x]) {
-      grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabIds: [tabId], iid: genInstanceId() }
+      grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: itemExtraData, tabIds: [tabId], iid: genInstanceId() }
       _autoTeleporterPair(x, y)
       return
     }
@@ -306,7 +316,7 @@ async function addToGrid(item) {
   for (let y = 0; y < grid.value.length; ++y) {
     for (let x = 0; x < grid.value[y].length; ++x) {
       if (!grid.value[y][x]) {
-        grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: 0, tabIds: [tabId], iid: genInstanceId() }
+        grid.value[y][x] = { applianceId: item.id, rotation: 0, extraData: itemExtraData, tabIds: [tabId], iid: genInstanceId() }
         _autoTeleporterPair(x, y)
         return
       }
@@ -1715,7 +1725,8 @@ function commitPaletteDrag() {
   if (paletteDragActive.value && paletteDragItem.value && paletteDragHoverCell.value) {
     const { x, y } = paletteDragHoverCell.value
     if (isPaletteDragDropValid(x, y)) {
-      grid.value[y][x] = { applianceId: paletteDragItem.value.id, rotation: 0, extraData: 0, tabIds: [state.activeTabId], iid: genInstanceId() }
+      const dragExtraData = paletteDragItem.value.alternativeKey ?? 0
+      grid.value[y][x] = { applianceId: paletteDragItem.value.id, rotation: 0, extraData: dragExtraData, tabIds: [state.activeTabId], iid: genInstanceId() }
       _autoTeleporterPair(x, y)
       placed = true
     }
@@ -1785,11 +1796,14 @@ async function loadGridFromState() {
           continue
         }
       } else if (state.URLVersion === 1 && cell && cell.applianceId != null && __applianceByGameId && applianceMapAvailable) {
-        // For v1, follow MapGameId chains to canonical entry and check Keep
+        // For v1, follow MapGameId chains to canonical entry and check Keep.
+        // Also apply MapExtraData from the first entry in the chain if present.
         let gameId = Number(cell.applianceId)
         const seen = new Set()
         let entry = __applianceByGameId.get(gameId)
+        let mappedExtraData = null
         while (entry && entry.MapGameId != null && Number(entry.MapGameId) !== -1) {
+          if (entry.MapExtraData != null && mappedExtraData === null) mappedExtraData = Number(entry.MapExtraData)
           const next = Number(entry.MapGameId)
           if (seen.has(next)) break
           seen.add(next)
@@ -1798,6 +1812,7 @@ async function loadGridFromState() {
         }
         if (entry) {
           if (!Number.isNaN(gameId)) cell.applianceId = gameId
+          if (mappedExtraData !== null) cell.extraData = mappedExtraData
           if (entry.Keep === false) continue
         } else {
           continue
@@ -1855,13 +1870,12 @@ function getTeleporterPairPos(x, y) {
   return null
 }
 
-// Swap the single selected cell's appliance to its PrevID (direction='prev') or NextID (direction='next').
-// Only applies when exactly one non-ghosted cell is selected and the appliance has the relevant field.
-function cycleAppliance(direction) {
+// Cycle the selected cell's appliance variant through its Alternatives entries.
+// direction='next' advances to the next key, direction='prev' goes back (wrapping).
+async function cycleAppliance(direction) {
   if (!__applianceByGameId) {
-    // Map not loaded yet — trigger load and retry on next keypress
-    _loadApplianceKeepMap().catch(() => {})
-    return
+    // Map not loaded yet — load it and then continue to perform the cycle
+    try { await _loadApplianceKeepMap() } catch (e) {}
   }
   if (selectedCells.value.size !== 1) return
   const [key] = selectedCells.value
@@ -1870,12 +1884,38 @@ function cycleAppliance(direction) {
   const cell = grid.value[y]?.[x]
   if (!cell || !cell.applianceId) return
   const current = __applianceByGameId.get(Number(cell.applianceId))
-  if (!current) return
-  const targetGameId = direction === 'prev' ? current.PrevID : current.NextID
-  if (targetGameId == null) return
-  const target = __applianceByGameId.get(Number(targetGameId))
-  if (!target || !target.Keep) return
-  cell.applianceId = Number(target.GameID)
+  if (!current || !current.Alternatives || typeof current.Alternatives !== 'object') return
+  const altKeys = Object.keys(current.Alternatives).map(Number).sort((a, b) => a - b)
+  if (altKeys.length === 0) return
+  const currentKey = Number(cell.extraData ?? 0)
+
+  // Prefer explicit Next/Prev values defined per-alternative. If missing or invalid,
+  // fall back to index-based wrapping behavior.
+  const currentAlt = current.Alternatives[String(currentKey)]
+  if (currentAlt && typeof currentAlt === 'object') {
+    if (direction === 'next' && currentAlt.Next != null) {
+      const nextKey = Number(currentAlt.Next)
+      if (!Number.isNaN(nextKey) && altKeys.includes(nextKey)) {
+        cell.extraData = nextKey
+        return
+      }
+    }
+    if (direction !== 'next' && currentAlt.Prev != null) {
+      const prevKey = Number(currentAlt.Prev)
+      if (!Number.isNaN(prevKey) && altKeys.includes(prevKey)) {
+        cell.extraData = prevKey
+        return
+      }
+    }
+  }
+
+  // Fallback: compute next/prev by order in altKeys
+  const idx = altKeys.indexOf(currentKey)
+  if (direction === 'next') {
+    cell.extraData = idx === -1 ? altKeys[0] : altKeys[(idx + 1) % altKeys.length]
+  } else {
+    cell.extraData = idx === -1 ? altKeys[altKeys.length - 1] : altKeys[(idx - 1 + altKeys.length) % altKeys.length]
+  }
 }
 
 export function useGrid() {

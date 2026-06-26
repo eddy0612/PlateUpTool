@@ -42,6 +42,15 @@
         "Added a news feed — you'll now see release highlights like this just once, when new features drop.",
         "For non-mobile users, select a single rotating grabber or flavoured icecream and use the [ and ] keys to cycle between alternatives"
       ]
+    },
+    {
+      "version": "x.x",
+      "date": "20xx-06-24",
+      "title": "Future release notes",
+      "items": [
+        "Breaking change: Imports with chocolate icecream from earlier releases may lose the chocolate setting",
+        "tbc"
+      ]
     }
   ]
 }

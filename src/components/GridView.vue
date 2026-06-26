@@ -19,7 +19,7 @@
                 <span :style="rotationStyle(getDisplayCell(cellInfo.x, cellInfo.y).rotation)">
                   <img
                     v-if="isImageIcon(getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId))"
-                    :src="get2DApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId)"
+                    :src="get2DApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId, getDisplayCell(cellInfo.x, cellInfo.y).extraData)"
                     :alt="getDisplayCell(cellInfo.x, cellInfo.y).applianceId"
                     draggable="false"
                     style="max-width:100%;max-height:100%;display:block;"
@@ -1978,7 +1978,7 @@ export default {
       const relY = (e.clientY - rect.top) / rect.height
       // debug logging removed
       const cell = getDisplayCell(x, y)
-      hoverLabel.value = cell?.applianceId ? getApplianceLabel(cell.applianceId) : ''
+      hoverLabel.value = cell?.applianceId ? getApplianceLabel(cell.applianceId, cell.extraData) : ''
       hoverApplianceId.value = cell?.applianceId ?? ''
     }
 
