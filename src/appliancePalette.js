@@ -19,7 +19,7 @@ export function getRawAppliances() {
           fetch(base + src)
             .then(resp => {
               if (!resp.ok) throw new Error(`Failed to load appliance source "${id}": ${src}`)
-              return resp.json()
+              return resp.json().then(data => data.map(entry => ({ ...entry, _sourceId: id })))
             })
         )
       )
@@ -58,7 +58,8 @@ export async function getAppliancePalette() {
           icon: icon3 || icon2 || '',
           icon2D: icon2 || '',
           flipPartner,
-          alternativeKey: k
+          alternativeKey: k,
+          isMod: entry._sourceId !== 'base'
         })
       }
     } else {
@@ -69,7 +70,8 @@ export async function getAppliancePalette() {
         label,
         icon: icon3 || icon2 || '',
         icon2D: icon2 || '',
-        flipPartner
+        flipPartner,
+        isMod: entry._sourceId !== 'base'
       })
     }
   }

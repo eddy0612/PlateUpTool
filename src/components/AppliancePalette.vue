@@ -82,7 +82,7 @@
                 @pointerdown="onPaletteItemPointerDown(item, $event)"
               >
                 <div class="bb-icon">
-                  <canvas :data-icon="item.icon" class="bb-canvas"></canvas>
+                  <canvas :data-icon="item.icon" :data-is-mod="item.isMod ? 'true' : null" class="bb-canvas"></canvas>
                 </div>
                 <div class="bb-label">{{ item.label }}</div>
               </div>
@@ -227,7 +227,7 @@
                 @pointerdown="onPaletteItemPointerDown(item, $event)"
               >
                 <div class="item-icon">
-                  <canvas :data-icon="item.icon" class="palette-canvas"></canvas>
+                  <canvas :data-icon="item.icon" :data-is-mod="item.isMod ? 'true' : null" class="palette-canvas"></canvas>
                 </div>
                 <div>{{ item.label }}</div>
               </div>
@@ -520,7 +520,11 @@ export default {
       const items = q
         ? palette.value.filter(item => item.label.toLowerCase().includes(q))
         : palette.value.slice()
-      return items.slice().sort((a, b) => a.label.localeCompare(b.label))
+      return items.slice().sort((a, b) => {
+        const modDiff = (a.isMod ? 1 : 0) - (b.isMod ? 1 : 0)
+        if (modDiff !== 0) return modDiff
+        return a.label.localeCompare(b.label)
+      })
     })
 
     // ── Bottom-bar search ─────────────────────────────────────────────────────
@@ -534,7 +538,11 @@ export default {
       const items = q
         ? palette.value.filter(item => item.label.toLowerCase().includes(q))
         : palette.value.slice()
-      return items.slice().sort((a, b) => a.label.localeCompare(b.label))
+      return items.slice().sort((a, b) => {
+        const modDiff = (a.isMod ? 1 : 0) - (b.isMod ? 1 : 0)
+        if (modDiff !== 0) return modDiff
+        return a.label.localeCompare(b.label)
+      })
     })
 
     function openBbSearch() {
@@ -616,6 +624,32 @@ export default {
     // Canvas image drawing with top-crop (but avoid top-crop for 2D icons).
     // Probe 3D assets with `fetch({cache:'no-store'})` to avoid serving cached 304s;
     // fall back to the 2D path when the probe or image load fails.
+
+    function drawModBadge(ctx, width, height) {
+      const badgeH = Math.max(13, Math.round(height * 0.17))
+      const badgeW = Math.max(26, Math.round(width * 0.40))
+      const fontSize = Math.max(8, Math.round(badgeH * 0.60))
+      const x = 0
+      const y = height - badgeH
+      ctx.save()
+      ctx.fillStyle = '#F5C500'
+      ctx.beginPath()
+      ctx.moveTo(x, y + 3)
+      ctx.arcTo(x, y + badgeH, x + 3, y + badgeH, 3)
+      ctx.lineTo(x + badgeW - 3, y + badgeH)
+      ctx.arcTo(x + badgeW, y + badgeH, x + badgeW, y + badgeH - 3, 3)
+      ctx.lineTo(x + badgeW, y)
+      ctx.lineTo(x, y)
+      ctx.closePath()
+      ctx.fill()
+      ctx.fillStyle = '#3a2600'
+      ctx.font = `bold ${fontSize}px sans-serif`
+      ctx.textBaseline = 'middle'
+      ctx.textAlign = 'center'
+      ctx.fillText('MOD', x + badgeW / 2, y + badgeH / 2)
+      ctx.restore()
+    }
+
     function cropAndDrawImage(canvas, src) {
       if (!canvas || !src) return
       const ctx = canvas.getContext('2d')
@@ -639,6 +673,9 @@ export default {
             dh = canvas.height; dw = canvas.height * croppedAspect; dx = (canvas.width - dw) / 2; dy = 0
           }
           ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
+          if (canvas.dataset.isMod === 'true') {
+            drawModBadge(ctx, canvas.width, canvas.height)
+          }
         }
         img.onerror = function () {
           try {
