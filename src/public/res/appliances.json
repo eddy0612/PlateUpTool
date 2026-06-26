@@ -1730,21 +1730,21 @@
         "GameID": -331651461,
         "Alternatives": {
             "1": {
-                "3DFilename": "GrabberRotatingL--331651461.png",
+                "3DFilename": "",
                 "2DFilename": "2D_GrabberRotatingL--331651461.png",
                 "ItemDescription": "Grabber - Rotating Left",
                 "Next": 2,
                 "Prev": 3
             },
             "2": {
-                "3DFilename": "GrabberRotatingS--331651461.png",
+                "3DFilename": "",
                 "2DFilename": "2D_GrabberRotatingS--331651461.png",
                 "ItemDescription": "Grabber - Rotating",
                 "Next": 3,
                 "Prev": 1
             },
             "3": {
-                "3DFilename": "GrabberRotatingR--331651461.png",
+                "3DFilename": "",
                 "2DFilename": "2D_GrabberRotatingR--331651461.png",
                 "ItemDescription": "Grabber - Rotating Right",
                 "Next": 1,

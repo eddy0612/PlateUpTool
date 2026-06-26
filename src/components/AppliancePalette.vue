@@ -613,30 +613,63 @@ export default {
 
     const inventoryTotal = computed(() => inventoryList.value.reduce((s, i) => s + i.count, 0))
 
-    // Canvas image drawing with top-crop (but avoid top-crop for 2D icons)
+    // Canvas image drawing with top-crop (but avoid top-crop for 2D icons).
+    // Probe 3D assets with `fetch({cache:'no-store'})` to avoid serving cached 304s;
+    // fall back to the 2D path when the probe or image load fails.
     function cropAndDrawImage(canvas, src) {
       if (!canvas || !src) return
       const ctx = canvas.getContext('2d')
-      const img = new window.Image()
-      img.crossOrigin = 'anonymous'
-      img.onload = function () {
-        const cropTop = (typeof src === 'string' && src.includes('2D_')) ? 0 : 50
-        const sx = 0, sy = cropTop, sw = img.width, sh = Math.max(img.height - cropTop, 1)
-        const rect = canvas.getBoundingClientRect()
-        canvas.width = rect.width || 100
-        canvas.height = rect.height || 100
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        const croppedAspect = sw / sh
-        const canvasAspect = canvas.width / canvas.height
-        let dw, dh, dx, dy
-        if (croppedAspect > canvasAspect) {
-          dw = canvas.width; dh = canvas.width / croppedAspect; dx = 0; dy = (canvas.height - dh) / 2
-        } else {
-          dh = canvas.height; dw = canvas.height * croppedAspect; dx = (canvas.width - dw) / 2; dy = 0
+
+      function drawFromUrl(url) {
+        const img = new window.Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = function () {
+          const cropTop = (typeof url === 'string' && (url.includes('/res/2D/') || url.includes('2D_'))) ? 0 : 50
+          const sx = 0, sy = cropTop, sw = img.width, sh = Math.max(img.height - cropTop, 1)
+          const rect = canvas.getBoundingClientRect()
+          canvas.width = rect.width || 100
+          canvas.height = rect.height || 100
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          const croppedAspect = sw / sh
+          const canvasAspect = canvas.width / canvas.height
+          let dw, dh, dx, dy
+          if (croppedAspect > canvasAspect) {
+            dw = canvas.width; dh = canvas.width / croppedAspect; dx = 0; dy = (canvas.height - dh) / 2
+          } else {
+            dh = canvas.height; dw = canvas.height * croppedAspect; dx = (canvas.width - dw) / 2; dy = 0
+          }
+          ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
         }
-        ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
+        img.onerror = function () {
+          try {
+            if (typeof url === 'string' && url.includes('/res/3D/')) {
+              const alt = url.replace('/res/3D/', '/res/2D/')
+              drawFromUrl(alt)
+              return
+            }
+          } catch (e) {}
+        }
+        img.src = url
       }
-      img.src = src
+
+      if (typeof src === 'string' && src.includes('/res/3D/')) {
+        try {
+          fetch(src, { method: 'GET', cache: 'no-store' }).then(resp => {
+            if (resp && resp.ok) {
+              drawFromUrl(src)
+            } else {
+              const alt = src.replace('/res/3D/', '/res/2D/')
+              drawFromUrl(alt)
+            }
+          }).catch(() => {
+            drawFromUrl(src)
+          })
+        } catch (e) {
+          drawFromUrl(src)
+        }
+      } else {
+        drawFromUrl(src)
+      }
     }
 
     // Clipboard export (uses same previews as file export but writes image to clipboard)
