@@ -76,7 +76,7 @@
               <!-- Appliance items, filtered by the bb search query -->
               <div
                 v-for="item in bbFilteredPalette"
-                :key="item.id"
+                :key="item.id + '_' + (item.alternativeKey ?? '')"
                 class="bb-item bb-item-appliance"
                 @click="onPaletteItemClick(item)"
                 @pointerdown="onPaletteItemPointerDown(item, $event)"
@@ -221,7 +221,7 @@
             <div class="palette" :style="paletteGridStyle">
               <div
                 v-for="item in filteredPalette"
-                :key="item.id"
+                :key="item.id + '_' + (item.alternativeKey ?? '')"
                 class="palette-item"
                 @click="onPaletteItemClick(item)"
                 @pointerdown="onPaletteItemPointerDown(item, $event)"

@@ -28,25 +28,46 @@ export function getRawAppliances() {
   return __rawAppliancesPromise
 }
 
-// Returns a Promise that resolves to an array of { id, label, icon }
-// id is the GameID (32-bit signed int matching the game engine's appliance ID)
+// Returns a Promise that resolves to an array of { id, label, icon, icon2D, flipPartner, alternativeKey? }
+// id is the GameID (32-bit signed int matching the game engine's appliance ID).
+// For entries with an Alternatives map, one palette entry is produced per alternative
+// (using that alternative's 3D/2D filenames and its key as alternativeKey).
+// The main entry's 3DFilename/2DFilename is ignored when Alternatives are present.
 export async function getAppliancePalette() {
   const base = import.meta.env.BASE_URL
   const applianceMap = await getRawAppliances()
-    // Treat `flipPartner` strictly as a GameID. `flipPartner` should be the
-    // runtime GameID for the paired appliance; entries must provide GameIDs.
-    return applianceMap
-      .filter(entry => entry.Keep)
-      .map(entry => {
-        const id = Number(entry.GameID ?? entry.gameid ?? entry.gameId)
-        const fpRaw = entry.flipPartner
-        const fp = fpRaw != null ? (Number(fpRaw) || null) : null
-        return {
+  const result = []
+  for (const entry of applianceMap) {
+    if (!entry.Keep) continue
+    const id = Number(entry.GameID ?? entry.gameid ?? entry.gameId)
+    const fpRaw = entry.flipPartner
+    const fp = fpRaw != null ? (Number(fpRaw) || null) : null
+    const flipPartner = Number.isNaN(fp) ? null : fp
+    const label = entry.ItemDescription
+
+    if (entry.Alternatives && typeof entry.Alternatives === 'object') {
+      // Expand into one palette entry per alternative, sorted by key
+      const keys = Object.keys(entry.Alternatives).map(Number).sort((a, b) => a - b)
+      for (const k of keys) {
+        const alt = entry.Alternatives[String(k)]
+        result.push({
           id,
-          label: entry.ItemDescription,
-          icon: `${base}res/3D/${entry["3DFilename"]}`,
-          icon2D: `${base}res/2D/${entry["2DFilename"]}`,
-          flipPartner: Number.isNaN(fp) ? null : fp
-        }
+          label: alt['ItemDescription'] || label,
+          icon: `${base}res/3D/${alt['3DFilename']}`,
+          icon2D: `${base}res/2D/${alt['2DFilename']}`,
+          flipPartner,
+          alternativeKey: k
+        })
+      }
+    } else {
+      result.push({
+        id,
+        label,
+        icon: `${base}res/3D/${entry['3DFilename']}`,
+        icon2D: `${base}res/2D/${entry['2DFilename']}`,
+        flipPartner
       })
+    }
+  }
+  return result
 }

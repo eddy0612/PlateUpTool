@@ -1695,43 +1695,62 @@
     },
     {
         "OriginalFileName": "GrabberRotatingL--331651461.png",
-        "Keep": true,
+        "Keep": false,
         "ID": 154,
-        "3DFilename": "GrabberRotatingL--331651461.png",
-        "2DFilename": "2D_GrabberRotatingL--331651461.png",
+        "3DFilename": "",
+        "2DFilename": "",
         "ItemDescription": "Grabber - Rotating Left",
-        "Reason": "",
+        "Reason": "Deprecated - Now uses extra data",
         "flipPartner": -961856961,
         "GameID": 367215780,
-        "NextID": -331651461,
-        "PrevID": -961856961,
-        "MapGameId": -1
+        "MapGameId": -331651461,
+        "MapExtraData": 1
     },
     {
         "OriginalFileName": "GrabberRotatingR--331651461.png",
-        "Keep": true,
+        "Keep": false,
         "ID": 346,
-        "3DFilename": "GrabberRotatingR--331651461.png",
-        "2DFilename": "2D_GrabberRotatingR--331651461.png",
+        "3DFilename": "",
+        "2DFilename": "",
         "ItemDescription": "Grabber - Rotating Right",
-        "Reason": "",
+        "Reason": "Deprecated - now uses extra data",
         "flipPartner": 367215780,
         "GameID": -961856961,
-        "NextID": 367215780,
-        "PrevID": -331651461,
-        "MapGameId": -1
+        "MapGameId": -331651461,
+        "MapExtraData": 3
     },
     {
         "OriginalFileName": "GrabberRotatingS--331651461.png",
         "Keep": true,
         "ID": 347,
-        "3DFilename": "GrabberRotatingS--331651461.png",
-        "2DFilename": "2D_GrabberRotatingS--331651461.png",
+        "3DFilename": "",
+        "2DFilename": "",
         "ItemDescription": "Grabber - Rotating",
         "Reason": "",
         "GameID": -331651461,
-        "NextID": -961856961,
-        "PrevID": 367215780,
+        "Alternatives": {
+            "1": {
+                "3DFilename": "GrabberRotatingL--331651461.png",
+                "2DFilename": "2D_GrabberRotatingL--331651461.png",
+                "ItemDescription": "Grabber - Rotating Left",
+                "Next": 2,
+                "Prev": 3
+            },
+            "2": {
+                "3DFilename": "GrabberRotatingS--331651461.png",
+                "2DFilename": "2D_GrabberRotatingS--331651461.png",
+                "ItemDescription": "Grabber - Rotating",
+                "Next": 3,
+                "Prev": 1
+            },
+            "3": {
+                "3DFilename": "GrabberRotatingR--331651461.png",
+                "2DFilename": "2D_GrabberRotatingR--331651461.png",
+                "ItemDescription": "Grabber - Rotating Right",
+                "Next": 1,
+                "Prev": 2
+            }
+        },
         "MapGameId": -1
     },
     {
@@ -1886,46 +1905,54 @@
         "ItemDescription": "Ice Cream",
         "Reason": "",
         "GameID": -1533430406,
-        "MapGameId": -1
-    },
-    {
-        "OriginalFileName": "IceCreamChocolate-Provider.png",
-        "Keep": true,
-        "ID": 169,
-        "3DFilename": "IceCreamChocolate-Provider.png",
-        "2DFilename": "2D_IceCreamChocolate-Provider.png",
-        "ItemDescription": "Ice Cream - Chocolate",
-        "Reason": "Manually created",
-        "GameID": -46968470,
-        "NextID": 26405173,
-        "PrevID": -2094600179,
-        "MapGameId": -1
+        "MapGameId": -1,
+        "Alternatives": {
+            "0": {
+                "3DFilename": "IceCreamVanilla-Provider.png",
+                "2DFilename": "2D_IceCreamVanilla-Provider.png",
+                "ItemDescription": "Ice Cream - Vanilla",
+                "Next": 2,
+                "Prev": 1
+            },
+            "1": {
+                "3DFilename": "IceCreamChocolate-Provider.png",
+                "2DFilename": "2D_IceCreamChocolate-Provider.png",
+                "ItemDescription": "Ice Cream - Chocolate",
+                "Next": 0,
+                "Prev": 2
+            },
+            "2": {
+                "3DFilename": "IceCreamStrawberry-Provider.png",
+                "2DFilename": "2D_IceCreamStrawberry-Provider.png",
+                "ItemDescription": "Ice Cream - Strawberry",
+                "Next": 1,
+                "Prev": 0
+            }
+        }
     },
     {
         "OriginalFileName": "IceCreamStrawberry-Provider.png",
-        "Keep": true,
+        "Keep": false,
         "ID": 170,
-        "3DFilename": "IceCreamStrawberry-Provider.png",
-        "2DFilename": "2D_IceCreamStrawberry-Provider.png",
+        "3DFilename": "",
+        "2DFilename": "",
         "ItemDescription": "Ice Cream - Strawberry",
-        "Reason": "Manually created",
+        "Reason": "Deprecated - Moved to extra data. Was manually created",
         "GameID": -2094600179,
-        "NextID": -46968470,
-        "PrevID": 26405173,
-        "MapGameId": -1
+        "MapGameId": -1533430406,
+        "MapExtraData": 2
     },
     {
         "OriginalFileName": "IceCreamVanilla-Provider.png",
-        "Keep": true,
+        "Keep": false,
         "ID": 171,
-        "3DFilename": "IceCreamVanilla-Provider.png",
-        "2DFilename": "2D_IceCreamVanilla-Provider.png",
+        "3DFilename": "",
+        "2DFilename": "",
         "ItemDescription": "Ice Cream - Vanilla",
-        "Reason": "Manually created",
+        "Reason": "Deprecated - Moved to extra data. Was manually created",
         "GameID": 26405173,
-        "NextID": -2094600179,
-        "PrevID": -46968470,
-        "MapGameId": -1
+        "MapGameId": -1533430406,
+        "MapExtraData": 0
     },
     {
         "OriginalFileName": "IceDispenser-801015432.png",

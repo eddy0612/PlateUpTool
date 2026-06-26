@@ -1,50 +1,113 @@
 [
     {
         "Keep": true,
-        "3DFilename": "Apple-681117884-Provider.png",
-        "2DFilename": "2D_Apple-681117884-Provider.png",
         "ItemDescription": "Smart Grabber - Rotating",
         "GameID": -1199303928,
+        "Alternatives": {
+            "1": {
+                "3DFilename": "MOD_3D_SmartGrabberRotatingL-367215780.png",
+                "2DFilename": "MOD_2D_SmartGrabberRotatingL-367215780.png",
+                "ItemDescription": "Smart Grabber - Rotating Left",
+                "Next": 2,
+                "Prev": 3
+            },
+            "2": {
+                "3DFilename": "MOD_3D_SmartGrabberRotatingS-367215780.png",
+                "2DFilename": "MOD_2D_SmartGrabberRotatingS-367215780.png",
+                "ItemDescription": "Smart Grabber - Rotating",
+                "Next": 3,
+                "Prev": 1
+            },
+            "3": {
+                "3DFilename": "MOD_3D_SmartGrabberRotatingR-367215780.png",
+                "2DFilename": "MOD_2D_SmartGrabberRotatingR-367215780.png",
+                "ItemDescription": "Smart Grabber - Rotating Right",
+                "Next": 1,
+                "Prev": 2
+            }
+        },
         "MapGameId": -1
     },
     {
         "Keep": true,
-        "3DFilename": "Apple-681117884-Provider.png",
-        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "3DFilename": "MOD_3D_Lazy_Mixer--817038110.png",
+        "2DFilename": "MOD_2D_Lazy_Mixer--817038110.png",
         "ItemDescription": "Lazy Mixer",
-        "GameID": -1199303928,
+        "GameID": -817038110,
         "MapGameId": -1
     },
     {
         "Keep": true,
-        "3DFilename": "Apple-681117884-Provider.png",
-        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "3DFilename": "MOD_3D_Fast_Conveyor--510474524.png",
+        "2DFilename": "MOD_2D_Fast_Conveyor--510474524.png",
         "ItemDescription": "Conveyor - Fast",
         "GameID": -510474524,
         "MapGameId": -1
     },
     {
         "Keep": true,
-        "3DFilename": "Apple-681117884-Provider.png",
-        "2DFilename": "2D_Apple-681117884-Provider.png",
+        "3DFilename": "MOD_3D_GrabberMixer-697238931.png",
+        "2DFilename": "MOD_2D_GrabberMixer-697238931.png",
         "ItemDescription": "Grabber Mixer",
         "GameID": 697238931,
         "MapGameId": -1
     },
     {
         "Keep": true,
-        "3DFilename": "Apple-681117884-Provider.png",
-        "2DFilename": "2D_Apple-681117884-Provider.png",
         "ItemDescription": "Grabber - Merging",
         "GameID": -1968180161,
+        "Alternatives": {
+            "1": {
+                "3DFilename": "MOD_3D_Grabber_MergingL--1968180161.png",
+                "2DFilename": "MOD_2D_Grabber_MergingL--1968180161.png",
+                "ItemDescription": "Grabber - Merging Left",
+                "Next": 2,
+                "Prev": 3
+            },
+            "2": {
+                "3DFilename": "MOD_3D_Grabber_MergingS--1968180161.png",
+                "2DFilename": "MOD_2D_Grabber_MergingS--1968180161.png",
+                "ItemDescription": "Grabber - Merging",
+                "Next": 3,
+                "Prev": 1
+            },
+            "3": {
+                "3DFilename": "MOD_3D_Grabber_MergingR--1968180161.png",
+                "2DFilename": "MOD_2D_Grabber_MergingR--1968180161.png",
+                "ItemDescription": "Grabber - Merging Right",
+                "Next": 1,
+                "Prev": 2
+            }
+        },
         "MapGameId": -1
     },
     {
         "Keep": true,
-        "3DFilename": "Apple-681117884-Provider.png",
-        "2DFilename": "2D_Apple-681117884-Provider.png",
         "ItemDescription": "Grabber - Distributing",
         "GameID": 1142075936,
+        "Alternatives": {
+            "1": {
+                "3DFilename": "MOD_3D_Grabber_DistributingL-1142075936.png",
+                "2DFilename": "MOD_2D_Grabber_DistributingL-1142075936.png",
+                "ItemDescription": "Grabber - Distributing Left",
+                "Next": 2,
+                "Prev": 3
+            },
+            "2": {
+                "3DFilename": "MOD_3D_Grabber_DistributingS-1142075936.png",
+                "2DFilename": "MOD_2D_Grabber_DistributingS-1142075936.png",
+                "ItemDescription": "Grabber - Distributing",
+                "Next": 3,
+                "Prev": 1
+            },
+            "3": {
+                "3DFilename": "MOD_3D_Grabber_DistributingR-1142075936.png",
+                "2DFilename": "MOD_2D_Grabber_DistributingR-1142075936.png",
+                "ItemDescription": "Grabber - Distributing Right",
+                "Next": 1,
+                "Prev": 2
+            }
+        },
         "MapGameId": -1
     }
 ]

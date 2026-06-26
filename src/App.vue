@@ -359,7 +359,7 @@
         class="palette-drag-ghost"
         :style="{ left: paletteDragPos.x + 'px', top: paletteDragPos.y + 'px', width: (cellSize * state.zoom) + 'px', height: (cellSize * state.zoom) + 'px' }"
       >
-        <img v-if="isImageIcon(paletteDragItem.icon)" :src="get2DApplianceIcon(paletteDragItem.id)" />
+        <img v-if="isImageIcon(paletteDragItem.icon)" :src="get2DApplianceIcon(paletteDragItem.id, paletteDragItem.alternativeKey)" />
         <span v-else style="font-size:1.8em">{{ paletteDragItem.icon }}</span>
       </div>
 
