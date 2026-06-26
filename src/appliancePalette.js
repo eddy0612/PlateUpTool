@@ -50,21 +50,25 @@ export async function getAppliancePalette() {
       const keys = Object.keys(entry.Alternatives).map(Number).sort((a, b) => a - b)
       for (const k of keys) {
         const alt = entry.Alternatives[String(k)]
+        const icon3 = alt['3DFilename'] ? `${base}res/3D/${alt['3DFilename']}` : null
+        const icon2 = alt['2DFilename'] ? `${base}res/2D/${alt['2DFilename']}` : null
         result.push({
           id,
           label: alt['ItemDescription'] || label,
-          icon: `${base}res/3D/${alt['3DFilename']}`,
-          icon2D: `${base}res/2D/${alt['2DFilename']}`,
+          icon: icon3 || icon2 || '',
+          icon2D: icon2 || '',
           flipPartner,
           alternativeKey: k
         })
       }
     } else {
+      const icon3 = entry['3DFilename'] ? `${base}res/3D/${entry['3DFilename']}` : null
+      const icon2 = entry['2DFilename'] ? `${base}res/2D/${entry['2DFilename']}` : null
       result.push({
         id,
         label,
-        icon: `${base}res/3D/${entry['3DFilename']}`,
-        icon2D: `${base}res/2D/${entry['2DFilename']}`,
+        icon: icon3 || icon2 || '',
+        icon2D: icon2 || '',
         flipPartner
       })
     }
