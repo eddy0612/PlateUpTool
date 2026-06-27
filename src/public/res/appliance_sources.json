@@ -1,5 +1,20 @@
 [
-  { "id": "base", "src": "res/appliances.json" },
-  { "id": "AutomationPlus", "src": "res/AutomationPlus.json" },
-  { "id": "AdvancedTeleporters", "src": "res/AdvancedTeleporters.json" }
+  {
+    "id": "base",
+    "src": "res/appliances.json",
+    "SteamID": -1,
+    "Description": ""
+  },
+  {
+    "id": "AutomationPlus",
+    "src": "res/AutomationPlus.json",
+    "SteamID": 2922412179,
+    "Description": "Automation Plus"
+  },
+  {
+    "id": "AdvancedTeleporters",
+    "src": "res/AdvancedTeleporters.json",
+    "SteamID": 3723869289,
+    "Description": "Advanced Teleporters"
+  }
 ]
