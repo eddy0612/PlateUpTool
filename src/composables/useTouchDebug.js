@@ -14,9 +14,52 @@ function getInitialEnabled() {
   return false
 }
 
+function getInitialViewportEnabled() {
+  if (!isClient) return false
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const v = params.get('viewportDebug') || params.get('showViewport') || params.get('showResolution')
+    if (v === '1' || v === 'true') return true
+  } catch {}
+  return false
+}
+
 const showTouchDebug = ref(getInitialEnabled())
+const showViewportDebug = ref(getInitialViewportEnabled())
 const touchDebugCounter = ref(0)
 const touchDebugLog = ref([])
+
+const viewportWidth = ref(0)
+const viewportHeight = ref(0)
+const visualViewportWidth = ref(null)
+const visualViewportHeight = ref(null)
+const viewportDpr = ref(1)
+
+function updateViewportInfo() {
+  if (!isClient) return
+  try {
+    viewportWidth.value = Math.round(window.innerWidth || document.documentElement?.clientWidth || 0)
+    viewportHeight.value = Math.round(window.innerHeight || document.documentElement?.clientHeight || 0)
+    viewportDpr.value = window.devicePixelRatio || 1
+    if (window.visualViewport) {
+      visualViewportWidth.value = Math.round(window.visualViewport.width)
+      visualViewportHeight.value = Math.round(window.visualViewport.height)
+    } else {
+      visualViewportWidth.value = null
+      visualViewportHeight.value = null
+    }
+  } catch {}
+}
+
+if (isClient) {
+  // keep values current when enabled or when developer wants to inspect
+  window.addEventListener('resize', updateViewportInfo)
+  if (window.visualViewport && window.visualViewport.addEventListener) {
+    window.visualViewport.addEventListener('resize', updateViewportInfo)
+  }
+  // initial fill
+  updateViewportInfo()
+}
 
 function setTouchDebugEnabled(value) {
   showTouchDebug.value = !!value
@@ -71,11 +114,18 @@ if (isClient) {
 export function useTouchDebug() {
   return {
     showTouchDebug,
+    showViewportDebug,
     touchDebugLog,
     logTouchDebug,
     clearTouchDebugLog,
     copyTouchDebugLog,
     setTouchDebugEnabled,
     toggleTouchDebug,
+    // viewport info
+    viewportWidth,
+    viewportHeight,
+    visualViewportWidth,
+    visualViewportHeight,
+    viewportDpr,
   }
 }

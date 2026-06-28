@@ -136,6 +136,16 @@
         <div v-for="entry in touchDebugLog" :key="entry.id" class="touch-debug-line">{{ entry.text }}</div>
       </div>
 
+      <div v-if="showViewportDebug" class="touch-debug-panel">
+        <div class="touch-debug-header">
+          <div class="touch-debug-title">Viewport</div>
+          <div class="touch-debug-actions">
+            <button type="button" class="touch-debug-action" @click="copyViewportInfo">Copy</button>
+          </div>
+        </div>
+        <div class="touch-debug-state">inner={{ viewportWidth }}x{{ viewportHeight }} visual={{ visualViewportWidth != null ? (visualViewportWidth + 'x' + visualViewportHeight) : 'n/a' }} dpr={{ viewportDpr }}</div>
+      </div>
+
       <div class="tabs" v-show="!tabsHidden">
         <div
           v-for="tab in state.tabs"
@@ -600,12 +610,28 @@ export default {
     const isMoveDragging = ref(false)
     const moveDragStartMouse = ref(null)
 
-    const { showTouchDebug, touchDebugLog, logTouchDebug, clearTouchDebugLog, copyTouchDebugLog } = useTouchDebug()
+    const { showTouchDebug, touchDebugLog, logTouchDebug, clearTouchDebugLog, copyTouchDebugLog,
+      showViewportDebug, viewportWidth, viewportHeight, visualViewportWidth, visualViewportHeight, viewportDpr } = useTouchDebug()
 
     async function copyTouchDebug() {
       const copied = await copyTouchDebugLog()
       if (copied) toast('Touch debug copied to clipboard.')
       else toast('Unable to copy touch debug log.')
+    }
+
+    async function copyViewportInfo() {
+      if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
+        toast('Unable to copy viewport info.')
+        return
+      }
+      try {
+        const visual = visualViewportWidth != null ? `${visualViewportWidth}x${visualViewportHeight}` : 'n/a'
+        const text = `inner=${viewportWidth}x${viewportHeight} visual=${visual} dpr=${viewportDpr}`
+        await navigator.clipboard.writeText(text)
+        toast('Viewport info copied to clipboard.')
+      } catch (e) {
+        toast('Unable to copy viewport info.')
+      }
     }
 
     const pendingMoveCellDebug = computed(() => pendingMoveCell.value ? `${pendingMoveCell.value.x},${pendingMoveCell.value.y}` : '-')
@@ -2616,7 +2642,8 @@ export default {
       rotateCell, selectedCells, isSelected, addTab, selectTab,
       selectedLabelIds,
       gridEl, viewportEl, isDragging, moveDragActive, dragStart, dragEnd, dragRectStyle,
-      showTouchDebug, touchDebugLog, pendingMoveCellDebug, isMoveDraggingDebug, activeGridPointerDebug, dragStartDebug, dragEndDebug, clearTouchDebugLog, copyTouchDebug,
+      showTouchDebug, showViewportDebug, touchDebugLog, pendingMoveCellDebug, isMoveDraggingDebug, activeGridPointerDebug, dragStartDebug, dragEndDebug, clearTouchDebugLog, copyTouchDebug,
+      viewportWidth, viewportHeight, visualViewportWidth, visualViewportHeight, viewportDpr, copyViewportInfo,
       tabsHidden,
       handleCellClick, handleCellContextMenu, onGridPointerDown, onGridTouchStart, cellClasses, getDisplayCell,
       editingTabId, editingTabLabel, onTabPointerDown, onTabPointerMove, onTabPointerUp, cancelTabRenameTimer, commitTabRename, cancelTabRename,
