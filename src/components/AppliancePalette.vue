@@ -462,6 +462,7 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import AddLabelDialog from './AddLabelDialog.vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
+import { getRawAppliances } from '../appliancePalette'
 import { useGrid, convertCellsToGameId } from '../composables/useGrid'
 import { useTouchDebug } from '../composables/useTouchDebug'
 import { readPngText, writePngText, writeStegoText, readStegoFromBytes, dataUrlToBytes, bytesToDataUrl, downloadDataUrl, readFileAsBytes, writePngDpi } from '../composables/usePngMetadata'
@@ -606,6 +607,17 @@ export default {
       bbInventoryVisible.value = false
     }
 
+    const baseLabelMap = ref({})
+    // Load raw appliance entries to obtain base ItemDescription for items with Alternatives
+    getRawAppliances().then(list => {
+      try {
+        for (const entry of list) {
+          const id = Number(entry.GameID ?? entry.gameid ?? entry.gameId)
+          if (!Number.isNaN(id)) baseLabelMap.value[id] = entry.ItemDescription || baseLabelMap.value[id]
+        }
+      } catch (e) { /* ignore */ }
+    }).catch(() => {})
+
     const inventoryList = computed(() => {
       const counts = {}
       for (const { cell } of flatGrid.value) {
@@ -615,8 +627,10 @@ export default {
       }
       return Object.entries(counts)
         .map(([id, count]) => {
-          const p = palette.value.find(a => a.id === Number(id))
-          return { id, count, label: p?.label || id, icon: p?.icon || '' }
+          const numericId = Number(id)
+          const p = palette.value.find(a => a.id === numericId)
+          const baseLabel = baseLabelMap.value[numericId]
+          return { id, count, label: baseLabel || p?.label || id, icon: p?.icon || '' }
         })
         .sort((a, b) => b.count - a.count)
     })
