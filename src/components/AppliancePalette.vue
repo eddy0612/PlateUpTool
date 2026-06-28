@@ -162,7 +162,8 @@
               <canvas v-if="isImageIcon(item.icon)" :data-icon="item.icon" class="inv-canvas"></canvas>
               <span v-else class="inventory-icon-emoji">{{ item.icon }}</span>
             </div>
-            <span class="inventory-count-badge">{{ item.count }}</span>
+            <span v-if="showInventoryIcons" class="inventory-count-badge">{{ item.count }}</span>
+            <span v-else class="inventory-count-text">{{ item.count }}</span>
             <span class="inventory-multiply">×</span>
             <span class="inventory-name">{{ item.label }}</span>
           </div>
@@ -416,7 +417,8 @@
                   <canvas v-if="isImageIcon(item.icon)" :data-icon="item.icon" class="inv-canvas"></canvas>
                   <span v-else class="inventory-icon-emoji">{{ item.icon }}</span>
                 </div>
-                <span class="inventory-count-badge">{{ item.count }}</span>
+                <span v-if="showInventoryIcons" class="inventory-count-badge">{{ item.count }}</span>
+                <span v-else class="inventory-count-text">{{ item.count }}</span>
                 <span class="inventory-multiply">&#215;</span>
                 <span class="inventory-name">{{ item.label }}</span>
               </div>
