@@ -29,7 +29,13 @@
           <button v-if="canScrollLeft" class="bb-chevron bb-chevron-left" @click="scrollPalette(-200)" aria-label="Scroll left">&#8249;</button>
           <div :class="['bb-scroll', { 'bb-scroll-appliances': paletteTab === 'appliances' }]" ref="bbScrollEl" @scroll="updateScrollChevrons">
             <template v-if="isPreviewTab">
-              <div class="bb-preview-msg">Preview — switch to a coloured tab on the left to place items</div>
+              <div class="bb-preview-action">
+                <button class="bb-inv-btn" @click="openBbInventory" title="Open inventory">Show item inventory</button>
+                <div class="bb-preview-msg">
+                  <div class="bb-preview-title">Preview</div>
+                  <div class="bb-preview-sub">Switch to a coloured tab on the left to place items</div>
+                </div>
+              </div>
             </template>
             <template v-else-if="isStructureMode">
               <div
@@ -606,6 +612,21 @@ export default {
     function closeBbInventory() {
       bbInventoryVisible.value = false
     }
+
+    // Close inventory popup on Escape key
+    function onBbInventoryKey(e) {
+      if (!bbInventoryVisible.value) return
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        closeBbInventory()
+      }
+    }
+
+    watch(bbInventoryVisible, (val) => {
+      if (val) window.addEventListener('keydown', onBbInventoryKey, true)
+      else window.removeEventListener('keydown', onBbInventoryKey, true)
+    })
+
+    onUnmounted(() => { window.removeEventListener('keydown', onBbInventoryKey, true) })
 
     const baseLabelMap = ref({})
     // Load raw appliance entries to obtain base ItemDescription for items with Alternatives
@@ -4248,10 +4269,32 @@ html.dark .bb-inv-chevron-down { background: linear-gradient(to top, rgba(13,27,
 }
 .bb-swatch { width: 28px; height: 28px; border-radius: 4px; flex-shrink: 0; margin-bottom: 4px; }
 .bb-preview-msg {
-  display: flex; align-items: center; justify-content: center; flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1;
   font-size: 11px; color: #6b7a8d; font-style: italic; padding: 0 12px;
   white-space: normal; text-align: center;
 }
+.bb-preview-title { font-weight: 700; font-style: normal; color: #3a5070; font-size: 11px; }
+.bb-preview-sub { font-size: 11px; color: #6b7a8d; font-style: italic; margin-top: 2px }
+
+/* Preview action: inventory button + message */
+.bb-preview-action {
+  display: flex; align-items: center; gap: 8px; flex: 1; padding: 0 8px;
+}
+.bb-inv-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f2f7ff 100%);
+  border: 1px solid #d6e6fb; color: #154fbd;
+  padding: 8px 10px; border-radius: 10px; font-weight: 700; font-size: 12px;
+  box-shadow: 0 6px 18px rgba(31,121,255,0.12);
+  cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.bb-inv-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(31,121,255,0.16); }
+.bb-inv-btn { font-size: 13px }
+
+/* Dark mode adjustments */
+html.dark .bb-inv-btn { background: linear-gradient(180deg, #0f1a2a 0%, #0c1524 100%); border-color: #20314a; color: #7fb1ff; box-shadow: 0 6px 18px rgba(10,20,36,0.4); }
+html.dark .bb-inv-btn svg { color: #7fb1ff; }
+html.dark .bb-inv-btn-label { color: #7fb1ff; }
 .bb-tool-btn {
   background: none;
   font-family: inherit;
