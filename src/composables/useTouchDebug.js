@@ -53,12 +53,41 @@ function updateViewportInfo() {
 
 if (isClient) {
   // keep values current when enabled or when developer wants to inspect
-  window.addEventListener('resize', updateViewportInfo)
-  if (window.visualViewport && window.visualViewport.addEventListener) {
-    window.visualViewport.addEventListener('resize', updateViewportInfo)
+  // Debounced notification logic: dispatch `plateup-viewport-changed` when
+  // the measured viewport metrics actually change.
+  let _prev = {
+    w: viewportWidth.value,
+    h: viewportHeight.value,
+    vw: visualViewportWidth.value,
+    vh: visualViewportHeight.value,
+    dpr: viewportDpr.value,
   }
-  // initial fill
-  updateViewportInfo()
+  let _timer = null
+  function scheduleViewportChangeIfNeeded() {
+    const now = { w: viewportWidth.value, h: viewportHeight.value, vw: visualViewportWidth.value, vh: visualViewportHeight.value, dpr: viewportDpr.value }
+    const changed = now.w !== _prev.w || now.h !== _prev.h || now.vw !== _prev.vw || now.vh !== _prev.vh || now.dpr !== _prev.dpr
+    if (!changed) return
+    // update previous snapshot
+    _prev = now
+    if (_timer) clearTimeout(_timer)
+    _timer = setTimeout(() => {
+      try { window.dispatchEvent(new CustomEvent('plateup-viewport-changed')) } catch (e) {}
+      _timer = null
+    }, 150)
+  }
+
+  // Single handler invoked by resize listeners. Ensures update + schedule
+  function _viewportHandler() {
+    try { updateViewportInfo() } catch (e) {}
+    try { scheduleViewportChangeIfNeeded() } catch (e) {}
+  }
+
+  window.addEventListener('resize', _viewportHandler)
+  if (window.visualViewport && window.visualViewport.addEventListener) {
+    window.visualViewport.addEventListener('resize', _viewportHandler)
+  }
+  // initial fill + possible notification
+  _viewportHandler()
 }
 
 function setTouchDebugEnabled(value) {
