@@ -158,7 +158,7 @@
         </div>
         <div class="inventory-list">
           <div v-for="item in inventoryList" :key="item.id" class="inventory-row">
-            <div class="inventory-icon">
+            <div v-if="showInventoryIcons" class="inventory-icon">
               <canvas v-if="isImageIcon(item.icon)" :data-icon="item.icon" class="inv-canvas"></canvas>
               <span v-else class="inventory-icon-emoji">{{ item.icon }}</span>
             </div>
@@ -412,7 +412,7 @@
             </button>
             <div class="bb-inv-list" ref="bbInvListEl" @scroll="updateInvScrollChevrons">
               <div v-for="item in inventoryList" :key="item.id" class="inventory-row">
-                <div class="inventory-icon">
+                <div v-if="showInventoryIcons" class="inventory-icon">
                   <canvas v-if="isImageIcon(item.icon)" :data-icon="item.icon" class="inv-canvas"></canvas>
                   <span v-else class="inventory-icon-emoji">{{ item.icon }}</span>
                 </div>
@@ -942,6 +942,8 @@ export default {
     const paletteGridStyle = computed(() => ({
       gridTemplateColumns: `repeat(${paletteColumns.value}, ${ICON_SIZE}px)`
     }))
+
+    const showInventoryIcons = computed(() => paletteColumns.value > 1 || bottomBarMode)
 
     const suppressNextClickForId = ref(null)
 
@@ -3121,6 +3123,7 @@ export default {
     }
 
     return { state, filteredPalette, addToGrid, hoverLabel, addAllToGrid, cutToClipboard, copyToClipboard, startPaste, removeSelected, viewportBoxHeight, isStructureMode, selectedStructureTool, setStructureTool, structureTools, isPreviewTab, inventoryList, inventoryTotal, isImageIcon, onPaletteItemClick, onPaletteItemPointerDown, rightPanelStyle, paletteGridStyle,
+      showInventoryIcons,
       tabsHidden,
       // blueprints
       paletteTab, blueprintFilter, filteredBlueprints, createBlueprint, applyBlueprint, deleteBlueprint, onBlueprintPointerDown,
