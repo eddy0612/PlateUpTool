@@ -728,6 +728,12 @@ export default {
       window.addEventListener('plateup-undo', undo)
       // Listen for rezoom requests (e.g. after complete import)
       window.addEventListener('plateup-rezoom', () => nextTick(() => resetZoom()))
+      // Recompute best-fit zoom when the viewport changes (dispatched by
+      // `useTouchDebug` when visual metrics change). Debounced there.
+      window.addEventListener('plateup-viewport-changed', () => nextTick(() => resetZoom()))
+      // Also respond to orientation changes which may not always trigger
+      // visualViewport resize events on some mobile browsers.
+      window.addEventListener('orientationchange', () => nextTick(() => resetZoom()))
       const onDocClick = (e) => {
         // close menus when clicking outside
         if (showMainMenu.value) {
