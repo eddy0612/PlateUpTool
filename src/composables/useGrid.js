@@ -259,6 +259,7 @@ export async function canonicalizeV1Cells(cells) {
       const orig = c.cell || c
       let gameId = Number(orig.applianceId)
       if (Number.isNaN(gameId)) continue
+      const origGameId = gameId
       const seen = new Set()
       let entry = __applianceByGameId.get(gameId)
       let mappedExtraData = null
@@ -280,11 +281,18 @@ export async function canonicalizeV1Cells(cells) {
         if (entry.Alternatives && typeof entry.Alternatives === 'object') {
           const altKey = String(origExtra)
           const altEntry = entry.Alternatives[altKey] || entry.Alternatives['0']
-          if (altEntry && altEntry.MapExtraData != null) mappedExtraData = Number(altEntry.MapExtraData)
+          // Only apply Alternatives MapExtraData when we don't already have an
+          // alias-provided MapExtraData (prefer alias MapExtraData). Also
+          // treat 0 as absent so Alternatives can provide a fallback.
+          if (altEntry && altEntry.MapExtraData != null && (mappedExtraData === null || mappedExtraData === 0)) {
+            mappedExtraData = Number(altEntry.MapExtraData)
+          }
         }
       } catch (e) {}
       const newCell = { ...orig, applianceId: gameId }
-      if (mappedExtraData !== null) newCell.extraData = mappedExtraData
+      if (mappedExtraData !== null) {
+        newCell.extraData = mappedExtraData
+      }
       out.push({ dx: c.dx, dy: c.dy, cell: newCell })
     } catch (e) { /* skip on error */ }
   }
