@@ -248,6 +248,38 @@ export async function convertCellsToGameId(cells) {
     .filter(Boolean)
 }
 
+// Canonicalize v1 cells by following MapGameId chains and applying MapExtraData.
+// Drops cells whose final canonical entry has Keep === false.
+export async function canonicalizeV1Cells(cells) {
+  await _loadApplianceKeepMap()
+  if (!__applianceByGameId) return cells
+  const out = []
+  for (const c of cells) {
+    try {
+      const orig = c.cell || c
+      let gameId = Number(orig.applianceId)
+      if (Number.isNaN(gameId)) continue
+      const seen = new Set()
+      let entry = __applianceByGameId.get(gameId)
+      let mappedExtraData = null
+      while (entry && entry.MapGameId != null && Number(entry.MapGameId) !== -1) {
+        if (entry.MapExtraData != null && mappedExtraData === null) mappedExtraData = Number(entry.MapExtraData)
+        const next = Number(entry.MapGameId)
+        if (seen.has(next)) break
+        seen.add(next)
+        gameId = next
+        entry = __applianceByGameId.get(gameId)
+      }
+      if (!entry) continue
+      if (entry.Keep === false) continue
+      const newCell = { ...orig, applianceId: gameId }
+      if (mappedExtraData !== null) newCell.extraData = mappedExtraData
+      out.push({ dx: c.dx, dy: c.dy, cell: newCell })
+    } catch (e) { /* skip on error */ }
+  }
+  return out
+}
+
 function isTeleporter(cell) {
   return cell?.applianceId === TELEPORTER_APPLIANCE_ID
 }
@@ -1780,48 +1812,44 @@ async function loadGridFromState() {
     applianceMapLoading.value = false
   }
   let restored = 0
-  for (const { x, y, ...cell } of state.gridCells) {
-    if (grid.value[y] && x < grid.value[y].length) {
-      // If this is a v0 URL (internal sequential ID), convert to GameID
-      if (state.URLVersion === 0 && cell && cell.applianceId != null && __applianceByInternalId && applianceMapAvailable) {
-        const internalId = Number(cell.applianceId)
-        const entry = __applianceByInternalId.get(internalId)
-        if (entry) {
-          if (entry.Keep === false) continue
-          const gameId = Number(entry.GameID ?? entry.gameid ?? entry.gameId)
-          if (!Number.isNaN(gameId)) cell.applianceId = gameId
-          else continue
-        } else {
-          // unknown internal ID — drop
-          continue
-        }
-      } else if (state.URLVersion === 1 && cell && cell.applianceId != null && __applianceByGameId && applianceMapAvailable) {
-        // For v1, follow MapGameId chains to canonical entry and check Keep.
-        // Also apply MapExtraData from the first entry in the chain if present.
-        let gameId = Number(cell.applianceId)
-        const seen = new Set()
-        let entry = __applianceByGameId.get(gameId)
-        let mappedExtraData = null
-        while (entry && entry.MapGameId != null && Number(entry.MapGameId) !== -1) {
-          if (entry.MapExtraData != null && mappedExtraData === null) mappedExtraData = Number(entry.MapExtraData)
-          const next = Number(entry.MapGameId)
-          if (seen.has(next)) break
-          seen.add(next)
-          gameId = next
-          entry = __applianceByGameId.get(gameId)
-        }
-        if (entry) {
-          if (!Number.isNaN(gameId)) cell.applianceId = gameId
-          if (mappedExtraData !== null) cell.extraData = mappedExtraData
-          if (entry.Keep === false) continue
-        } else {
-          continue
+  // If this state is v1 and the appliance map is available, perform batch
+  // canonicalization via canonicalizeV1Cells to avoid duplicating mapping logic.
+  if (state.URLVersion === 1 && applianceMapAvailable) {
+    try {
+      const inputCells = state.gridCells.map(({ x, y, ...cell }) => ({ dx: x, dy: y, cell }))
+      const canonical = await canonicalizeV1Cells(inputCells)
+      for (const { dx, dy, cell } of canonical) {
+        if (grid.value[dy] && dx < grid.value[dy].length) {
+          if (!cell.iid) cell.iid = genInstanceId()
+          grid.value[dy][dx] = cell
+          restored++
         }
       }
-      // ensure loaded cells have an instance id so labels can anchor to appliance instances
-      if (!cell.iid) cell.iid = genInstanceId()
-      grid.value[y][x] = cell
-      restored++
+    } catch (e) {
+      // Fall back to per-cell processing on error
+    }
+  } else {
+    for (const { x, y, ...cell } of state.gridCells) {
+      if (grid.value[y] && x < grid.value[y].length) {
+        // If this is a v0 URL (internal sequential ID), convert to GameID
+        if (state.URLVersion === 0 && cell && cell.applianceId != null && __applianceByInternalId && applianceMapAvailable) {
+          const internalId = Number(cell.applianceId)
+          const entry = __applianceByInternalId.get(internalId)
+          if (entry) {
+            if (entry.Keep === false) continue
+            const gameId = Number(entry.GameID ?? entry.gameid ?? entry.gameId)
+            if (!Number.isNaN(gameId)) cell.applianceId = gameId
+            else continue
+          } else {
+            // unknown internal ID — drop
+            continue
+          }
+        }
+        // ensure loaded cells have an instance id so labels can anchor to appliance instances
+        if (!cell.iid) cell.iid = genInstanceId()
+        grid.value[y][x] = cell
+        restored++
+      }
     }
   }
 

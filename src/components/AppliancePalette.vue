@@ -469,7 +469,7 @@ import AddLabelDialog from './AddLabelDialog.vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
 import { getRawAppliances } from '../appliancePalette'
-import { useGrid, convertCellsToGameId } from '../composables/useGrid'
+import { useGrid, convertCellsToGameId, canonicalizeV1Cells } from '../composables/useGrid'
 import { useTouchDebug } from '../composables/useTouchDebug'
 import { readPngText, writePngText, writeStegoText, readStegoFromBytes, dataUrlToBytes, bytesToDataUrl, downloadDataUrl, readFileAsBytes, writePngDpi } from '../composables/usePngMetadata'
 import { alert, confirm, toast } from '../utils/ui'
@@ -1673,6 +1673,8 @@ export default {
         const raw = await convertCellsToGameId(cells.map(c => ({ ...c.cell, _dx: c.dx, _dy: c.dy })))
         if (raw) cells = raw.map(c => { const { _dx, _dy, ...cell } = c; return { dx: _dx, dy: _dy, cell } })
       }
+      // Ensure canonicalization is applied (v0->GameID conversion above guarantees GameIDs)
+      try { cells = await canonicalizeV1Cells(cells) } catch (e) { /* ignore */ }
       await startPasteFromCells({ cells, labels: labels || [] })
     }
 
@@ -2762,6 +2764,8 @@ export default {
               const raw = await convertCellsToGameId(cells.map(c => ({ ...c.cell, _dx: c.dx, _dy: c.dy })))
               if (raw) cells = raw.map(c => { const { _dx, _dy, ...cell } = c; return { dx: _dx, dy: _dy, cell } })
             }
+            // Ensure v0->GameID conversion done above, then always canonicalize mapped GameIDs
+            try { cells = await canonicalizeV1Cells(cells) } catch (e) { /* ignore */ }
             await startPasteFromCells({ cells, labels: labels || [] })
             return
           }
@@ -2820,10 +2824,11 @@ export default {
           // Legacy format uses internal IDs — convert to GameIDs
           const rawCells = parsed.gridCells.map(c => ({ applianceId: c.applianceId, rotation: c.rotation ?? 0, extraData: c.extraData ?? 0, _dx: c.x - minX, _dy: c.y - minY }))
           const rawConverted = await convertCellsToGameId(rawCells)
-          const convertedCells = (rawConverted ?? rawCells).map(c => {
+          let convertedCells = (rawConverted ?? rawCells).map(c => {
             const { _dx, _dy, ...cell } = c
             return { dx: _dx, dy: _dy, cell: { ...cell, tabIds: [] } }
           })
+          try { convertedCells = await canonicalizeV1Cells(convertedCells) } catch (e) { /* ignore */ }
           await startPasteFromCells(convertedCells)
           return
         }

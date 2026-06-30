@@ -1,0 +1,24 @@
+(async () => {
+  const raw = localStorage.getItem('plateup-blueprints')
+  if (!raw) return console.error('No blueprints found in localStorage key plateup-blueprints')
+  let list
+  try { list = JSON.parse(raw) } catch (e) { return console.error('Failed to parse blueprints JSON', e) }
+
+  list.forEach((bp, bi) => {
+    const name = bp.name || bp.id || `blueprint#${bi}`
+    const version = bp.version ?? '(none)'
+    const cells = Array.isArray(bp.cells) ? bp.cells : []
+    const rows = cells.map((c, i) => {
+      const ap = (c.cell && (c.cell.applianceId ?? c.cell.applianceid)) ?? (c.applianceId ?? c.applianceid ?? null)
+      return { index: i, dx: c.dx ?? c._dx ?? c.dxCell ?? null, dy: c.dy ?? c._dy ?? c.dyCell ?? null, applianceId: ap }
+    })
+    const idNums = rows.map(r => (r.applianceId != null ? Number(r.applianceId) : null))
+    const unique = [...new Set(idNums.filter(n => n !== null && !Number.isNaN(n)))]
+    console.group(`${name} — version ${version} — cells ${cells.length}`)
+    console.table(rows.slice(0, 40))
+    console.log('Unique appliance IDs count:', unique.length)
+    console.log('Unique appliance IDs (first 200):', unique.slice(0,200))
+    console.log('Positive IDs:', idNums.filter(n => n > 0).length, 'Negative IDs:', idNums.filter(n => n < 0).length, 'Null/NaN:', idNums.filter(n => n == null || Number.isNaN(n)).length)
+    console.groupEnd()
+  })
+})();
