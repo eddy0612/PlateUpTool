@@ -3881,5 +3881,46 @@
         "Reason": "Item does not take space on grid",
         "GameID": -302306254,
         "MapGameId": -1
+    },
+    {
+        "OriginalFileName": "",
+        "Keep": false,
+        "ItemDescription": "Grabber - Rotating Left (Legacy)",
+        "Reason": "Deprecated - Now uses proper id and extra data",
+        "GameID": -99,
+        "MapGameId": -331651461,
+        "MapExtraData": 1
+    },
+    {
+        "Keep": false,
+        "ItemDescription": "Grabber - Rotating Right (Legacy)",
+        "Reason": "Deprecated - Now uses proper id and extra data",
+        "GameID": -98,
+        "MapGameId": -331651461,
+        "MapExtraData": 3
+    },
+    {
+        "Keep": false,
+        "ItemDescription": "Ice Cream - Strawberry (Legacy)",
+        "Reason": "Deprecated - Moved to extra data. Was manually created",
+        "GameID": -96,
+        "MapGameId": -1533430406,
+        "MapExtraData": 2
+    },
+    {
+        "Keep": false,
+        "ItemDescription": "Ice Cream - Chocolate (Legacy)",
+        "Reason": "Deprecated - Moved to extra data. Was manually created",
+        "GameID": -97,
+        "MapGameId": -1533430406,
+        "MapExtraData": 1
+    },
+    {
+        "Keep": false,
+        "ItemDescription": "Ice Cream - Vanilla (Legacy)",
+        "Reason": "Deprecated - Moved to extra data. Was manually created",
+        "GameID": -95,
+        "MapGameId": -1533430406,
+        "MapExtraData": 0
     }
 ]
