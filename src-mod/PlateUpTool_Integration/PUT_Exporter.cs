@@ -410,16 +410,6 @@ namespace PlateUpTool_Integration
         static int STAGE4_WAITONCHAIRS = 4;
         private static int ImportStage = STAGE0_IDLE;
 
-
-
-        private const int ID_GRABBER_L = 367215780;
-        private const int ID_GRABBER_R = -961856961;
-        private const int ID_GRABBER_S = -331651461;    // GrabberRotatingS (the bidirectional one)
-        private const int ID_ICECREAM_CHOC = -46968470;
-        private const int ID_ICECREAM_STRAW = -2094600179;
-        private const int ID_ICECREAM_VAN = 26405173;
-        private const int ID_ICECREAM = -1533430406;
-
         // DumpData menu toggle is handled in the menu implementation
         [StructLayout(LayoutKind.Sequential, Size = 1)]
         protected struct PUT_DummyComponent : IComponentData, IModComponent
@@ -680,23 +670,52 @@ namespace PlateUpTool_Integration
                         }
 
                         // -----------------------------------------------------------------------------------
-                        // Corner grabbers are a single entity with an attribute saying which orientation
-                        // they point. However in PUT they are represented as separate appliances for each
-                        // direction so override the appliance type based on the orientation
+                        // ExtraData handling:
                         // -----------------------------------------------------------------------------------
+                        // We use extraData to help identify alternatives for things like rotating grabbers,
+                        // icecream. We cannot do things based off ID for example as there are mods which also
+                        // provide rotating grabbers. Therefore try to do things based on component data,
+                        // assuming we never have an item with two things that drive alternatives (we do have
+                        // additionalData if we ever need it).
+                        // WARNING: The same order of priority needs to be mirrored into the FixUpAppliance,
+                        // ReallyExport and ScanGameGrid routines. Search for "ExtraData handling" to find
+                        // the places
+                        // -----------------------------------------------------------------------------------
+
+                        // Rotating grabbers have a CConveyPushRotatable component, and set extraData ==  Target
                         if (base.EntityManager.HasComponent<CConveyPushRotatable>(primaryOccupant))
                         {
-                            PlateUpTool_Integration.TDbg("Corner grabber!!!");
+                            PlateUpTool_Integration.TDbg("CConveyPushRotatable so some form of corner grabber");
                             var rotateComponent = base.EntityManager.GetComponentData<CConveyPushRotatable>(primaryOccupant);
-                            switch (rotateComponent.Target)
-                            {
-                                case Orientation.Left: PlateUpTool_Integration.TDbg("Corner grabber : LEFT!!!"); forceAction = ID_GRABBER_L; break;
-                                case Orientation.Right: PlateUpTool_Integration.TDbg("Corner grabber : RIGHT!!!"); forceAction = ID_GRABBER_R; break;
-                                case Orientation.Down: PlateUpTool_Integration.TDbg("Corner grabber : DOWN!!!"); break; // Unexpected - leave as is
-                                case Orientation.Up: PlateUpTool_Integration.TDbg("Corner grabber : Up!!!"); break; // Normal straight on, leave as is
-                                case Orientation.Null: PlateUpTool_Integration.TDbg("Corner grabber : NULL!!!"); break; // Unexpected - leave as is
-                            }
+                            PlateUpTool_Integration.TDbg("Rotation: " + (int) rotateComponent.Target);
+                            forceExtraData = (int) rotateComponent.Target;
                         }
+
+                        // Teleporters have a CConveyTeleport and set extraData == GroupID (their id)
+                        else if (base.EntityManager.HasComponent<CConveyTeleport>(primaryOccupant))
+                        {
+                            PlateUpTool_Integration.TDbg("CConveyTeleport so some form of teleporter");
+                            var teleportData = base.EntityManager.GetComponentData<CConveyTeleport>(primaryOccupant);
+                            PlateUpTool_Integration.TDbg("Group Id: " + teleportData.GroupID);
+                            forceExtraData = teleportData.GroupID;
+                        }
+
+
+                        // Icecream dispensers - these are represented as a CVariableProvider and have a variable
+                        // variable (in this example, flavour) they are dispensing.
+                        else if (base.EntityManager.HasComponent<CVariableProvider>(primaryOccupant))
+                        {
+                            PlateUpTool_Integration.TDbg("CVariableProvider - for example icecream");
+                            var variableData = base.EntityManager.GetComponentData<CVariableProvider>(primaryOccupant);
+                            PlateUpTool_Integration.TDbg("Variable Value: " + variableData.Current);
+                            forceExtraData = variableData.Current;
+                        }
+
+                        // -----------------------------------------------------------------------------------
+                        // AdditionalData handling:  In ReallyExport and also needed in ScanGameGrid during import
+                        // -----------------------------------------------------------------------------------
+
+                        // SmartGrabber - additional data is the list of things in the programmed requirement
                         if (base.EntityManager.HasComponent<CConveyPushItems>(primaryOccupant))
                         {
                             var sgData = base.EntityManager.GetComponentData<CConveyPushItems>(primaryOccupant);
@@ -713,10 +732,8 @@ namespace PlateUpTool_Integration
                             }
                         }
 
-                        // -----------------------------------------------------------------------------------
-                        // Blueprint stores - capture the stored appliance ID, whether it has been copied,
+                        // Blueprint stores - Capture the stored appliance ID, whether it has been copied,
                         // and the price so they can be restored on import. Encoded as [ApplianceID, HasBeenCopied, Price]
-                        // -----------------------------------------------------------------------------------
                         if (base.EntityManager.HasComponent<CBlueprintStore>(primaryOccupant))
                         {
                             var bpData = base.EntityManager.GetComponentData<CBlueprintStore>(primaryOccupant);
@@ -727,44 +744,6 @@ namespace PlateUpTool_Integration
                                 (int)bpData.Price
                             };
                         }
-
-                        // -----------------------------------------------------------------------------------
-                        // Teleporters - these are in pairs, and their number is represented in the GroupID
-                        // attribute. Extract that and pass it over to PUT so we can keep the same pairings
-                        // -----------------------------------------------------------------------------------
-                        if (base.EntityManager.HasComponent<CConveyTeleport>(primaryOccupant))
-                        {
-                            PlateUpTool_Integration.TDbg("Teleporter!!!");
-                            var teleportData = base.EntityManager.GetComponentData<CConveyTeleport>(primaryOccupant);
-                            PlateUpTool_Integration.TDbg("Group Id: " + teleportData.GroupID);
-                            forceExtraData = teleportData.GroupID;
-                        }
-
-                        // -----------------------------------------------------------------------------------
-                        // Icecream dispensers - these have a variable which flavour they are dispensing. We
-                        // want to extract the flavour as in PUT they are represented as different appliances
-                        // -----------------------------------------------------------------------------------
-                        if (base.EntityManager.HasComponent<CVariableProvider>(primaryOccupant))
-                        {
-                            PlateUpTool_Integration.TDbg("CVariableProvider - is it icecream?");
-                            if (appliance.ID == ID_ICECREAM)
-                            {
-                                PlateUpTool_Integration.TDbg("IceCream... flavour: ");
-                                var variableData = base.EntityManager.GetComponentData<CVariableProvider>(primaryOccupant);
-                                PlateUpTool_Integration.TDbg("Variable Value: " + variableData.Current);
-                                switch (variableData.Current)
-                                {
-                                    case 0: PlateUpTool_Integration.TDbg("IceCream flavour: Vanilla"); forceAction = ID_ICECREAM_VAN; break;
-                                    case 1: PlateUpTool_Integration.TDbg("IceCream flavour: Chocolate"); forceAction = ID_ICECREAM_CHOC; break;
-                                    case 2: PlateUpTool_Integration.TDbg("IceCream flavour: Strawberry"); forceAction = ID_ICECREAM_STRAW; break;
-                                    default:
-                                        PlateUpTool_Integration.TDbg("IceCream flavour unknown (" + variableData.Current + "): forcing vanilla");
-                                        forceAction = ID_ICECREAM_VAN;
-                                        break;
-                                }
-                            }
-                        }
-
 
                         // ===================================================================================
                         // Special case for certain appliances -------------------------- ^^^^^^^^^^^^^^^^^^^^
@@ -1651,13 +1630,6 @@ namespace PlateUpTool_Integration
         // Appliance matching helpers (used by ReallyImport)
         // -------------------------------------------------------------------------------------
 
-        // Returns true if id is one of the rotating corner-grabber IDs (L/R are the split-out
-        // export representations; S is the single in-game ID with an orientation property).
-        private static bool IsRotatingGrabber(int id) => id == ID_GRABBER_L || id == ID_GRABBER_R || id == ID_GRABBER_S;
-
-        // Returns true if id is one of the three ice-cream flavour overrides.
-        private static bool IsIceCream(int id) => id == ID_ICECREAM_CHOC || id == ID_ICECREAM_STRAW || id == ID_ICECREAM_VAN;
-
         // Returns true if a cell/appliance carries a non-empty additionalData list.
         private static bool HasAdditionalData(List<int> items) => items != null && items.Count > 0;
 
@@ -1674,38 +1646,6 @@ namespace PlateUpTool_Integration
             return true;
         }
 
-        // Exact match: same applianceId + same extraData. Rotation is always correctable so
-        // is not used as a matching criterion. Cross-ID matches (any grabber, any flavour) are
-        // handled as correctable loose matches in the second pass.
-        // When the imported cell has no additionalData we prefer game appliances that also have
-        // no additionalData (same-kind preference), falling back to any match if none found.
-        private static GameAppliance FindExactMatch(PUTGridCell imp, List<GameAppliance> available)
-        {
-            var candidates = available.Where(g =>
-                (g.applianceId == imp.applianceId || (g.altId != 0 && g.altId == imp.applianceId)) &&
-                g.extraData   == imp.extraData).ToList();
-            if (candidates.Count == 0) return null;
-            // Prefer a game appliance whose additionalData state mirrors the import's
-            if (!HasAdditionalData(imp.additionalData))
-                return candidates.FirstOrDefault(g => !HasAdditionalData(g.additionalData)) ?? candidates[0];
-            return candidates[0];
-        }
-
-        // Loose match rules (correctable alternatives, used when no exact match was found):
-        //   Grabbers  – any rotating grabber (L/R/S are interchangeable; direction corrected in-game)
-        //   Ice cream – any ice-cream flavour (corrected via CVariableProvider)
-        //   Teleporters – extraData (GroupID) must still match; no looser alternative exists
-        //   Regular   – same applianceId + same extraData, any rotation (rotation is correctable)
-        private static GameAppliance FindLooseMatch(PUTGridCell imp, List<GameAppliance> available)
-        {
-            if (IsRotatingGrabber(imp.applianceId))
-                return available.FirstOrDefault(g => IsRotatingGrabber(g.applianceId));
-            if (IsIceCream(imp.applianceId))
-                return available.FirstOrDefault(g => IsIceCream(g.applianceId));
-            return available.FirstOrDefault(g =>
-                (g.applianceId == imp.applianceId || (g.altId != 0 && g.altId == imp.applianceId)) &&
-                g.extraData   == imp.extraData);
-        }
 
         // -------------------------------------------------------------------------------------
         // Placement helpers (used by ReallyImport)
@@ -1945,29 +1885,43 @@ namespace PlateUpTool_Integration
             base.EntityManager.SetComponentData(entity, position);
             PlateUpTool_Integration.TDbg("FixUp entity " + entity + ": rotation set to " + target.rotation);
 
-            // Fix grabber direction — ID_GRABBER_L/R are the export-side representations of
-            // CConveyPushRotatable.Target; ID_GRABBER_S uses normal rotation only.
-            if (IsRotatingGrabber(target.applianceId))
+            // -----------------------------------------------------------------------------------
+            // ExtraData handling:
+            // -----------------------------------------------------------------------------------
+            // We use extraData to help identify alternatives for things like rotating grabbers,
+            // icecream. We cannot do things based off ID for example as there are mods which also
+            // provide rotating grabbers. Therefore try to do things based on component data,
+            // assuming we never have an item with two things that drive alternatives (we do have
+            // additionalData if we ever need it).
+            // WARNING: The same order of priority needs to be mirrored into the FixUpAppliance,
+            // ReallyExport and ScanGameGrid routines. Search for "ExtraData handling" to find
+            // the places
+            // -----------------------------------------------------------------------------------
+            // Fix up appliance types with precedence:
+
+            // Fix grabber direction — extraData contains the Orientation to use
+            if (base.EntityManager.HasComponent<CConveyPushRotatable>(entity))
             {
                 var grabber = base.EntityManager.GetComponentData<CConveyPushRotatable>(entity);
-                switch (target.applianceId) {
-                    case ID_GRABBER_L: grabber.Target = Orientation.Left; break;
-                    case ID_GRABBER_R: grabber.Target = Orientation.Right; break;
-                    default: grabber.Target = Orientation.Up; break;
-                }
+                grabber.Target = (Orientation)target.extraData;
                 base.EntityManager.SetComponentData(entity, grabber);
                 PlateUpTool_Integration.TDbg("FixUp entity " + entity + ": grabber target set to " + grabber.Target);
             }
 
-            // Fix ice cream flavour — 0=Vanilla, 1=Chocolate, 2=Strawberry (mirrors ScanGameGrid read)
-            if (IsIceCream(target.applianceId))
+            // Teleporters have a CConveyTeleport and set extraData == GroupID (their id)
+            else if (base.EntityManager.HasComponent<CConveyTeleport>(entity))
             {
-                int flavour = target.applianceId == ID_ICECREAM_CHOC ? 1 :
-                              target.applianceId == ID_ICECREAM_STRAW ? 2 : 0;
+                // Nothing to do here: Code left here so priority tree matches the export code
+                // We dont remap IDs for teleporters, we just match
+            }
+
+            // Fix ice cream flavour — 0=Vanilla, 1=Chocolate, 2=Strawberry (mirrors ScanGameGrid read)
+            else if (base.EntityManager.HasComponent<CVariableProvider>(entity))
+            {
                 var provider = base.EntityManager.GetComponentData<CVariableProvider>(entity);
-                provider.Current = flavour;
+                provider.Current = target.extraData;
                 base.EntityManager.SetComponentData(entity, provider);
-                PlateUpTool_Integration.TDbg("FixUp entity " + entity + ": ice cream flavour set to " + flavour);
+                PlateUpTool_Integration.TDbg("FixUp entity " + entity + ": variable provider set to " + target.extraData);
             }
         }
 
@@ -2218,83 +2172,54 @@ namespace PlateUpTool_Integration
             return true;
         }
 
-        // Three-pass greedy match:
-        //   Pass 0 – imported cells with additionalData are matched against game appliances
-        //            with the exact same additionalData set (order-independent).  Only after
-        //            ALL strict matches are resolved do unresolved cells fall through.
-        //   Pass 1 – exact match (same applianceId + same extraData) for everything else.
-        //   Pass 2 – loose / correctable match for whatever remains.
+        // Matching logic (per-import-item greedy): prefer
+        // 1) applianceId + additionalData + extraData
+        // 2) applianceId + additionalData (any extraData)
+        // 3) applianceId + extraData
+        // 4) applianceId only
         // Returns the full pairings list, or null if any imported appliance cannot be matched.
         private static List<ImportPairing> MatchAppliances(
             List<PUTGridCell> imported,
             List<GameAppliance> available)
         {
             var remaining = new List<GameAppliance>(available);
-            var pairings  = new List<ImportPairing>();
+            var pairings = new List<ImportPairing>();
 
             PlateUpTool_Integration.TDbg("MatchAppliances: " + imported.Count + " imported, " + available.Count + " game appliances");
             PlateUpTool_Integration.TDbg("  Imported IDs: " + string.Join(", ", imported.Select(c => c.applianceId + "@(" + c.x + "," + c.y + ")").ToArray()));
             PlateUpTool_Integration.TDbg("  Game IDs:     " + string.Join(", ", available.Select(g => g.applianceId + (g.altId != 0 ? "/alt" + g.altId : "") + "@(" + g.putX + "," + g.putY + ")").ToArray()));
 
-            // Pass 0: strict additionalData matching
-            var strictUnmatched = new List<PUTGridCell>(); // cells with additionalData and no strict partner yet
-            var noAdditional    = new List<PUTGridCell>(); // cells without additionalData
-            foreach (var imp in imported)
+            // Greedily match each imported cell in ID order to improve determinism.
+            foreach (var imp in imported.OrderBy(c => c.applianceId))
             {
-                if (HasAdditionalData(imp.additionalData))
+                // Candidates matching by applianceId (or altId)
+                var candidates = remaining.Where(g => (g.applianceId == imp.applianceId || (g.altId != 0 && g.altId == imp.applianceId))).ToList();
+                if (candidates.Count == 0)
                 {
-                    var match = remaining.FirstOrDefault(g =>
-                        (g.applianceId == imp.applianceId || (g.altId != 0 && g.altId == imp.applianceId)) &&
-                        g.extraData == imp.extraData &&
-                        AdditionalDataMatch(g.additionalData, imp.additionalData));
-                    if (match != null)
-                    {
-                        PlateUpTool_Integration.TDbg("  Strict additionalData match: imp=" + imp.applianceId + "@(" + imp.x + "," + imp.y + ") data=[" + string.Join(",", imp.additionalData) + "] -> game@(" + match.putX + "," + match.putY + ")");
-                        pairings.Add(new ImportPairing(imp, match));
-                        remaining.Remove(match);
-                    }
-                    else
-                    {
-                        PlateUpTool_Integration.TDbg("  No strict additionalData match for imp=" + imp.applianceId + "@(" + imp.x + "," + imp.y + ") data=[" + string.Join(",", imp.additionalData) + "] -> deferring to loose passes");
-                        strictUnmatched.Add(imp);
-                    }
-                }
-                else
-                {
-                    noAdditional.Add(imp);
-                }
-            }
-
-            // Pass 1: exact match for cells without additionalData and those that had no strict partner
-            var unmatched = new List<PUTGridCell>();
-            foreach (var imp in noAdditional.Concat(strictUnmatched).OrderBy(c => c.applianceId))
-            {
-                var match = FindExactMatch(imp, remaining);
-                if (match != null)
-                {
-                    PlateUpTool_Integration.TDbg("  Exact match: imp=" + imp.applianceId + "@(" + imp.x + "," + imp.y + ") -> game=" + match.applianceId + "@(" + match.putX + "," + match.putY + ")");
-                    pairings.Add(new ImportPairing(imp, match));
-                    remaining.Remove(match);
-                }
-                else
-                {
-                    PlateUpTool_Integration.TDbg("  No exact match for imp=" + imp.applianceId + " extra=" + imp.extraData + " at (" + imp.x + "," + imp.y + ") -> deferring to loose pass");
-                    unmatched.Add(imp);
-                }
-            }
-
-            // Pass 2: loose / correctable match for anything still unmatched
-            foreach (var imp in unmatched)
-            {
-                var match = FindLooseMatch(imp, remaining);
-                if (match == null)
-                {
-                    PlateUpTool_Integration.TDbg("  FAIL loose match: imp=" + imp.applianceId + " extra=" + imp.extraData + " at (" + imp.x + "," + imp.y + ")");
+                    PlateUpTool_Integration.TDbg("  FAIL no candidate: imp=" + imp.applianceId + " at (" + imp.x + "," + imp.y + ")");
                     PlateUpTool_Integration.TDbg("  Remaining game IDs: " + string.Join(", ", remaining.Select(g => g.applianceId + (g.altId != 0 ? "/alt" + g.altId : "") + "@(" + g.putX + "," + g.putY + ")").ToArray()));
-                    PlateUpTool_Integration.TDbg("  IsRotatingGrabber(imp)=" + IsRotatingGrabber(imp.applianceId) + "  IsIceCream(imp)=" + IsIceCream(imp.applianceId));
                     return null;
                 }
-                PlateUpTool_Integration.TDbg("  Loose match: imp=" + imp.applianceId + "@(" + imp.x + "," + imp.y + ") -> game=" + match.applianceId + "@(" + match.putX + "," + match.putY + ")");
+
+                GameAppliance match = null;
+
+                // 1) applianceId + additionalData + extraData
+                if (HasAdditionalData(imp.additionalData))
+                    match = candidates.FirstOrDefault(g => AdditionalDataMatch(g.additionalData, imp.additionalData) && g.extraData == imp.extraData);
+
+                // 2) applianceId + additionalData (any extraData)
+                if (match == null && HasAdditionalData(imp.additionalData))
+                    match = candidates.FirstOrDefault(g => AdditionalDataMatch(g.additionalData, imp.additionalData));
+
+                // 3) applianceId + extraData
+                if (match == null)
+                    match = candidates.FirstOrDefault(g => g.extraData == imp.extraData);
+
+                // 4) applianceId only (fallback to any candidate)
+                if (match == null)
+                    match = candidates[0];
+
+                PlateUpTool_Integration.TDbg("  Matched: imp=" + imp.applianceId + "@(" + imp.x + "," + imp.y + ") -> game=" + match.applianceId + "@(" + match.putX + "," + match.putY + ")");
                 pairings.Add(new ImportPairing(imp, match));
                 remaining.Remove(match);
             }
@@ -2362,23 +2287,34 @@ namespace PlateUpTool_Integration
                     int effectiveId = appliance.ID;
                     int altId     = GetAltId(appliance.ID); // canonical alias (0 if none)
                     int extraData = 0;
-                    if (base.EntityManager.HasComponent<CConveyPushRotatable>(occupant))
-                    {
-                        var cr = base.EntityManager.GetComponentData<CConveyPushRotatable>(occupant);
-                        if (cr.Target == Orientation.Left)  effectiveId = ID_GRABBER_L;
-                        if (cr.Target == Orientation.Right) effectiveId = ID_GRABBER_R;
-                    }
-                    if (base.EntityManager.HasComponent<CConveyTeleport>(occupant))
-                        extraData = base.EntityManager.GetComponentData<CConveyTeleport>(occupant).GroupID;
-                    if (base.EntityManager.HasComponent<CVariableProvider>(occupant) && appliance.ID == ID_ICECREAM)
-                    {
-                        int flavour = base.EntityManager.GetComponentData<CVariableProvider>(occupant).Current;
-                        effectiveId = flavour == 1 ? ID_ICECREAM_CHOC : flavour == 2 ? ID_ICECREAM_STRAW : ID_ICECREAM_VAN;
-                    }
-
                     string rotStr = position.Rotation.ToOrientation().ToString();
                     int rotation = rotStr == "Right" ? 1 : rotStr == "Left" ? 3 : rotStr == "Down" ? 2 : 0;
 
+
+                    // -----------------------------------------------------------------------------------
+                    // ExtraData handling:
+                    // -----------------------------------------------------------------------------------
+                    // We use extraData to help identify alternatives for things like rotating grabbers,
+                    // icecream. We cannot do things based off ID for example as there are mods which also
+                    // provide rotating grabbers. Therefore try to do things based on component data,
+                    // assuming we never have an item with two things that drive alternatives (we do have
+                    // additionalData if we ever need it).
+                    // WARNING: The same order of priority needs to be mirrored into the FixUpAppliance,
+                    // ReallyExport and ScanGameGrid routines. Search for "ExtraData handling" to find
+                    // the places
+                    // -----------------------------------------------------------------------------------
+                    if (base.EntityManager.HasComponent<CConveyPushRotatable>(occupant))
+                    {
+                        extraData = (int) base.EntityManager.GetComponentData<CConveyPushRotatable>(occupant).Target;
+                    } else if (base.EntityManager.HasComponent<CConveyTeleport>(occupant)) {
+                        extraData = base.EntityManager.GetComponentData<CConveyTeleport>(occupant).GroupID;
+                    } else if (base.EntityManager.HasComponent<CVariableProvider>(occupant)) {
+                        extraData = base.EntityManager.GetComponentData<CVariableProvider>(occupant).Current;
+                    }
+
+                    // -----------------------------------------------------------------------------------
+                    // AdditionalData handling:  In ReallyExport and also needed in ScanGameGrid during import
+                    // -----------------------------------------------------------------------------------
                     List<int> adItems = null;
                     if (base.EntityManager.HasComponent<CConveyPushItems>(occupant))
                     {
