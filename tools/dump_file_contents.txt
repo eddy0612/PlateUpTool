@@ -1,0 +1,98 @@
+(async () => {
+  // Helpers (copied from the app)
+  function _readU32be(bytes, off) { return ((bytes[off] << 24) | (bytes[off+1] << 16) | (bytes[off+2] << 8) | bytes[off+3]) >>> 0 }
+  function bytesToDataUrl(bytes, mimeType = 'image/png') {
+    const CHUNK = 0x8000; let bin = ''
+    for (let i=0;i<bytes.length;i+=CHUNK) bin += String.fromCharCode(...bytes.subarray(i, i+CHUNK))
+    return `data:${mimeType};base64,${btoa(bin)}`
+  }
+  function readPngText(bytes, keyword) {
+    let off = 8
+    while (off + 12 <= bytes.length) {
+      const len = _readU32be(bytes, off)
+      const type = String.fromCharCode(bytes[off+4], bytes[off+5], bytes[off+6], bytes[off+7])
+      if (type === 'tEXt' && off + 8 + len <= bytes.length) {
+        const data = bytes.subarray(off + 8, off + 8 + len)
+        let nullIdx = -1
+        for (let i=0;i<data.length;i++) { if (data[i]===0) { nullIdx = i; break } }
+        if (nullIdx >= 0) {
+          const kw = String.fromCharCode(...data.subarray(0, nullIdx))
+          if (kw === keyword) return String.fromCharCode(...data.subarray(nullIdx + 1))
+        }
+      }
+      if (type === 'IEND') break
+      off += 12 + len
+    }
+    return null
+  }
+  function readStegoFromBytes(bytes, keyword) {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        try {
+          const w = img.width, h = img.height
+          const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h
+          const ctx = canvas.getContext('2d', { willReadFrequently: true })
+          ctx.drawImage(img, 0, 0)
+          const px = ctx.getImageData(0,0,w,h).data
+          let bi = 0, maxBits = w*h*3
+          function readByte() { let byte=0; for (let b=7;b>=0;b--) { if (bi>=maxBits) return 0; const off = Math.floor(bi/3)*4 + (bi%3); byte |= (px[off]&1) << b; bi++ } return byte }
+          function readU32() { return ((readByte()<<24)|(readByte()<<16)|(readByte()<<8)|readByte())>>>0 }
+          const MAGIC = [0x50,0x4C,0x55,0x50]
+          for (const m of MAGIC) { if (readByte() !== m) { resolve(null); return } }
+          const totalLen = readU32()
+          if (totalLen > Math.floor((maxBits - bi)/8)) { resolve(null); return }
+          let remaining = totalLen
+          while (remaining > 0) {
+            const keyLen = readByte(); remaining--
+            if (keyLen === 0) break
+            if (keyLen > remaining) { resolve(null); return }
+            let kw = ''
+            for (let i=0;i<keyLen;i++) { kw += String.fromCharCode(readByte()); remaining-- }
+            if (remaining < 4) { resolve(null); return }
+            const valLen = readU32(); remaining -= 4
+            if (valLen > remaining) { resolve(null); return }
+            let val = ''
+            for (let i=0;i<valLen;i++) { val += String.fromCharCode(readByte()); remaining-- }
+            if (kw === keyword) { resolve(val); return }
+          }
+          resolve(null)
+        } catch { resolve(null) }
+      }
+      img.onerror = () => resolve(null)
+      img.src = bytesToDataUrl(bytes)
+    })
+  }
+
+  // Ask user to pick a PNG file
+  const fi = document.createElement('input'); fi.type='file'; fi.accept='image/png'
+  fi.onchange = async (ev) => {
+    const file = ev.target.files?.[0]; if (!file) return
+    const bytes = new Uint8Array(await file.arrayBuffer())
+    // Try tEXt first, then stego LSB
+    let raw = readPngText(bytes, 'plateup-blueprint') || await readStegoFromBytes(bytes, 'plateup-blueprint')
+    if (!raw) { console.error('No plateup-blueprint payload found in this PNG'); return }
+    try {
+      const jsonText = new TextDecoder().decode(Uint8Array.from(atob(raw), c=>c.charCodeAt(0)))
+      const obj = JSON.parse(jsonText)
+      const cells = Array.isArray(obj.cells) ? obj.cells : []
+      const ids = cells.map((c,i) => ({ index:i, dx:c.dx, dy:c.dy, applianceId: (c.cell && c.cell.applianceId!=null) ? c.cell.applianceId : c.applianceId }))
+      console.log('Blueprint name:', obj.name ?? '(no name)', 'version:', obj.version ?? '(unknown)')
+      console.log('Total cells:', ids.length)
+      console.group('First 40 cells (index, dx, dy, applianceId)')
+      console.table(ids.slice(0,40))
+      console.groupEnd()
+      const idList = ids.map(x=>Number(x.applianceId)).filter(x=>!Number.isNaN(x))
+      const unique = [...new Set(idList)]
+      console.log('Unique appliance IDs count:', unique.length)
+      console.log('Unique IDs (first 200):', unique.slice(0,200))
+      // Quick check: negative vs positive
+      const negCount = idList.filter(x=>x<0).length
+      const posCount = idList.filter(x=>x>0).length
+      console.log('Positive IDs:', posCount, 'Negative IDs:', negCount)
+    } catch (e) {
+      console.error('Failed to decode blueprint payload:', e)
+    }
+  }
+  document.body.appendChild(fi); fi.click()
+})();
