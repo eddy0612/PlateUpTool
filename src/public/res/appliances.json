@@ -1729,6 +1729,9 @@
         "Reason": "",
         "GameID": -331651461,
         "Alternatives": {
+            "0": {
+                "MapExtraData": 2
+            },
             "1": {
                 "3DFilename": "",
                 "2DFilename": "2D_GrabberRotatingL--331651461.png",

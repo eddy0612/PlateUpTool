@@ -52,6 +52,9 @@ export async function getAppliancePalette() {
         const alt = entry.Alternatives[String(k)]
         const icon3 = alt['3DFilename'] ? `${base}res/3D/${alt['3DFilename']}` : null
         const icon2 = alt['2DFilename'] ? `${base}res/2D/${alt['2DFilename']}` : null
+        // Skip alternatives that provide no visual assets (compat-only entries)
+        if (!icon3 && !icon2) continue
+
         result.push({
           id,
           label: alt['ItemDescription'] || label,
