@@ -262,6 +262,7 @@ export async function canonicalizeV1Cells(cells) {
       const seen = new Set()
       let entry = __applianceByGameId.get(gameId)
       let mappedExtraData = null
+      const origExtra = Number(orig.extraData ?? 0)
       while (entry && entry.MapGameId != null && Number(entry.MapGameId) !== -1) {
         if (entry.MapExtraData != null && mappedExtraData === null) mappedExtraData = Number(entry.MapExtraData)
         const next = Number(entry.MapGameId)
@@ -272,6 +273,16 @@ export async function canonicalizeV1Cells(cells) {
       }
       if (!entry) continue
       if (entry.Keep === false) continue
+      // Compatibility: if the canonical entry defines Alternatives mapping for
+      // the original extraData (or a "0" fallback), and that alternative
+      // provides a MapExtraData, prefer that to translate extraData values.
+      try {
+        if (entry.Alternatives && typeof entry.Alternatives === 'object') {
+          const altKey = String(origExtra)
+          const altEntry = entry.Alternatives[altKey] || entry.Alternatives['0']
+          if (altEntry && altEntry.MapExtraData != null) mappedExtraData = Number(altEntry.MapExtraData)
+        }
+      } catch (e) {}
       const newCell = { ...orig, applianceId: gameId }
       if (mappedExtraData !== null) newCell.extraData = mappedExtraData
       out.push({ dx: c.dx, dy: c.dy, cell: newCell })
