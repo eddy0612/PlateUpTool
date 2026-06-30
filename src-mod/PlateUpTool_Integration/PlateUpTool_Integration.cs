@@ -9,7 +9,7 @@ namespace PlateUpTool_Integration
         // ========= Constants ===========
         public const string MOD_ID = "com.eddy0612.plateuptool";
         public const string MOD_NAME = "PlateUpTool";
-        public const string MOD_VERSION = "0.0.2";
+        public const string MOD_VERSION = "0.0.3";
 
         // ========= Class wide variables ===========
         internal static KitchenLib.Logging.KitchenLogger Logger;
