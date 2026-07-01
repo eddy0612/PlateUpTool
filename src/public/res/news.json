@@ -44,12 +44,14 @@
       ]
     },
     {
-      "version": "x.x",
-      "date": "20xx-06-24",
-      "title": "Future release notes",
+      "version": "1.4beta",
+      "date": "2026-07-01",
+      "title": "MOD support",
       "items": [
-        "Breaking change: Imports with chocolate icecream from earlier releases may lose the chocolate setting",
-        "tbc"
+        "Added the ability for MOD support within the tool. Turn MODs off in settings if you just want vanilla game items.",
+        "Added example support for AutomationPlus and Advanced Teleporters mods",
+        "Various minor bug fixes and interfact cleanup, including internal rework",
+        "Breaking change: Imports with 'chocolate icecream' from earlier releases may lose the chocolate setting"
       ]
     }
   ]
