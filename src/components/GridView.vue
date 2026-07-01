@@ -1433,15 +1433,10 @@ export default {
       { id: 'label', title: 'Add Label', desc: 'Add a label anchored to the selected item.' },
       { id: 'delete', title: 'Delete', desc: 'Delete the selected cells.' },
       { id: 'help', title: 'Help', desc: 'Show this help overlay.' },
-      { divider: true },
-      { id: 'size', title: 'Change room size', desc: 'Open room size dialog to change dimensions' },
-      { id: 'dark-mode', title: 'Dark Mode', desc: 'Toggle the UI dark theme.' },
-      { id: 'teleporter-lines', title: 'Teleporter lines', desc: 'Show or hide teleporter connector lines (T).' },
-      { id: 'label-display', title: 'Label display', desc: 'Cycle label display: lines+text / text only / hidden' }
     ]
     const helpItems = computed(() =>
       compactMenuMode.value
-        ? allHelpItems.filter(item => !item.divider && item.id !== 'size' && item.id !== 'dark-mode' && item.id !== 'teleporter-lines' && item.id !== 'label-display')
+        ? allHelpItems.filter(item => !item.divider)
         : allHelpItems
     )
 
