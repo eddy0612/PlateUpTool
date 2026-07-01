@@ -57,6 +57,10 @@
                   <svg v-else class="menu-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="3" y1="5" x2="15" y2="11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                   Show labels (lines/text/none)
                 </button>
+                <button class="menu-item sub-item" @click="openModsSettingsModal">
+                  <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z"/></svg>
+                  MOD Support
+                </button>
               </div>
             </div>
             <div class="menu-sep"></div>
@@ -279,62 +283,166 @@
       </div>
     </teleport>
 
+    <!-- Settings Modal -->
+    <teleport to="body">
+      <div v-if="showSettingsModal" class="settings-modal-backdrop" @click.self="closeSettingsModal">
+        <div class="settings-modal" role="dialog" aria-modal="true">
+          <!-- Header -->
+          <div class="settings-modal-header">
+            <div class="settings-modal-header-left">
+              <button v-if="settingsPage === 'mods'" class="settings-modal-close" @click="closeSettingsModal" aria-label="Close MOD Support">✕</button>
+            </div>
+            <h2 class="settings-modal-title">{{ settingsPage === 'mods' ? 'MOD Support' : 'Settings' }}</h2>
+            <button class="settings-modal-close" @click="closeSettingsModal" aria-label="Close">✕</button>
+          </div>
+
+          <!-- Main settings page -->
+          <div v-if="settingsPage === 'main'" class="settings-modal-body">
+
+            <button class="settings-row" @click="closeSettingsModal(); openChangeSizeModal()">
+              <span class="settings-row-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h13A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 12.5v-9zM1.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z"/>
+                  <path d="M3 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1H4v4.5a.5.5 0 0 1-1 0v-5zm9-3a.5.5 0 0 1-.5.5H7v-5a.5.5 0 0 1 1 0V6h3.5a.5.5 0 0 1 .5.5z"/>
+                </svg>
+              </span>
+              <span class="settings-row-body">
+                <span class="settings-row-title">Room Size</span>
+                <span class="settings-row-desc">Currently {{ state.roomWidth }} × {{ state.roomHeight }} tiles — click to change</span>
+              </span>
+              <span class="settings-row-chevron" aria-hidden="true">›</span>
+            </button>
+
+            <div class="settings-row">
+              <span class="settings-row-icon">
+                <svg v-if="!darkMode" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zM8 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zM16 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 16 8zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zM12.657 2.343a.5.5 0 0 1 0 .707l-1.414 1.414a.5.5 0 1 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zM4.464 11.536a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zM12.657 13.657a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/>
+                </svg>
+              </span>
+              <span class="settings-row-body">
+                <span class="settings-row-title">Dark Mode</span>
+                <span class="settings-row-desc">Switch between light and dark theme</span>
+              </span>
+              <button :class="['settings-toggle', { active: darkMode }]" @click="toggleDarkMode" :aria-pressed="darkMode" aria-label="Toggle dark mode">
+                <span class="settings-toggle-thumb"></span>
+              </button>
+            </div>
+
+            <div class="settings-row">
+              <span class="settings-row-icon">
+                <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2" stroke-linecap="round"/>
+                  <circle cx="2" cy="2" r="2" fill="currentColor"/>
+                  <circle cx="14" cy="14" r="2" fill="currentColor"/>
+                </svg>
+              </span>
+              <span class="settings-row-body">
+                <span class="settings-row-title">Teleporter Lines</span>
+                <span class="settings-row-desc">Show connecting lines between teleporters</span>
+              </span>
+              <button :class="['settings-toggle', { active: teleporterLines }]" @click="toggleTeleporterLines" :aria-pressed="teleporterLines" aria-label="Toggle teleporter lines">
+                <span class="settings-toggle-thumb"></span>
+              </button>
+            </div>
+
+            <button class="settings-row" @click="toggleLabelDisplayMode">
+              <span class="settings-row-icon">
+                <svg v-if="labelDisplayMode === 0" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <rect x="3" y="3" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                  <line x1="9" y1="9" x2="16" y2="16" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2" stroke-linecap="round"/>
+                  <circle cx="3.5" cy="3.5" r="1" fill="currentColor"/>
+                  <circle cx="15.5" cy="15.5" r="1" fill="currentColor"/>
+                </svg>
+                <svg v-else-if="labelDisplayMode === 1" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                  <line x1="5" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                </svg>
+                <svg v-else viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                  <line x1="3" y1="5" x2="15" y2="11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span class="settings-row-body">
+                <span class="settings-row-title">Label Display</span>
+                <span class="settings-row-desc">{{ labelDisplayMode === 0 ? 'Showing lines and text' : (labelDisplayMode === 1 ? 'Showing text only' : 'Labels hidden') }} — click to cycle</span>
+              </span>
+              <span class="settings-row-badge">{{ labelDisplayMode === 0 ? 'Lines' : (labelDisplayMode === 1 ? 'Text' : 'Off') }}</span>
+            </button>
+
+            <button class="settings-row settings-row--mods" @click="goToModsPage">
+              <span class="settings-row-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M6 .5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1H9v1.07A7.001 7.001 0 0 1 8 16a7 7 0 0 1-5.277-11.568l.463.44A6 6 0 1 0 8 2.071V1h-.5A.5.5 0 0 1 6 .5zm2 1.026v1.986A4 4 0 1 1 4.004 9H3a5 5 0 1 0 5-5.999V1.526z"/>
+                </svg>
+              </span>
+              <span class="settings-row-body">
+                <span class="settings-row-title">MOD Support</span>
+                <span class="settings-row-desc">Manage mod appliance packs</span>
+              </span>
+              <span class="settings-row-chevron" aria-hidden="true">›</span>
+            </button>
+
+          </div>
+
+          <!-- MOD Support page -->
+          <div v-else-if="settingsPage === 'mods'" class="settings-modal-body">
+
+            <div class="settings-row">
+              <span class="settings-row-icon settings-row-icon--mod">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z"/>
+                </svg>
+              </span>
+              <span class="settings-row-body">
+                <span class="settings-row-title">Show MODs</span>
+                <span class="settings-row-desc">Enable or disable all mod appliances</span>
+              </span>
+              <button :class="['settings-toggle', { active: modsEnabled }]" @click="toggleModsEnabled" :aria-pressed="modsEnabled" aria-label="Toggle mod support">
+                <span class="settings-toggle-thumb"></span>
+              </button>
+            </div>
+
+            <div v-if="allModSources.length === 0" class="settings-mods-empty">
+              No mod packs found in appliance_sources.json
+            </div>
+            <template v-else>
+              <p class="settings-mods-label">Enabled Mod Packs</p>
+              <div class="settings-mods-list">
+                <button v-for="mod in allModSources" :key="mod.SteamID"
+                  :class="['settings-mod-item', { 'settings-mod-item--off': !modsEnabled }]"
+                  :disabled="!modsEnabled"
+                  @click="toggleMod(mod.SteamID)"
+                  :aria-pressed="isModEnabled(mod.SteamID)">
+                  <span :class="['settings-mod-check', { 'settings-mod-check--on': isModEnabled(mod.SteamID) }]" aria-hidden="true">
+                    <svg v-if="isModEnabled(mod.SteamID)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="11" height="11" aria-hidden="true">
+                      <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                    </svg>
+                  </span>
+                  <span class="settings-mod-name">{{ mod.Description }}</span>
+                </button>
+              </div>
+            </template>
+
+          </div>
+        </div>
+      </div>
+    </teleport>
+
     <div class="main-grid">
       <GridView />
       <div v-if="!smallTopZoom" class="palette-column">
         <AppliancePalette />
-        <div v-show="!showCompactMenu" class="palette-toolbox-box" title="Palette toolbox (controls) - Undo - Ctrl + Z">
-          <div class="palette-toolbox" role="toolbar" aria-label="Palette toolbox">
-            <button class="toolbox-button toolbox-button--size" @click="openChangeSizeModal" title="Change room size">
-              <svg class="toolbox-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h13A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 12.5v-9zM1.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z"/>
-                <path d="M3 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1H4v4.5a.5.5 0 0 1-1 0v-5zm9-3a.5.5 0 0 1-.5.5H7v-5a.5.5 0 0 1 1 0V6h3.5a.5.5 0 0 1 .5.5z"/>
-              </svg>
-              <span class="toolbox-size-text">{{ state.roomWidth }}&times;{{ state.roomHeight }}</span>
-            </button>
-
-            <button class="toolbox-button" @click="toggleDarkMode" :title="darkMode ? 'Switch to light mode' : 'Switch to dark mode'">
-              <svg class="toolbox-icon" v-if="!darkMode" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
-              </svg>
-              <svg class="toolbox-icon" v-else xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zM8 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zM16 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 16 8zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zM12.657 2.343a.5.5 0 0 1 0 .707l-1.414 1.414a.5.5 0 1 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zM4.464 11.536a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zM12.657 13.657a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/>
-              </svg>
-            </button>
-
-            <button :class="['toolbox-button', 'toolbox-button--icon', 'toolbox-button--teleporter', { active: teleporterLines } ]" @click="toggleTeleporterLines" title="Toggle teleporter connector lines (T)">
-              <svg class="toolbox-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                <line x1="1.8" y1="1.8" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2" stroke-linecap="round"/>
-                <circle cx="2" cy="2" r="2" fill="currentColor"/>
-                <circle cx="14" cy="14" r="2" fill="currentColor"/>
-              </svg>
-            </button>
-
-            <button :class="['toolbox-button', 'toolbox-button--icon', 'toolbox-button--teleporter']" @click="toggleLabelDisplayMode" :title="labelDisplayMode === 0 ? 'Labels: lines + text' : (labelDisplayMode === 1 ? 'Labels: text only' : 'Labels: hidden')">
-              <svg v-if="labelDisplayMode === 0" class="toolbox-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                <!-- small rectangle top-left (6x6) -->
-                <rect x="3" y="3" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4" />
-                <!-- dashed diagonal from rect bottom-right (9,9) to icon bottom-right (16,16) -->
-                <line x1="9" y1="9" x2="16" y2="16" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2" stroke-linecap="round" />
-                <circle cx="3.5" cy="3.5" r="1" fill="currentColor" />
-                <circle cx="15.5" cy="15.5" r="1" fill="currentColor" />
-              </svg>
-              <svg v-else-if="labelDisplayMode === 1" class="toolbox-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                <rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4" />
-                <line x1="5" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
-              </svg>
-              <svg v-else class="toolbox-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                <rect x="3" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.4" />
-                <line x1="3" y1="5" x2="15" y2="11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-              </svg>
-            </button>
-
-            <button v-if="false" :class="['toolbox-button', 'toolbox-button--icon', 'toolbox-button--teleporter', { active: showTouchDebug }]" @click="toggleTouchDebug" :title="showTouchDebug ? 'Hide touch debug panel' : 'Show touch debug panel'">
-              <svg class="toolbox-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                <path d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13zm0 1.2a5.3 5.3 0 1 1 0 10.6A5.3 5.3 0 0 1 8 2.7zm-.6 2.1h1.2v4.1H7.4V4.8zm0 5.2h1.2v1.2H7.4V10z" fill="currentColor"/>
-              </svg>
-            </button>
-          </div>
+        <div v-show="!showCompactMenu" class="palette-toolbox-box">
+          <button class="toolbox-settings-btn" @click="openSettingsModal">
+            <svg class="toolbox-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            Settings
+          </button>
         </div>
       </div>
     </div>
@@ -409,7 +517,9 @@
 <script>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRestaurantStore, encodeState as encodeStateFn } from './store/restaurant'
-import { useGrid, smallScreenMode, compactMenuMode, bottomBarHeight } from './composables/useGrid'
+import { useGrid, smallScreenMode, compactMenuMode, bottomBarHeight, clearGridCaches } from './composables/useGrid'
+import { clearAppliancePaletteCache } from './appliancePalette'
+import { reloadPalette } from './composables/useAppliancePalette'
 import GridView from './components/GridView.vue'
 import AppliancePalette from './components/AppliancePalette.vue'
 import creditsRaw from './CREDITS.md?raw'
@@ -555,6 +665,20 @@ export default {
     const showCopiedToast = ref(false)
     const showFeedbackModal = ref(false)
     const { showTouchDebug, toggleTouchDebug } = useTouchDebug()
+
+    // Settings modal state
+    const showSettingsModal = ref(false)
+    const settingsPage = ref('main') // 'main' | 'mods'
+
+    // Mod support state (persisted to localStorage)
+    const modsEnabled = ref(localStorage.getItem('modsEnabled') !== 'false')
+    const allModSources = ref([])
+    const enabledModSteamIds = ref((() => {
+      const raw = localStorage.getItem('enabledModSteamIds')
+      if (raw === null) return null // null = all enabled
+      try { return JSON.parse(raw) } catch (e) { return null }
+    })())
+
     // Ensure teleporterLines defaults to visible (true) when not set
     let _teleporterLines = localStorage.getItem('teleporterLines')
     if (_teleporterLines === null) { try { localStorage.setItem('teleporterLines', '1') } catch (e) {} _teleporterLines = '1' }
@@ -687,6 +811,15 @@ export default {
       try {
         window.dispatchEvent(new CustomEvent('teleporter-lines-changed', { detail: teleporterLines.value }))
         window.dispatchEvent(new CustomEvent('label-display-mode-changed', { detail: labelDisplayMode.value }))
+      } catch (e) {}
+      // Load available mod sources for the Settings → MOD Support dialog
+      try {
+        const sourcesUrl = import.meta.env.BASE_URL + 'res/appliance_sources.json'
+        const srcResp = await fetch(sourcesUrl)
+        if (srcResp.ok) {
+          const srcData = await srcResp.json()
+          allModSources.value = srcData.filter(s => s.SteamID !== -1)
+        }
       } catch (e) {}
       if (!hasTutorialBeenSeen()) {
         showTutorial.value = true
@@ -959,6 +1092,50 @@ export default {
       } catch (e) {}
     }
 
+    // ── Settings modal ──────────────────────────────────────────────────────
+    function openSettingsModal() { showSettingsModal.value = true; settingsPage.value = 'main' }
+    function closeSettingsModal() { showSettingsModal.value = false }
+    function goToModsPage() { settingsPage.value = 'mods' }
+    function openModsSettingsModal() { showSettingsModal.value = true; settingsPage.value = 'mods'; closeMainMenu() }
+
+    function isModEnabled(steamId) {
+      if (enabledModSteamIds.value === null) return true
+      return enabledModSteamIds.value.includes(steamId)
+    }
+
+    async function _applyModSettingsChange() {
+      clearAppliancePaletteCache()
+      clearGridCaches()
+      await reloadPalette()
+      await loadGridFromState()
+    }
+
+    async function toggleModsEnabled() {
+      modsEnabled.value = !modsEnabled.value
+      try { localStorage.setItem('modsEnabled', modsEnabled.value ? 'true' : 'false') } catch (e) {}
+      await _applyModSettingsChange()
+    }
+
+    async function toggleMod(steamId) {
+      const allIds = allModSources.value.map(s => s.SteamID)
+      let current = enabledModSteamIds.value === null ? [...allIds] : [...enabledModSteamIds.value]
+      if (current.includes(steamId)) {
+        current = current.filter(id => id !== steamId)
+      } else {
+        current.push(steamId)
+      }
+      // Normalise to null when all mods are enabled
+      if (allIds.length > 0 && allIds.every(id => current.includes(id))) {
+        enabledModSteamIds.value = null
+        try { localStorage.removeItem('enabledModSteamIds') } catch (e) {}
+      } else {
+        enabledModSteamIds.value = current
+        try { localStorage.setItem('enabledModSteamIds', JSON.stringify(current)) } catch (e) {}
+      }
+      await _applyModSettingsChange()
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     async function onSizeChosen({ w, h }) {
       state.roomWidth = Number(w)
       state.roomHeight = Number(h)
@@ -1047,6 +1224,9 @@ export default {
       /* tabs dropdown */ showTabsDropdown, toggleTabsDropdown, closeTabsDropdown, currentTabLabel, setActiveTab, addNewTab, getTabDropdownStyle, tabStyleMap, currentTabStyle,
       /* grid clipboard actions */ copyToClipboard, cutToClipboard, startPaste, startDuplicate, removeSelected,
       applianceMapLoading,
+      /* settings modal */ showSettingsModal, settingsPage, openSettingsModal, closeSettingsModal, goToModsPage,
+      openModsSettingsModal,
+      modsEnabled, allModSources, enabledModSteamIds, isModEnabled, toggleModsEnabled, toggleMod,
     }
   }
 }
@@ -1483,6 +1663,176 @@ html.dark svg.hp-svg * { stroke: currentColor !important; }
 @media (max-width: 420px) {
   .tool-popup { transform: translateY(-4px); }
 }
+
+/* ── Settings launch button (replaces the 4-icon palette toolbox) ── */
+.toolbox-settings-btn {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #c8d6e8;
+  border-radius: 6px;
+  padding: 9px 14px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: #21313a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+  transition: background 0.12s, border-color 0.12s;
+}
+.toolbox-settings-btn:hover { background: #eef4ff; border-color: #5b8fd9 }
+.toolbox-settings-btn .toolbox-icon { width: 18px; height: 18px; display: block; flex-shrink: 0 }
+.dark .toolbox-settings-btn { background: #2b3338; border-color: #444d55; color: #eef6f1 }
+.dark .toolbox-settings-btn:hover { background: #1a2640; border-color: #5a7aaa }
+
+/* ── Settings Modal ── */
+.settings-modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 10000;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.settings-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+  width: min(400px, calc(100vw - 32px));
+  max-height: min(92vh, 580px);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.settings-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid #e8ecf3;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.settings-modal-header-left { min-width: 60px; display: flex; align-items: center }
+.settings-modal-title {
+  margin: 0; font-size: 1.05rem; font-weight: 700; color: #1a2a4a;
+  flex: 1; text-align: center;
+}
+.settings-modal-close {
+  border: none; background: none; cursor: pointer;
+  color: #888; font-size: 1rem; padding: 4px 6px;
+  border-radius: 4px; min-width: 28px; text-align: center;
+  flex-shrink: 0;
+}
+.settings-modal-close:hover { background: #f0f0f0; color: #333 }
+.settings-modal-body {
+  overflow-y: auto;
+  padding: 6px 0;
+  display: flex; flex-direction: column;
+  flex: 1;
+}
+.settings-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 11px 18px;
+  background: transparent; border: none; width: 100%;
+  text-align: left; cursor: default;
+  border-bottom: 1px solid #f0f3f8;
+  transition: background 0.1s;
+  box-sizing: border-box;
+}
+button.settings-row { cursor: pointer }
+button.settings-row:hover { background: #f4f8ff }
+.settings-row:last-child { border-bottom: none }
+.settings-row-icon {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  background: #eef4ff;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: #2a5db0;
+}
+.settings-row-icon svg { width: 16px; height: 16px; display: block }
+.settings-row-icon--mod { background: #fff0e8; color: #b85010 }
+.settings-row-body {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 0;
+}
+.settings-row-title { font-size: 0.875rem; font-weight: 600; color: #1a2030; line-height: 1.2 }
+.settings-row-desc { font-size: 0.75rem; color: #6a7a94; line-height: 1.3 }
+.settings-row-chevron { font-size: 1.15rem; color: #aab8cc; flex-shrink: 0; line-height: 1 }
+.settings-row-badge {
+  font-size: 0.7rem; font-weight: 700;
+  background: #e8edf5; color: #4a6080;
+  border-radius: 5px; padding: 2px 8px;
+  flex-shrink: 0; letter-spacing: 0.02em; white-space: nowrap;
+}
+.settings-row--mods .settings-row-icon { background: #fff0e8; color: #b85010 }
+button.settings-row--mods:hover { background: #fff8f2 }
+
+/* Toggle switch */
+.settings-toggle {
+  flex-shrink: 0;
+  width: 44px; height: 24px;
+  border-radius: 12px;
+  border: none;
+  background: #c4d0e0;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  padding: 0;
+}
+.settings-toggle.active { background: #1f79ff }
+.settings-toggle-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  transition: transform 0.18s;
+  display: block;
+}
+.settings-toggle.active .settings-toggle-thumb { transform: translateX(20px) }
+
+/* MOD list */
+.settings-mods-empty {
+  padding: 24px 18px;
+  color: #8898b0; font-size: 0.85rem; text-align: center;
+}
+.settings-mods-label {
+  margin: 14px 18px 4px;
+  font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.09em;
+  color: #5070a0;
+}
+.settings-mods-list {
+  display: flex; flex-direction: column;
+  padding: 2px 10px 8px;
+}
+.settings-mod-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 10px;
+  background: transparent; border: none; width: 100%;
+  text-align: left; cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.1s;
+}
+.settings-mod-item:hover:not(:disabled) { background: #eef4ff }
+.settings-mod-item--off { opacity: 0.38; pointer-events: none }
+.settings-mod-item:disabled { opacity: 0.38; cursor: not-allowed }
+.settings-mod-check {
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+  border-radius: 5px;
+  border: 2px solid #b8c8d8;
+  background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+.settings-mod-check--on { background: #1f79ff; border-color: #1f79ff }
+.settings-mod-check--on svg { fill: #fff }
+.settings-mod-name { font-size: 0.875rem; font-weight: 500; color: #1a2030 }
 </style>
 <style>
 /* ─── Dark Mode Overrides ──────────────────────────────────────────────────
@@ -1644,6 +1994,33 @@ html.dark .swatch-door  { background: #f0a830; }
 
 /* ── Number inputs (room size controls in GridView) ── */
 html.dark input[type="number"] { background: #141926; border-color: #2a3a54; color: #d0daea; }
+
+/* ── Settings button & modal – dark mode ── */
+html.dark .toolbox-settings-btn { background: #2b3338; border-color: #444d55; color: #eef6f1 }
+html.dark .toolbox-settings-btn:hover { background: #1a2640; border-color: #5a7aaa }
+html.dark .settings-modal { background: #1c2030 }
+html.dark .settings-modal-header { border-bottom-color: #2e3a52 }
+html.dark .settings-modal-title { color: #d0daea }
+html.dark .settings-modal-close { color: #8898b0 }
+html.dark .settings-modal-close:hover { background: #2e3a52; color: #d0daea }
+html.dark .settings-row { border-bottom-color: #1e2535 }
+html.dark button.settings-row:hover { background: #1a2640 }
+html.dark .settings-row-icon { background: #1a2640; color: #7aaade }
+html.dark .settings-row-icon--mod { background: #3a1e10; color: #e07830 }
+html.dark .settings-row-title { color: #d0daea }
+html.dark .settings-row-desc { color: #6a7a94 }
+html.dark .settings-row-chevron { color: #4a5a70 }
+html.dark .settings-row-badge { background: #1e2535; color: #7a94b0 }
+html.dark .settings-row--mods .settings-row-icon { background: #3a1e10; color: #e07830 }
+html.dark button.settings-row--mods:hover { background: #2a1810 }
+html.dark .settings-toggle { background: #2e3d52 }
+html.dark .settings-toggle.active { background: #1a5fe0 }
+html.dark .settings-mods-label { color: #5a7aaa }
+html.dark .settings-mods-empty { color: #5a6a7a }
+html.dark .settings-mod-item:hover:not(:disabled) { background: #1a2640 }
+html.dark .settings-mod-check { background: #141926; border-color: #2e3a52 }
+html.dark .settings-mod-check--on { background: #1a5fe0; border-color: #1a5fe0 }
+html.dark .settings-mod-name { color: #d0daea }
 </style>
 
 <style>
