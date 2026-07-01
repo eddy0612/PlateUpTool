@@ -24,3 +24,22 @@ getAppliancePalette()
 export function useAppliancePalette() {
   return { palette, loading, error }
 }
+
+/** Re-fetch the appliance palette (call after clearing the cache) and update the shared ref. */
+export async function reloadPalette() {
+  loading.value = true
+  try {
+    const data = await getAppliancePalette()
+    palette.value = data
+    data.forEach(entry => {
+      if (entry.icon2D) {
+        const img = new window.Image()
+        img.src = entry.icon2D
+      }
+    })
+  } catch (err) {
+    error.value = err
+  } finally {
+    loading.value = false
+  }
+}

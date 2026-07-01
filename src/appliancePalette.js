@@ -5,6 +5,12 @@
 // "id" (for diagnostics) and a "src" path relative to BASE_URL.  To include a mod,
 // add another entry to appliance_sources.json pointing at the mod's own JSON file.
 let __rawAppliancesPromise = null
+
+/** Clear the cached promise so the next call re-fetches with updated mod settings. */
+export function clearAppliancePaletteCache() {
+  __rawAppliancesPromise = null
+}
+
 export function getRawAppliances() {
   if (__rawAppliancesPromise) return __rawAppliancesPromise
   const base = import.meta.env.BASE_URL
@@ -14,8 +20,18 @@ export function getRawAppliances() {
       return resp.json()
     })
     .then(sources => {
+      // Apply mod visibility filter from localStorage
+      const modsEnabled = localStorage.getItem('modsEnabled') !== 'false'
+      const enabledRaw = localStorage.getItem('enabledModSteamIds')
+      const enabledIds = enabledRaw !== null ? JSON.parse(enabledRaw) : null // null = all enabled
+      const filteredSources = sources.filter(s => {
+        if (s.SteamID === -1) return true // base always included
+        if (!modsEnabled) return false
+        if (enabledIds === null) return true
+        return enabledIds.includes(s.SteamID)
+      })
       return Promise.all(
-        sources.map(({ id, src }) =>
+        filteredSources.map(({ id, src }) =>
           fetch(base + src)
             .then(resp => {
               if (!resp.ok) throw new Error(`Failed to load appliance source "${id}": ${src}`)

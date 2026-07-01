@@ -1965,6 +1965,14 @@ async function cycleAppliance(direction) {
   }
 }
 
+/** Clear the module-level appliance keep-map caches so they are re-built on next load. */
+export function clearGridCaches() {
+  __applianceKeepMapPromise = null
+  __applianceKeepMap = null
+  __applianceByGameId = null
+  __applianceByInternalId = null
+}
+
 export function useGrid() {
   return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, hoverLabel, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, selectedLabelIds, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveSelectionBy, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, pastePendingLabels, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, applianceMapLoading, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal, skipLabelAnchorSync, cycleAppliance }
 }
