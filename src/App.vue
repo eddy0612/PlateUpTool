@@ -398,7 +398,7 @@
               </span>
               <span class="settings-row-body">
                 <span class="settings-row-title">Show MODs</span>
-                <span class="settings-row-desc">Enable or disable all mod appliances</span>
+                <span class="settings-row-desc">Enable or disable all mod appliances. Unchecked packs are disabled; new packs stay enabled unless you turn them off.</span>
               </span>
               <button :class="['settings-toggle', { active: modsEnabled }]" @click="toggleModsEnabled" :aria-pressed="modsEnabled" aria-label="Toggle mod support">
                 <span class="settings-toggle-thumb"></span>
@@ -409,19 +409,20 @@
               No mod packs found in appliance_sources.json
             </div>
             <template v-else>
-              <p class="settings-mods-label">Enabled Mod Packs</p>
+              <p class="settings-mods-label">Mod Packs</p>
               <div class="settings-mods-list">
                 <button v-for="mod in allModSources" :key="mod.SteamID"
                   :class="['settings-mod-item', { 'settings-mod-item--off': !modsEnabled }]"
                   :disabled="!modsEnabled"
                   @click="toggleMod(mod.SteamID)"
-                  :aria-pressed="isModEnabled(mod.SteamID)">
-                  <span :class="['settings-mod-check', { 'settings-mod-check--on': isModEnabled(mod.SteamID) }]" aria-hidden="true">
-                    <svg v-if="isModEnabled(mod.SteamID)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="11" height="11" aria-hidden="true">
+                  :aria-pressed="isModPermanentlyEnabled(mod.SteamID)">
+                  <span :class="['settings-mod-check', { 'settings-mod-check--on': isModPermanentlyEnabled(mod.SteamID) }]" aria-hidden="true">
+                    <svg v-if="isModPermanentlyEnabled(mod.SteamID)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="11" height="11" aria-hidden="true">
                       <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
                     </svg>
                   </span>
                   <span class="settings-mod-name">{{ mod.Description }}</span>
+                  <span v-if="isModEnabled(mod.SteamID) && !isModPermanentlyEnabled(mod.SteamID)" class="settings-mod-session-badge">Session only</span>
                 </button>
               </div>
             </template>
@@ -517,8 +518,7 @@
 <script>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRestaurantStore, encodeState as encodeStateFn } from './store/restaurant'
-import { useGrid, smallScreenMode, compactMenuMode, bottomBarHeight, clearGridCaches } from './composables/useGrid'
-import { clearAppliancePaletteCache } from './appliancePalette'
+import { useGrid, smallScreenMode, compactMenuMode, bottomBarHeight } from './composables/useGrid'
 import { reloadPalette } from './composables/useAppliancePalette'
 import GridView from './components/GridView.vue'
 import AppliancePalette from './components/AppliancePalette.vue'
@@ -531,6 +531,8 @@ import RestaurantSizeModal from './components/RestaurantSizeModal.vue'
 import { isDefaultState } from './store/restaurant'
 import { alert, confirm, toast } from './utils/ui'
 import { useTouchDebug } from './composables/useTouchDebug'
+import { modsEnabled, disabledModSteamIds, setModsEnabled, setDisabledModSteamIds, loadModSourceCatalog, migrateLegacyModSettings, isModEnabled as isModEnabledModSupport, isModPermanentlyEnabled } from './composables/useModSupport'
+import { enableSessionModsForCells } from './composables/useGrid'
 
 export default {
   name: 'App',
@@ -670,14 +672,7 @@ export default {
     const showSettingsModal = ref(false)
     const settingsPage = ref('main') // 'main' | 'mods'
 
-    // Mod support state (persisted to localStorage)
-    const modsEnabled = ref(localStorage.getItem('modsEnabled') !== 'false')
     const allModSources = ref([])
-    const enabledModSteamIds = ref((() => {
-      const raw = localStorage.getItem('enabledModSteamIds')
-      if (raw === null) return null // null = all enabled
-      try { return JSON.parse(raw) } catch (e) { return null }
-    })())
 
     // Ensure teleporterLines defaults to visible (true) when not set
     let _teleporterLines = localStorage.getItem('teleporterLines')
@@ -801,6 +796,17 @@ export default {
       try {
         loadFromHash()
         await loadGridFromState()
+        const requiredMods = await enableSessionModsForCells(state.gridCells)
+        if (requiredMods.length) {
+          const lines = requiredMods.map(mod => `- ${mod.description || mod.itemDescription || `SteamID ${mod.steamId}`}`)
+          await alert([
+            'This design needs mod content that is currently disabled.',
+            'Those mod packs have been temporarily enabled for this session only:',
+            ...lines,
+            '',
+            'You can permanently enable them in Settings > MODs.'
+          ].join('\n'))
+        }
       } finally {
         isRestoring = false
       }
@@ -814,12 +820,9 @@ export default {
       } catch (e) {}
       // Load available mod sources for the Settings → MOD Support dialog
       try {
-        const sourcesUrl = import.meta.env.BASE_URL + 'res/appliance_sources.json'
-        const srcResp = await fetch(sourcesUrl)
-        if (srcResp.ok) {
-          const srcData = await srcResp.json()
-          allModSources.value = srcData.filter(s => s.SteamID !== -1)
-        }
+        allModSources.value = (await loadModSourceCatalog()).filter(s => s.SteamID !== -1)
+        await migrateLegacyModSettings(allModSources.value)
+        await reloadPalette()
       } catch (e) {}
       if (!hasTutorialBeenSeen()) {
         showTutorial.value = true
@@ -837,6 +840,17 @@ export default {
         try {
           loadFromHash()
           await loadGridFromState()
+          const requiredMods = await enableSessionModsForCells(state.gridCells)
+          if (requiredMods.length) {
+            const lines = requiredMods.map(mod => `- ${mod.description || mod.itemDescription || `SteamID ${mod.steamId}`}`)
+            await alert([
+              'This design needs mod content that is currently disabled.',
+              'Those mod packs have been temporarily enabled for this session only:',
+              ...lines,
+              '',
+              'You can permanently enable them in Settings > MODs.'
+            ].join('\n'))
+          }
         } finally {
           isRestoring = false
         }
@@ -1099,40 +1113,21 @@ export default {
     function openModsSettingsModal() { showSettingsModal.value = true; settingsPage.value = 'mods'; closeMainMenu() }
 
     function isModEnabled(steamId) {
-      if (enabledModSteamIds.value === null) return true
-      return enabledModSteamIds.value.includes(steamId)
-    }
-
-    async function _applyModSettingsChange() {
-      clearAppliancePaletteCache()
-      clearGridCaches()
-      await reloadPalette()
-      await loadGridFromState()
+      return isModEnabledModSupport(steamId)
     }
 
     async function toggleModsEnabled() {
-      modsEnabled.value = !modsEnabled.value
-      try { localStorage.setItem('modsEnabled', modsEnabled.value ? 'true' : 'false') } catch (e) {}
-      await _applyModSettingsChange()
+      setModsEnabled(!modsEnabled.value)
+      await reloadPalette()
     }
 
     async function toggleMod(steamId) {
-      const allIds = allModSources.value.map(s => s.SteamID)
-      let current = enabledModSteamIds.value === null ? [...allIds] : [...enabledModSteamIds.value]
-      if (current.includes(steamId)) {
-        current = current.filter(id => id !== steamId)
-      } else {
-        current.push(steamId)
-      }
-      // Normalise to null when all mods are enabled
-      if (allIds.length > 0 && allIds.every(id => current.includes(id))) {
-        enabledModSteamIds.value = null
-        try { localStorage.removeItem('enabledModSteamIds') } catch (e) {}
-      } else {
-        enabledModSteamIds.value = current
-        try { localStorage.setItem('enabledModSteamIds', JSON.stringify(current)) } catch (e) {}
-      }
-      await _applyModSettingsChange()
+      const allIds = allModSources.value.map(s => Number(s.SteamID)).filter(id => !Number.isNaN(id) && id !== -1)
+      const enabledSet = new Set(allIds.filter(id => isModPermanentlyEnabled(id)))
+      if (enabledSet.has(steamId)) enabledSet.delete(steamId)
+      else enabledSet.add(steamId)
+      setDisabledModSteamIds(allIds.filter(id => !enabledSet.has(id)))
+      await reloadPalette()
     }
     // ────────────────────────────────────────────────────────────────────────
 
@@ -1226,7 +1221,7 @@ export default {
       applianceMapLoading,
       /* settings modal */ showSettingsModal, settingsPage, openSettingsModal, closeSettingsModal, goToModsPage,
       openModsSettingsModal,
-      modsEnabled, allModSources, enabledModSteamIds, isModEnabled, toggleModsEnabled, toggleMod,
+      modsEnabled, allModSources, disabledModSteamIds, isModEnabled, isModPermanentlyEnabled, toggleModsEnabled, toggleMod,
     }
   }
 }

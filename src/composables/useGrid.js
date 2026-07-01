@@ -2,6 +2,9 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useRestaurantStore } from '../store/restaurant'
 import { useAppliancePalette } from './useAppliancePalette'
 import { getRawAppliances } from '../appliancePalette'
+import { getApplianceSourceInfoByGameId } from '../appliancePalette'
+import { addSessionEnabledModSteamIds, isModEnabled } from './useModSupport'
+import { reloadPalette } from './useAppliancePalette'
 import { alert, confirm, toast } from '../utils/ui'
 
 // Module-level singletons — grid state is shared across GridView and AppliancePalette
@@ -297,6 +300,37 @@ export async function canonicalizeV1Cells(cells) {
     } catch (e) { /* skip on error */ }
   }
   return out
+}
+
+function _extractCellApplianceId(cellEntry) {
+  const cell = cellEntry?.cell || cellEntry
+  return Number(cell?.applianceId)
+}
+
+export async function getDisabledRequiredModsForCells(cells) {
+  if (!Array.isArray(cells) || cells.length === 0) return []
+  const sourceMap = await getApplianceSourceInfoByGameId()
+  const seen = new Set()
+  const required = []
+  for (const entry of cells) {
+    const applianceId = _extractCellApplianceId(entry)
+    if (Number.isNaN(applianceId)) continue
+    const sourceInfo = sourceMap.get(applianceId)
+    if (!sourceInfo || sourceInfo.steamId === -1) continue
+    if (isModEnabled(sourceInfo.steamId)) continue
+    if (seen.has(sourceInfo.steamId)) continue
+    seen.add(sourceInfo.steamId)
+    required.push(sourceInfo)
+  }
+  return required
+}
+
+export async function enableSessionModsForCells(cells) {
+  const requiredMods = await getDisabledRequiredModsForCells(cells)
+  if (requiredMods.length === 0) return []
+  addSessionEnabledModSteamIds(requiredMods.map(mod => mod.steamId))
+  await reloadPalette()
+  return requiredMods
 }
 
 function isTeleporter(cell) {
@@ -1974,5 +2008,5 @@ export function clearGridCaches() {
 }
 
 export function useGrid() {
-  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, hoverLabel, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, selectedLabelIds, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveSelectionBy, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, pastePendingLabels, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, applianceMapLoading, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal, skipLabelAnchorSync, cycleAppliance }
+  return { grid, flatGrid, gridStyleDynamic, cellSize, viewportBoxHeight, rotationStyle, getApplianceIcon, getApplianceLabel, get2DApplianceIcon, isImageIcon, addToGrid, hoverLabel, rotateCell, rotateCellCCW, rotateGroupAroundCell, rotateGroupAroundCellCCW, selectCell, selectedCells, selectedLabelIds, isSelected, selectCellsInRect, addCellsToSelection, selectAll, invertSelection, moveSelectionBy, moveDragActive, isMoveAllOutside, getCellMoveState, getDisplayCell, isCellGhosted, moveSelectionToTab, addSelectionToTab, startMoveDrag, updateMoveDragOffset, commitMoveDrag, cancelMoveDrag, removeSelected, copyToClipboard, cutToClipboard, pastePending, getCellPasteState, startPaste, startDuplicate, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, pastePendingLabels, tabHasVisibleItems, deleteTabItems, isStructureMode, selectedStructureTool, setStructureTool, getWallEdge, setWallEdge, clearWallEdge, loadGridFromState, paletteDragActive, paletteDragItem, paletteDragPos, paletteDragHoverCell, applianceMapLoading, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, cancelPaletteDrag, isPaletteDragDropValid, getTeleporterPairPos, flipSelectionVertical, flipSelectionHorizontal, skipLabelAnchorSync, cycleAppliance, getDisabledRequiredModsForCells, enableSessionModsForCells }
 }

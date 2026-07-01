@@ -469,7 +469,7 @@ import AddLabelDialog from './AddLabelDialog.vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
 import { getRawAppliances } from '../appliancePalette'
-import { useGrid, convertCellsToGameId, canonicalizeV1Cells } from '../composables/useGrid'
+import { useGrid, convertCellsToGameId, canonicalizeV1Cells, enableSessionModsForCells } from '../composables/useGrid'
 import { useTouchDebug } from '../composables/useTouchDebug'
 import { readPngText, writePngText, writeStegoText, readStegoFromBytes, dataUrlToBytes, bytesToDataUrl, downloadDataUrl, readFileAsBytes, writePngDpi } from '../composables/usePngMetadata'
 import { alert, confirm, toast } from '../utils/ui'
@@ -2766,6 +2766,17 @@ export default {
             }
             // Ensure v0->GameID conversion done above, then always canonicalize mapped GameIDs
             try { cells = await canonicalizeV1Cells(cells) } catch (e) { /* ignore */ }
+            const requiredMods = await enableSessionModsForCells(cells)
+            if (requiredMods.length) {
+              const lines = requiredMods.map(mod => `- ${mod.description || mod.itemDescription || `SteamID ${mod.steamId}`}`)
+              await alert([
+                'This design needs mod content that is currently disabled.',
+                'Those mod packs have been temporarily enabled for this session only:',
+                ...lines,
+                '',
+                'You can permanently enable them in Settings > MODs.'
+              ].join('\n'))
+            }
             await startPasteFromCells({ cells, labels: labels || [] })
             return
           }
@@ -2801,6 +2812,17 @@ export default {
             state.activeTabId = firstUserTab?.id ?? 'main'
             // Rebuild the internal grid from the new state
             await loadGridFromState()
+            const requiredMods = await enableSessionModsForCells(state.gridCells)
+            if (requiredMods.length) {
+              const lines = requiredMods.map(mod => `- ${mod.description || mod.itemDescription || `SteamID ${mod.steamId}`}`)
+              await alert([
+                'This design needs mod content that is currently disabled.',
+                'Those mod packs have been temporarily enabled for this session only:',
+                ...lines,
+                '',
+                'You can permanently enable them in Settings > MODs.'
+              ].join('\n'))
+            }
             // Fit viewport to the newly loaded room size
             nextTick(() => window.dispatchEvent(new Event('plateup-rezoom')))
             return
@@ -2829,6 +2851,17 @@ export default {
             return { dx: _dx, dy: _dy, cell: { ...cell, tabIds: [] } }
           })
           try { convertedCells = await canonicalizeV1Cells(convertedCells) } catch (e) { /* ignore */ }
+          const requiredMods = await enableSessionModsForCells(convertedCells)
+          if (requiredMods.length) {
+            const lines = requiredMods.map(mod => `- ${mod.description || mod.itemDescription || `SteamID ${mod.steamId}`}`)
+            await alert([
+              'This design needs mod content that is currently disabled.',
+              'Those mod packs have been temporarily enabled for this session only:',
+              ...lines,
+              '',
+              'You can permanently enable them in Settings > MODs.'
+            ].join('\n'))
+          }
           await startPasteFromCells(convertedCells)
           return
         }
