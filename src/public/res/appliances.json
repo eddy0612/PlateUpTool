@@ -1704,7 +1704,7 @@
         "flipPartner": -961856961,
         "GameID": 367215780,
         "MapGameId": -331651461,
-        "MapExtraData": 1
+        "MapExtraData": 4
     },
     {
         "OriginalFileName": "GrabberRotatingR--331651461.png",
@@ -1717,7 +1717,7 @@
         "flipPartner": 367215780,
         "GameID": -961856961,
         "MapGameId": -331651461,
-        "MapExtraData": 3
+        "MapExtraData": 1
     },
     {
         "OriginalFileName": "GrabberRotatingS--331651461.png",
@@ -1730,28 +1730,28 @@
         "GameID": -331651461,
         "Alternatives": {
             "0": {
-                "MapExtraData": 2
+                "MapExtraData": 8
             },
-            "1": {
+            "4": {
                 "3DFilename": "",
                 "2DFilename": "2D_GrabberRotatingL--331651461.png",
                 "ItemDescription": "Grabber - Rotating Left",
-                "Next": 2,
-                "Prev": 3
+                "Next": 8,
+                "Prev": 1
             },
-            "2": {
+            "8": {
                 "3DFilename": "",
                 "2DFilename": "2D_GrabberRotatingS--331651461.png",
                 "ItemDescription": "Grabber - Rotating",
-                "Next": 3,
-                "Prev": 1
+                "Next": 1,
+                "Prev": 4
             },
-            "3": {
+            "1": {
                 "3DFilename": "",
                 "2DFilename": "2D_GrabberRotatingR--331651461.png",
                 "ItemDescription": "Grabber - Rotating Right",
-                "Next": 1,
-                "Prev": 2
+                "Next": 4,
+                "Prev": 8
             }
         },
         "MapGameId": -1

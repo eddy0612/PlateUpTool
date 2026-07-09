@@ -4,26 +4,26 @@
         "ItemDescription": "Smart Grabber - Rotating",
         "GameID": -1199303928,
         "Alternatives": {
-            "1": {
+            "4": {
                 "3DFilename": "",
                 "2DFilename": "MOD_2D_SmartGrabberRotatingL-367215780.png",
                 "ItemDescription": "Smart Grabber - Rotating Left",
-                "Next": 2,
-                "Prev": 3
+                "Next": 8,
+                "Prev": 1
             },
-            "2": {
+            "8": {
                 "3DFilename": "",
                 "2DFilename": "MOD_2D_SmartGrabberRotatingS-367215780.png",
                 "ItemDescription": "Smart Grabber - Rotating",
-                "Next": 3,
-                "Prev": 1
+                "Next": 1,
+                "Prev": 4
             },
-            "3": {
+            "1": {
                 "3DFilename": "",
                 "2DFilename": "MOD_2D_SmartGrabberRotatingR-367215780.png",
                 "ItemDescription": "Smart Grabber - Rotating Right",
-                "Next": 1,
-                "Prev": 2
+                "Next": 4,
+                "Prev": 8
             }
         },
         "MapGameId": -1
@@ -57,26 +57,26 @@
         "ItemDescription": "Grabber - Merging",
         "GameID": -1968180161,
         "Alternatives": {
-            "1": {
+            "4": {
                 "3DFilename": "",
                 "2DFilename": "MOD_2D_Grabber_MergingL--1968180161.png",
                 "ItemDescription": "Grabber - Merging Left",
-                "Next": 2,
-                "Prev": 3
+                "Next": 8,
+                "Prev": 1
             },
-            "2": {
+            "8": {
                 "3DFilename": "",
                 "2DFilename": "MOD_2D_Grabber_MergingS--1968180161.png",
                 "ItemDescription": "Grabber - Merging",
-                "Next": 3,
-                "Prev": 1
+                "Next": 1,
+                "Prev": 4
             },
-            "3": {
+            "1": {
                 "3DFilename": "",
                 "2DFilename": "MOD_2D_Grabber_MergingR--1968180161.png",
                 "ItemDescription": "Grabber - Merging Right",
-                "Next": 1,
-                "Prev": 2
+                "Next": 4,
+                "Prev": 8
             }
         },
         "MapGameId": -1
@@ -86,26 +86,26 @@
         "ItemDescription": "Grabber - Distributing",
         "GameID": 1142075936,
         "Alternatives": {
-            "1": {
+            "4": {
                 "3DFilename": "",
                 "2DFilename": "MOD_2D_Grabber_DistributingL-1142075936.png",
                 "ItemDescription": "Grabber - Distributing Left",
-                "Next": 2,
-                "Prev": 3
+                "Next": 8,
+                "Prev": 1
             },
-            "2": {
+            "8": {
                 "3DFilename": "",
                 "2DFilename": "MOD_2D_Grabber_DistributingS-1142075936.png",
                 "ItemDescription": "Grabber - Distributing",
-                "Next": 3,
-                "Prev": 1
+                "Next": 1,
+                "Prev": 4
             },
-            "3": {
+            "1": {
                 "3DFilename": "",
                 "2DFilename": "MOD_2D_Grabber_DistributingR-1142075936.png",
                 "ItemDescription": "Grabber - Distributing Right",
-                "Next": 1,
-                "Prev": 2
+                "Next": 4,
+                "Prev": 8
             }
         },
         "MapGameId": -1

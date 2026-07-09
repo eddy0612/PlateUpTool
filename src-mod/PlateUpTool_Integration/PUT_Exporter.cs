@@ -687,7 +687,7 @@ namespace PlateUpTool_Integration
                         {
                             PlateUpTool_Integration.TDbg("CConveyPushRotatable so some form of corner grabber");
                             var rotateComponent = base.EntityManager.GetComponentData<CConveyPushRotatable>(primaryOccupant);
-                            PlateUpTool_Integration.TDbg("Rotation: " + (int) rotateComponent.Target);
+                            PlateUpTool_Integration.TDbg("Target Rotation: " + (int) rotateComponent.Target);
                             forceExtraData = (int) rotateComponent.Target;
                         }
 
