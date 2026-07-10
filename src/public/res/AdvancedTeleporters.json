@@ -5,6 +5,7 @@
         "2DFilename": "MOD_2D_Conveyor_Teleporter--793372977.png",
         "ItemDescription": "Conveyor Teleporter",
         "GameID": -793372977,
+        "TeleporterLines" : true,
         "MapGameId": -1
     },
     {
@@ -13,6 +14,7 @@
         "2DFilename": "MOD_2D_Grabber_Teleporter.png",
         "ItemDescription": "Grabber Teleporter",
         "GameID": -2080566615,
+        "TeleporterLines" : true,
         "MapGameId": -1
     },
     {
@@ -21,6 +23,7 @@
         "2DFilename": "MOD_2D_Distributing_Teleporter-976510972.png",
         "ItemDescription": "Distributing Teleporter",
         "GameID": 976510972,
+        "TeleporterLines" : true,
         "MapGameId": -1
     },
     {
@@ -29,6 +32,7 @@
         "2DFilename": "MOD_2D_Omni_Grabber_Teleporter-1959496181.png",
         "ItemDescription": "Omni-Grabber Teleporter",
         "GameID": 1959496181,
+        "TeleporterLines" : true,
         "MapGameId": -1
     }
 ]
