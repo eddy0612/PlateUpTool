@@ -469,7 +469,7 @@ import AddLabelDialog from './AddLabelDialog.vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
 import { useAppliancePalette } from '../composables/useAppliancePalette'
 import { getRawAppliances } from '../appliancePalette'
-import { useGrid, convertCellsToGameId, canonicalizeV1Cells, enableSessionModsForCells } from '../composables/useGrid'
+import { useGrid, convertCellsToGameId, canonicalizeV1Cells, enableSessionModsForCells, supportsTeleporterLines } from '../composables/useGrid'
 import { useTouchDebug } from '../composables/useTouchDebug'
 import { readPngText, writePngText, writeStegoText, readStegoFromBytes, dataUrlToBytes, bytesToDataUrl, downloadDataUrl, readFileAsBytes, writePngDpi } from '../composables/usePngMetadata'
 import { alert, confirm, toast } from '../utils/ui'
@@ -1390,7 +1390,7 @@ export default {
           ctx.fillText((entry?.label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
           // Draw teleporter pair number if present
           try {
-            if (cell?.applianceId === 459840623 && (cell.extraData || 0) > 0) {
+            if (supportsTeleporterLines(cell?.applianceId) && (cell.extraData || 0) > 0) {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
               ctx.save()
@@ -1423,7 +1423,7 @@ export default {
           }
           ctx.restore()
           try {
-            if (cell?.applianceId === 459840623 && (cell.extraData || 0) > 0) {
+            if (supportsTeleporterLines(cell?.applianceId) && (cell.extraData || 0) > 0) {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
               ctx.save()
@@ -1453,26 +1453,33 @@ export default {
           const seen = new Set()
           const cxp = x => padLeft + x * CELL_PX + CELL_PX / 2
           const cyp = y => padTop + y * CELL_PX + CELL_PX / 2
-          // use localCells (shifted) for connector drawing
+          // Build groups by extraData among localCells and draw all unordered pairs
+          const groups = new Map()
           for (const a of localCells) {
-            const x = a.dx, y = a.dy
             const cell = a.cell
-            if (cell?.applianceId === 459840623 && (cell.extraData || 0) > 0) {
-              // find partner within blueprint
-              const partner = localCells.find(c => (c.cell?.applianceId === 459840623) && (c.cell.extraData || 0) === cell.extraData && (c.dx !== x || c.dy !== y))
-              if (!partner) continue
-              const key = `${Math.min(x, partner.dx)},${Math.min(y, partner.dy)},${Math.max(x, partner.dx)},${Math.max(y, partner.dy)}`
-              if (seen.has(key)) continue
-              seen.add(key)
-              ctx.beginPath()
-              ctx.moveTo(cxp(x), cyp(y))
-              ctx.lineTo(cxp(partner.dx), cyp(partner.dy))
-              ctx.stroke()
+            const pairNum = Number(cell?.extraData || 0)
+            if (!supportsTeleporterLines(cell?.applianceId) || pairNum <= 0) continue
+            if (!groups.has(pairNum)) groups.set(pairNum, [])
+            groups.get(pairNum).push(a)
+          }
+          for (const arr of groups.values()) {
+            if (arr.length < 2) continue
+            for (let i = 0; i < arr.length; i++) {
+              for (let j = i + 1; j < arr.length; j++) {
+                const a = arr[i], b = arr[j]
+                const key = `${Math.min(a.dx, b.dx)},${Math.min(a.dy, b.dy)},${Math.max(a.dx, b.dx)},${Math.max(a.dy, b.dy)}`
+                if (seen.has(key)) continue
+                seen.add(key)
+                ctx.beginPath()
+                ctx.moveTo(cxp(a.dx), cyp(a.dy))
+                ctx.lineTo(cxp(b.dx), cyp(b.dy))
+                ctx.stroke()
+              }
             }
           }
           ctx.restore()
         }
-        } catch (e) {}
+      } catch (e) {}
 
         // Draw labels according to label display mode (0 = lines+text, 1 = text only, 2 = hidden)
         try {
@@ -2076,7 +2083,7 @@ export default {
           ctx.fillText((entry?.label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
           // Draw teleporter pair number if present
           try {
-            if (cell?.applianceId === 459840623 && (cell.extraData || 0) > 0) {
+            if (supportsTeleporterLines(cell?.applianceId) && (cell.extraData || 0) > 0) {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
               ctx.save()
@@ -2109,7 +2116,7 @@ export default {
           ctx.restore()
           // Draw teleporter pair number if present
           try {
-            if (cell?.applianceId === 459840623 && (cell.extraData || 0) > 0) {
+            if (supportsTeleporterLines(cell?.applianceId) && (cell.extraData || 0) > 0) {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
               ctx.save()
@@ -2147,19 +2154,25 @@ export default {
           const seen = new Set()
           const cx = x => PAD + x * CELL_PX + CELL_PX / 2
           const cy = y => PAD + y * CELL_PX + CELL_PX / 2
-          for (let y = 0; y < grid.value.length; y++) {
-            for (let x = 0; x < (grid.value[y]?.length ?? 0); x++) {
-              const cell = grid.value[y][x]
-              if (cell?.applianceId === 459840623 && (cell.extraData || 0) > 0) {
-                // find partner using getTeleporterPairPos
-                const partner = getTeleporterPairPos(x, y)
-                if (!partner) continue
-                const key = `${Math.min(x, partner.x)},${Math.min(y, partner.y)},${Math.max(x, partner.x)},${Math.max(y, partner.y)}`
+          // Build groups from the exported `cells` array so only included cells are connected
+          const groups = new Map()
+          for (const { x, y, cell } of cells) {
+            const pairNum = Number(cell?.extraData || 0)
+            if (!supportsTeleporterLines(cell?.applianceId) || pairNum <= 0) continue
+            if (!groups.has(pairNum)) groups.set(pairNum, [])
+            groups.get(pairNum).push({ x, y })
+          }
+          for (const arr of groups.values()) {
+            if (arr.length < 2) continue
+            for (let i = 0; i < arr.length; i++) {
+              for (let j = i + 1; j < arr.length; j++) {
+                const a = arr[i], b = arr[j]
+                const key = `${Math.min(a.x, b.x)},${Math.min(a.y, b.y)},${Math.max(a.x, b.x)},${Math.max(a.y, b.y)}`
                 if (seen.has(key)) continue
                 seen.add(key)
                 ctx.beginPath()
-                ctx.moveTo(cx(x), cy(y))
-                ctx.lineTo(cx(partner.x), cy(partner.y))
+                ctx.moveTo(cx(a.x), cy(a.y))
+                ctx.lineTo(cx(b.x), cy(b.y))
                 ctx.stroke()
               }
             }

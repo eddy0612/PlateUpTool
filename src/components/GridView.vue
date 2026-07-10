@@ -28,7 +28,7 @@
                   <template v-else>{{ getApplianceIcon(getDisplayCell(cellInfo.x, cellInfo.y).applianceId) }}</template>
                 </span>
                 <span
-                  v-if="getDisplayCell(cellInfo.x, cellInfo.y).applianceId === TELEPORTER_APPLIANCE_ID && (getDisplayCell(cellInfo.x, cellInfo.y).extraData || 0) > 0"
+                  v-if="supportsTeleporterLines(getDisplayCell(cellInfo.x, cellInfo.y).applianceId) && (getDisplayCell(cellInfo.x, cellInfo.y).extraData || 0) > 0"
                   class="teleporter-pair-number"
                 >{{ getDisplayCell(cellInfo.x, cellInfo.y).extraData }}</span>
               </template>
@@ -341,7 +341,7 @@
 <script>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRestaurantStore, decodeState } from '../store/restaurant'
-import { useGrid, TELEPORTER_APPLIANCE_ID, compactMenuMode } from '../composables/useGrid'
+import { useGrid, supportsTeleporterLines, compactMenuMode } from '../composables/useGrid'
 import { useTouchDebug } from '../composables/useTouchDebug'
 import { readPngText, readStegoFromBytes, readFileAsBytes } from '../composables/usePngMetadata'
 import AddLabelDialog from './AddLabelDialog.vue'
@@ -1912,28 +1912,47 @@ export default {
       const cx = x => x * (tw + 2) + tw / 2
       const cy = y => y * (th + 2) + th / 2
 
+      // Build map from pairNum -> [{x,y}, ...]
+      const pairMap = new Map()
+      for (const cellInfo of flatGrid.value) {
+        const x = cellInfo.x, y = cellInfo.y
+        const cell = getDisplayCell(x, y)
+        const pairNum = cell?.extraData || 0
+        if (!supportsTeleporterLines(cell?.applianceId) || pairNum <= 0) continue
+        if (!pairMap.has(pairNum)) pairMap.set(pairNum, [])
+        pairMap.get(pairNum).push({ x, y })
+      }
+
+      const seen = new Set()
       if (showTeleporterLinesAlways.value) {
-        // Show lines for every teleporter pair (dedupe pairs)
-        const seen = new Set()
-        for (const cellInfo of flatGrid.value) {
-          const x = cellInfo.x, y = cellInfo.y
-          const cell = getDisplayCell(x, y)
-          if (cell?.applianceId === TELEPORTER_APPLIANCE_ID && (cell.extraData || 0) > 0) {
-            const partner = getTeleporterPairPos(x, y)
-            if (!partner) continue
-            const key = `${Math.min(x, partner.x)},${Math.min(y, partner.y)},${Math.max(x, partner.x)},${Math.max(y, partner.y)}`
-            if (seen.has(key)) continue
-            seen.add(key)
-            lines.push({ x1: cx(x), y1: cy(y), x2: cx(partner.x), y2: cy(partner.y) })
+        // For each group, draw lines between every unordered pair
+        for (const arr of pairMap.values()) {
+          for (let i = 0; i < arr.length; i++) {
+            for (let j = i + 1; j < arr.length; j++) {
+              const a = arr[i], b = arr[j]
+              const key = `${Math.min(a.x, b.x)},${Math.min(a.y, b.y)},${Math.max(a.x, b.x)},${Math.max(a.y, b.y)}`
+              if (seen.has(key)) continue
+              seen.add(key)
+              lines.push({ x1: cx(a.x), y1: cy(a.y), x2: cx(b.x), y2: cy(b.y) })
+            }
           }
         }
       } else if (showContextTeleporterLines.value) {
+        // Only draw lines involving selected cells: for each selected teleporter,
+        // draw to every other teleporter in the same group (deduped).
         for (const key of selectedCells.value) {
-          const [x, y] = key.split(',').map(Number)
-          const cell = getDisplayCell(x, y)
-          if (cell?.applianceId === TELEPORTER_APPLIANCE_ID && (cell.extraData || 0) > 0) {
-            const partner = getTeleporterPairPos(x, y)
-            if (partner) lines.push({ x1: cx(x), y1: cy(y), x2: cx(partner.x), y2: cy(partner.y) })
+          const [sx, sy] = key.split(',').map(Number)
+          const sCell = getDisplayCell(sx, sy)
+          const pairNum = sCell?.extraData || 0
+          if (!supportsTeleporterLines(sCell?.applianceId) || pairNum <= 0) continue
+          const arr = pairMap.get(pairNum) || []
+          for (const p of arr) {
+            if (p.x === sx && p.y === sy) continue
+            const u = { x: sx, y: sy }, v = p
+            const key2 = `${Math.min(u.x, v.x)},${Math.min(u.y, v.y)},${Math.max(u.x, v.x)},${Math.max(u.y, v.y)}`
+            if (seen.has(key2)) continue
+            seen.add(key2)
+            lines.push({ x1: cx(u.x), y1: cy(u.y), x2: cx(v.x), y2: cy(v.y) })
           }
         }
       }
@@ -2651,7 +2670,7 @@ export default {
       getTabColorClass, getApplianceBgStyle,
       hoverLabel, hoverApplianceId, onViewportMouseMove, onViewportMouseLeave, onViewportTouchStart, onViewportTouchMove, onViewportTouchEnd,
       getApplianceIcon, isImageIcon, onApplianceImgError,
-      TELEPORTER_APPLIANCE_ID, wallRects, wallDots, wallRectsDoor, wallRectsWall, teleporterPairLines, labelAnchorLines, showTeleporterLinesAlways, labelDisplayMode,
+      supportsTeleporterLines, wallRects, wallDots, wallRectsDoor, wallRectsWall, teleporterPairLines, labelAnchorLines, showTeleporterLinesAlways, labelDisplayMode,
       wallColor, doorColor, hatchPatternColor,
       flipSelectionHorizontal, flipSelectionVertical, startDuplicate, copyToClipboard, cutToClipboard, startPaste, removeSelected, selectAll, invertSelection, rotateSelectionLeft, rotateSelectionRight,
       createLabel, handleLabelPointerDown, getLabelStyle, editLabel, labelDialogVisible, labelDialogInitial, labelDialogTitle, onLabelDialogConfirm, closeLabelDialog,

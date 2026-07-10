@@ -334,7 +334,32 @@ export async function enableSessionModsForCells(cells) {
 }
 
 function isTeleporter(cell) {
-  return cell?.applianceId === TELEPORTER_APPLIANCE_ID
+  // Treat any appliance whose canonical appliance entry advertises
+  // `TeleporterLines: true` as a teleporter. Fall back to the
+  // historical hard-coded `TELEPORTER_APPLIANCE_ID` when the
+  // appliance map hasn't been loaded yet.
+  const apId = Number(cell?.applianceId)
+  return supportsTeleporterLinesSync(apId)
+}
+
+// Synchronous helper: when appliance metadata has been loaded into
+// `__applianceByGameId` we can consult the raw entry for a
+// `TeleporterLines` boolean. If the map isn't ready, fall back to the
+// legacy TELEPORTER_APPLIANCE_ID check so behaviour remains stable.
+function supportsTeleporterLinesSync(applianceId) {
+  if (!applianceId || Number.isNaN(Number(applianceId))) return false
+  if (__applianceByGameId && __applianceByGameId.size > 0) {
+    try {
+      const entry = __applianceByGameId.get(Number(applianceId))
+      if (entry && entry.TeleporterLines != null) return !!entry.TeleporterLines
+    } catch (e) {}
+  }
+  return Number(applianceId) === TELEPORTER_APPLIANCE_ID
+}
+
+// Exported (named) helper for consumers that need to check teleporter support.
+export function supportsTeleporterLines(applianceId) {
+  return supportsTeleporterLinesSync(applianceId)
 }
 
 // Returns the lowest positive integer not already used as an extraData pair number

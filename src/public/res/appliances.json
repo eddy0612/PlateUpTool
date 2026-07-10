@@ -3538,6 +3538,7 @@
         "2DFilename": "2D_Teleporter-459840623.png",
         "ItemDescription": "Teleporter",
         "Reason": "",
+        "TeleporterLines" : true,
         "GameID": 459840623,
         "MapGameId": -1
     },

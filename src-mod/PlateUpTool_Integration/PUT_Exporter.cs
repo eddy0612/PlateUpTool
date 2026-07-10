@@ -682,8 +682,17 @@ namespace PlateUpTool_Integration
                         // the places
                         // -----------------------------------------------------------------------------------
 
+                        // Teleporters have a CConveyTeleport and set extraData == GroupID (their id)
+                        if (base.EntityManager.HasComponent<CConveyTeleport>(primaryOccupant))
+                        {
+                            PlateUpTool_Integration.TDbg("CConveyTeleport so some form of teleporter");
+                            var teleportData = base.EntityManager.GetComponentData<CConveyTeleport>(primaryOccupant);
+                            PlateUpTool_Integration.TDbg("Group Id: " + teleportData.GroupID);
+                            forceExtraData = teleportData.GroupID;
+                        }
+
                         // Rotating grabbers have a CConveyPushRotatable component, and set extraData ==  Target
-                        if (base.EntityManager.HasComponent<CConveyPushRotatable>(primaryOccupant))
+                        else if (base.EntityManager.HasComponent<CConveyPushRotatable>(primaryOccupant))
                         {
                             PlateUpTool_Integration.TDbg("CConveyPushRotatable so some form of corner grabber");
                             var rotateComponent = base.EntityManager.GetComponentData<CConveyPushRotatable>(primaryOccupant);
@@ -691,14 +700,6 @@ namespace PlateUpTool_Integration
                             forceExtraData = (int) rotateComponent.Target;
                         }
 
-                        // Teleporters have a CConveyTeleport and set extraData == GroupID (their id)
-                        else if (base.EntityManager.HasComponent<CConveyTeleport>(primaryOccupant))
-                        {
-                            PlateUpTool_Integration.TDbg("CConveyTeleport so some form of teleporter");
-                            var teleportData = base.EntityManager.GetComponentData<CConveyTeleport>(primaryOccupant);
-                            PlateUpTool_Integration.TDbg("Group Id: " + teleportData.GroupID);
-                            forceExtraData = teleportData.GroupID;
-                        }
 
 
                         // Icecream dispensers - these are represented as a CVariableProvider and have a variable
@@ -1899,20 +1900,20 @@ namespace PlateUpTool_Integration
             // -----------------------------------------------------------------------------------
             // Fix up appliance types with precedence:
 
+            // Teleporters have a CConveyTeleport and set extraData == GroupID (their id)
+            if (base.EntityManager.HasComponent<CConveyTeleport>(entity))
+            {
+                // Nothing to do here: Code left here so priority tree matches the export code
+                // We dont remap IDs for teleporters, we just match
+            }
+
             // Fix grabber direction — extraData contains the Orientation to use
-            if (base.EntityManager.HasComponent<CConveyPushRotatable>(entity))
+            else if (base.EntityManager.HasComponent<CConveyPushRotatable>(entity))
             {
                 var grabber = base.EntityManager.GetComponentData<CConveyPushRotatable>(entity);
                 grabber.Target = (Orientation)target.extraData;
                 base.EntityManager.SetComponentData(entity, grabber);
                 PlateUpTool_Integration.TDbg("FixUp entity " + entity + ": grabber target set to " + grabber.Target);
-            }
-
-            // Teleporters have a CConveyTeleport and set extraData == GroupID (their id)
-            else if (base.EntityManager.HasComponent<CConveyTeleport>(entity))
-            {
-                // Nothing to do here: Code left here so priority tree matches the export code
-                // We dont remap IDs for teleporters, we just match
             }
 
             // Fix ice cream flavour — 0=Vanilla, 1=Chocolate, 2=Strawberry (mirrors ScanGameGrid read)
@@ -2303,11 +2304,10 @@ namespace PlateUpTool_Integration
                     // ReallyExport and ScanGameGrid routines. Search for "ExtraData handling" to find
                     // the places
                     // -----------------------------------------------------------------------------------
-                    if (base.EntityManager.HasComponent<CConveyPushRotatable>(occupant))
-                    {
-                        extraData = (int) base.EntityManager.GetComponentData<CConveyPushRotatable>(occupant).Target;
-                    } else if (base.EntityManager.HasComponent<CConveyTeleport>(occupant)) {
+                    if (base.EntityManager.HasComponent<CConveyTeleport>(occupant)) {
                         extraData = base.EntityManager.GetComponentData<CConveyTeleport>(occupant).GroupID;
+                    } else if (base.EntityManager.HasComponent<CConveyPushRotatable>(occupant)) {
+                        extraData = (int) base.EntityManager.GetComponentData<CConveyPushRotatable>(occupant).Target;
                     } else if (base.EntityManager.HasComponent<CVariableProvider>(occupant)) {
                         extraData = base.EntityManager.GetComponentData<CVariableProvider>(occupant).Current;
                     }
