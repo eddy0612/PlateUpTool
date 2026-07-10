@@ -1006,8 +1006,34 @@ export default {
         if (vb && cellSize.value > 0 && state.roomWidth > 0 && state.roomHeight > 0) {
           const innerW = vb.clientWidth - 16  // 8px padding each side
           const innerH = vb.clientHeight - 16
-          const fz = Math.min(innerW / (state.roomWidth * cellSize.value), innerH / (state.roomHeight * cellSize.value))
-          state.zoom = Math.max(0.25, Math.floor(fz * 100) / 100)
+          // If the grid at 100% would overflow the viewport, the grid-centering
+          // wrapper will add 80px padding on each side (160px total). Account for
+          // that when calculating a fit zoom so we don't leave a horizontal scrollbar.
+          const gridWAt1 = state.roomWidth * cellSize.value * 1
+          const gridHAt1 = state.roomHeight * cellSize.value * 1
+          // Determine whether the centering wrapper currently has padding
+          // applied. If it does, we must account for that when fitting.
+          const centerEl = document.querySelector('.grid-centering-wrapper')
+          const centerStyle = centerEl ? getComputedStyle(centerEl) : null
+          const paddingAppliedNow = centerStyle && (parseFloat(centerStyle.padding) || 0) > 0
+
+          // If the wrapper currently has no padding, prefer zoom=1 when the
+          // grid fits into the inner area; otherwise compute a fit that does
+          // NOT preemptively subtract the centering padding. If padding is
+          // already applied, account for the 80px-per-side reduction.
+          if (!paddingAppliedNow) {
+            if (gridWAt1 <= innerW && gridHAt1 <= innerH) {
+              state.zoom = 1
+            } else {
+              const baseFz = Math.min(innerW / (state.roomWidth * cellSize.value), innerH / (state.roomHeight * cellSize.value))
+              state.zoom = Math.max(0.25, Math.floor(baseFz * 100) / 100)
+            }
+          } else {
+            const effectiveInnerW = Math.max(16, innerW - 160)
+            const effectiveInnerH = Math.max(16, innerH - 160)
+            const fitFz = Math.min(effectiveInnerW / (state.roomWidth * cellSize.value), effectiveInnerH / (state.roomHeight * cellSize.value))
+            state.zoom = Math.max(0.25, Math.floor(fitFz * 100) / 100)
+          }
         } else {
           state.zoom = 1
         }
