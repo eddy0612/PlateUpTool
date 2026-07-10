@@ -2040,12 +2040,18 @@ export default {
     }
 
     // Add 80px scroll padding around the grid only when the grid actually
-    // overflows the viewport, so edge cells are reachable by scrolling.
-    // Using a height-overflow check instead of "zoom > 1" prevents the padding
-    // from pushing the grid off-screen when resetZoom sets a zoom just above 1.
+    // overflows the viewport (either vertically or horizontally), so edge
+    // cells are reachable by scrolling. Use the measured viewport element
+    // width when available to decide horizontal overflow; fall back to
+    // windowWidth otherwise. Subtract the same internal padding (8px each
+    // side) used elsewhere so the decision is consistent.
     const gridCenteringStyle = computed(() => {
       const gridH = state.roomHeight * cellSize.value * state.zoom
-      return gridH > viewportBoxHeight.value - 18 ? { padding: '80px' } : {}
+      const gridW = state.roomWidth * cellSize.value * state.zoom
+      const vpW = viewportEl.value ? viewportEl.value.clientWidth : window.innerWidth
+      const innerW = vpW - 16
+      const innerH = viewportBoxHeight.value - 16
+      return (gridH > innerH || gridW > innerW) ? { padding: '80px' } : {}
     })
     function getTouchDistance(firstTouch, secondTouch) {
       const dx = secondTouch.clientX - firstTouch.clientX
