@@ -3923,5 +3923,207 @@
         "GameID": -95,
         "MapGameId": -1533430406,
         "MapExtraData": 0
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Mint.png",
+        "2DFilename": "2D_Mint.png",
+        "ItemDescription": "Mint",
+        "GameID": -1383080431,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Viola_Flowers.png",
+        "2DFilename": "2D_Viola_Flowers.png",
+        "ItemDescription": "Viola Flowers",
+        "GameID": -1677597382,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Oregano.png",
+        "2DFilename": "2D_Oregano.png",
+        "ItemDescription": "Oregano",
+        "GameID": -1848709278,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Thyme.png",
+        "2DFilename": "2D_Thyme.png",
+        "ItemDescription": "Thyme",
+        "GameID": -1873457825,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Spring_Onion.png",
+        "2DFilename": "2D_Spring_Onion.png",
+        "ItemDescription": "Spring Onion",
+        "GameID": -2146458011,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Tarragon.png",
+        "2DFilename": "2D_Tarragon.png",
+        "ItemDescription": "Tarragon",
+        "GameID": -395285279,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Jasmine.png",
+        "2DFilename": "2D_Jasmine.png",
+        "ItemDescription": "Jasmine",
+        "GameID": -552159415,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "X3DFilename": "3D_Shoddy_Hob.png",
+        "2DFilename": "2D_Shoddy_Hob.png",
+        "ItemDescription": "Shoddy Hob",
+        "GameID": -703157650,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Lavender.png",
+        "2DFilename": "2D_Lavender.png",
+        "ItemDescription": "Lavender",
+        "GameID": -78023961,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "Reason": "No need for plants in planner currently",
+        "X3DFilename": "3D_Shoddy_Starter_Plates.png",
+        "2DFilename": "2D_Shoddy_Starter_Plates.png",
+        "ItemDescription": "Shoddy Starter Plates",
+        "GameID": -951016989,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "X3DFilename": "3D_Shoddy_Table.png",
+        "2DFilename": "2D_Shoddy_Table.png",
+        "ItemDescription": "Shoddy Table",
+        "GameID": -995798081,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Chili.png",
+        "2DFilename": "2D_Chili.png",
+        "ItemDescription": "Chili",
+        "GameID": 1071144288,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Seed.png",
+        "2DFilename": "2D_Seed.png",
+        "ItemDescription": "Seed",
+        "GameID": 116617378,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "X3DFilename": "3D_Shoddy_Counter.png",
+        "2DFilename": "2D_Shoddy_Counter.png",
+        "ItemDescription": "Shoddy Counter",
+        "GameID": 1521405905,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Sage.png",
+        "2DFilename": "2D_Sage.png",
+        "ItemDescription": "Sage",
+        "GameID": 1631244582,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "X3DFilename": "3D_Shoddy_Oven.png",
+        "2DFilename": "2D_Shoddy_Oven.png",
+        "ItemDescription": "Shoddy Oven",
+        "GameID": 179021494,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Cherry_Blossom.png",
+        "2DFilename": "2D_Cherry_Blossom.png",
+        "ItemDescription": "Cherry Blossom",
+        "GameID": 239366585,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Rosemary.png",
+        "2DFilename": "2D_Rosemary.png",
+        "ItemDescription": "Rosemary",
+        "GameID": 245231715,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Rose.png",
+        "2DFilename": "2D_Rose.png",
+        "ItemDescription": "Rose",
+        "GameID": 269955775,
+        "MapGameId": -1
+    },
+    {
+        "Keep": true,
+        "X3DFilename": "3D_Starting_Shower.png",
+        "2DFilename": "2D_Starting_Shower.png",
+        "ItemDescription": "Starting Shower",
+        "GameID": 307023830,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Fennel.png",
+        "2DFilename": "2D_Fennel.png",
+        "ItemDescription": "Fennel",
+        "GameID": 349483235,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Chives.png",
+        "2DFilename": "2D_Chives.png",
+        "ItemDescription": "Chives",
+        "GameID": 444566625,
+        "MapGameId": -1
+    },
+    {
+        "Keep": false,
+        "Reason": "No need for plants in planner currently",
+        "3DFilename": "3D_Bay_Leaves.png",
+        "2DFilename": "2D_Bay_Leaves.png",
+        "ItemDescription": "Bay Leaves",
+        "GameID": 494894462,
+        "MapGameId": -1
     }
 ]
