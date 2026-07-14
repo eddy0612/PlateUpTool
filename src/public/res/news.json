@@ -44,8 +44,8 @@
       ]
     },
     {
-      "version": "1.4beta",
-      "date": "2026-07-01",
+      "version": "1.4",
+      "date": "2026-07-14",
       "title": "MOD support",
       "items": [
         "Added the ability for MOD support within the tool. Turn MODs off in settings if you just want vanilla game items.",
