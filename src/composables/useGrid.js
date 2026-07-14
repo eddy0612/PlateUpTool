@@ -239,16 +239,34 @@ export const TELEPORTER_APPLIANCE_ID = 459840623
 export async function convertCellsToGameId(cells) {
   await _loadApplianceKeepMap()
   if (!__applianceByInternalId) return cells
-  return cells
+  // First map internal sequential IDs -> GameID
+  const mapped = cells
     .map(c => {
-      const internalId = Number(c.applianceId)
-      const entry = __applianceByInternalId.get(internalId)
-      if (!entry || entry.Keep === false) return null
-      const gameId = Number(entry.GameID ?? entry.gameid ?? entry.gameId)
-      if (Number.isNaN(gameId)) return null
-      return { ...c, applianceId: gameId }
+      try {
+        const internalId = Number(c.applianceId ?? c.ID ?? c.id)
+        const entry = __applianceByInternalId.get(internalId)
+        if (!entry || entry.Keep === false) return null
+        const gameId = Number(entry.GameID ?? entry.gameid ?? entry.gameId)
+        if (Number.isNaN(gameId)) return null
+        // Preserve any coordinate hints callers may have provided (_dx/_dy or dx/dy)
+        return { ...c, applianceId: gameId }
+      } catch (e) { return null }
     })
     .filter(Boolean)
+
+  // To keep behaviour consistent with v1 canonicalization, follow MapGameId chains
+  // and apply MapExtraData / Alternatives MapExtraData when available.
+  // canonicalizeV1Cells accepts items of shape { dx, dy, cell } or plain cell-like objects;
+  // construct input preserving caller coordinate fields so we can return in the same shape.
+  try {
+    const canonicalInput = mapped.map(c => ({ dx: c._dx ?? c.dx ?? null, dy: c._dy ?? c.dy ?? null, cell: c }))
+    const canonical = await canonicalizeV1Cells(canonicalInput)
+    // canonical returns array of { dx, dy, cell }
+    return canonical.map(({ dx, dy, cell }) => ({ ...cell, _dx: dx ?? cell._dx ?? cell.dx, _dy: dy ?? cell._dy ?? cell.dy }))
+  } catch (e) {
+    // Fallback: return the simple mapped list if canonicalization fails
+    return mapped
+  }
 }
 
 // Canonicalize v1 cells by following MapGameId chains and applying MapExtraData.
