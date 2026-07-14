@@ -1,0 +1,1 @@
+"C:\Program Files (x86)\Steam\steamapps\common\PlateUp\PlateUp\PlateUp_Data\ModUploader.exe"
