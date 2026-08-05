@@ -1630,6 +1630,7 @@
     {
         "OriginalFileName": "GhostScrubber--560953757-combined.png",
         "Keep": true,
+        "SkipUpdate": true,
         "ID": 148,
         "3DFilename": "GhostScrubber--560953757-combined.png",
         "2DFilename": "2D_GhostScrubber--560953757-combined.png",
@@ -1641,6 +1642,7 @@
     {
         "OriginalFileName": "GhostStatue--1318523640.png",
         "Keep": false,
+        "SkipUpdate": true,
         "ID": 149,
         "3DFilename": "",
         "2DFilename": "",
@@ -1652,6 +1654,7 @@
     {
         "OriginalFileName": "GhostlyClipboard--1946127856-combined.png",
         "Keep": true,
+        "SkipUpdate": true,
         "ID": 150,
         "3DFilename": "GhostlyClipboard--1946127856-combined.png",
         "2DFilename": "2D_GhostlyClipboard--1946127856-combined.png",
@@ -1663,6 +1666,7 @@
     {
         "OriginalFileName": "GhostlyKnife-1313278365-combined.png",
         "Keep": true,
+        "SkipUpdate": true,
         "ID": 151,
         "3DFilename": "GhostlyKnife-1313278365-combined.png",
         "2DFilename": "2D_GhostlyKnife-1313278365-combined.png",
@@ -1674,6 +1678,7 @@
     {
         "OriginalFileName": "GhostlyRollingPin-689268680-combined.png",
         "Keep": true,
+        "SkipUpdate": true,
         "ID": 152,
         "3DFilename": "GhostlyRollingPin-689268680-combined.png",
         "2DFilename": "2D_GhostlyRollingPin-689268680-combined.png",
@@ -1722,6 +1727,7 @@
     {
         "OriginalFileName": "GrabberRotatingS--331651461.png",
         "Keep": true,
+        "SkipUpdate": true,
         "ID": 347,
         "3DFilename": "",
         "2DFilename": "",
@@ -1902,6 +1908,7 @@
     {
         "OriginalFileName": "IceCream--1533430406.png",
         "Keep": true,
+        "SkipUpdate": true,
         "ID": 168,
         "3DFilename": "IceCream--1533430406.png",
         "2DFilename": "2D_IceCream--1533430406.png",
