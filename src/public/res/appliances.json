@@ -3989,7 +3989,7 @@
     },
     {
         "Keep": true,
-        "X3DFilename": "3D_Shoddy_Hob.png",
+        "3DFilename": "3D_Shoddy_Hob.png",
         "2DFilename": "2D_Shoddy_Hob.png",
         "ItemDescription": "Shoddy Hob",
         "GameID": -703157650,
@@ -4007,7 +4007,7 @@
     {
         "Keep": true,
         "Reason": "No need for plants in planner currently",
-        "X3DFilename": "3D_Shoddy_Starter_Plates.png",
+        "3DFilename": "3D_Shoddy_Starter_Plates.png",
         "2DFilename": "2D_Shoddy_Starter_Plates.png",
         "ItemDescription": "Shoddy Starter Plates",
         "GameID": -951016989,
@@ -4015,7 +4015,7 @@
     },
     {
         "Keep": true,
-        "X3DFilename": "3D_Shoddy_Table.png",
+        "3DFilename": "3D_Shoddy_Table.png",
         "2DFilename": "2D_Shoddy_Table.png",
         "ItemDescription": "Shoddy Table",
         "GameID": -995798081,
@@ -4041,7 +4041,7 @@
     },
     {
         "Keep": true,
-        "X3DFilename": "3D_Shoddy_Counter.png",
+        "3DFilename": "3D_Shoddy_Counter.png",
         "2DFilename": "2D_Shoddy_Counter.png",
         "ItemDescription": "Shoddy Counter",
         "GameID": 1521405905,
@@ -4058,7 +4058,7 @@
     },
     {
         "Keep": true,
-        "X3DFilename": "3D_Shoddy_Oven.png",
+        "3DFilename": "3D_Shoddy_Oven.png",
         "2DFilename": "2D_Shoddy_Oven.png",
         "ItemDescription": "Shoddy Oven",
         "GameID": 179021494,
@@ -4093,7 +4093,7 @@
     },
     {
         "Keep": true,
-        "X3DFilename": "3D_Starting_Shower.png",
+        "3DFilename": "3D_Starting_Shower.png",
         "2DFilename": "2D_Starting_Shower.png",
         "ItemDescription": "Starting Shower",
         "GameID": 307023830,
@@ -4128,7 +4128,7 @@
     },
     {
         "Keep": true,
-        "X3DFilename": "3D_Buffet-Platter.png",
+        "3DFilename": "3D_Buffet-Platter.png",
         "2DFilename": "2D_Buffet-Platter.png",
         "ItemDescription": "Buffet - Platter",
         "GameID": -1228506595,
@@ -4136,7 +4136,7 @@
     },
     {
         "Keep": true,
-        "X3DFilename": "3D_Bell_Peppers.png",
+        "3DFilename": "3D_Bell_Peppers.png",
         "2DFilename": "2D_Bell_Peppers.png",
         "ItemDescription": "Bell Peppers",
         "GameID": -1374072955,
@@ -4144,7 +4144,7 @@
     },
     {
         "Keep": true,
-        "X3DFilename": "3D_Avocado.png",
+        "3DFilename": "3D_Avocado.png",
         "2DFilename": "2D_Avocado.png",
         "ItemDescription": "Avocado",
         "GameID": -1809492459,
@@ -4152,7 +4152,7 @@
     },
     {
         "Keep": true,
-        "X3DFilename": "3D_Frying_Pans.png",
+        "3DFilename": "3D_Frying_Pans.png",
         "2DFilename": "2D_Frying_Pans.png",
         "ItemDescription": "Frying Pans",
         "GameID": -2137213147,
@@ -4160,7 +4160,7 @@
     },
     {
         "Keep": true,
-        "X3DFilename": "3D_Limes.png",
+        "3DFilename": "3D_Limes.png",
         "2DFilename": "2D_Limes.png",
         "ItemDescription": "Limes",
         "GameID": -870467526,
@@ -4168,7 +4168,7 @@
     },
     {
         "Keep": true,
-        "X3DFilename": "3D_Buffet-Heated.png",
+        "3DFilename": "3D_Buffet-Heated.png",
         "2DFilename": "2D_Buffet-Heated.png",
         "ItemDescription": "Buffet - Heated",
         "GameID": 524986663,
