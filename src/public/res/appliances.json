@@ -398,6 +398,7 @@
     {
         "OriginalFileName": "BurgerPattyRaw-1150879908-Provider.png",
         "Keep": true,
+        "SkipUpdate2D": true,
         "ID": 36,
         "3DFilename": "BurgerPattyRaw-1150879908-Provider.png",
         "2DFilename": "2D_BurgerPattyRaw-1150879908-Provider.png",
@@ -541,6 +542,7 @@
     {
         "OriginalFileName": "Chair--1979922052.png",
         "Keep": true,
+        "SkipUpdate2D": true,
         "ID": 49,
         "3DFilename": "Chair--1979922052.png",
         "2DFilename": "2D_Chair--1979922052.png",
@@ -1631,6 +1633,7 @@
         "OriginalFileName": "GhostScrubber--560953757-combined.png",
         "Keep": true,
         "SkipUpdate": true,
+        "SkipUpdate2D": true,
         "ID": 148,
         "3DFilename": "GhostScrubber--560953757-combined.png",
         "2DFilename": "2D_GhostScrubber--560953757-combined.png",
@@ -1655,6 +1658,7 @@
         "OriginalFileName": "GhostlyClipboard--1946127856-combined.png",
         "Keep": true,
         "SkipUpdate": true,
+        "SkipUpdate2D": true,
         "ID": 150,
         "3DFilename": "GhostlyClipboard--1946127856-combined.png",
         "2DFilename": "2D_GhostlyClipboard--1946127856-combined.png",
@@ -1667,6 +1671,7 @@
         "OriginalFileName": "GhostlyKnife-1313278365-combined.png",
         "Keep": true,
         "SkipUpdate": true,
+        "SkipUpdate2D": true,
         "ID": 151,
         "3DFilename": "GhostlyKnife-1313278365-combined.png",
         "2DFilename": "2D_GhostlyKnife-1313278365-combined.png",
@@ -1679,6 +1684,7 @@
         "OriginalFileName": "GhostlyRollingPin-689268680-combined.png",
         "Keep": true,
         "SkipUpdate": true,
+        "SkipUpdate2D": true,
         "ID": 152,
         "3DFilename": "GhostlyRollingPin-689268680-combined.png",
         "2DFilename": "2D_GhostlyRollingPin-689268680-combined.png",
@@ -1728,6 +1734,7 @@
         "OriginalFileName": "GrabberRotatingS--331651461.png",
         "Keep": true,
         "SkipUpdate": true,
+        "SkipUpdate2D": true,
         "ID": 347,
         "3DFilename": "",
         "2DFilename": "",
@@ -1875,6 +1882,7 @@
     {
         "OriginalFileName": "HotdogRaw-1702717896-Provider.png",
         "Keep": true,
+        "SkipUpdate2D": true,
         "ID": 165,
         "3DFilename": "HotdogRaw-1702717896-Provider.png",
         "2DFilename": "2D_HotdogRaw-1702717896-Provider.png",
@@ -1909,6 +1917,7 @@
         "OriginalFileName": "IceCream--1533430406.png",
         "Keep": true,
         "SkipUpdate": true,
+        "SkipUpdate2D": true,
         "ID": 168,
         "3DFilename": "IceCream--1533430406.png",
         "2DFilename": "2D_IceCream--1533430406.png",
@@ -2242,6 +2251,7 @@
     {
         "OriginalFileName": "Meat-1306214641-Provider.png",
         "Keep": true,
+        "SkipUpdate2D": true,
         "ID": 197,
         "3DFilename": "Meat-1306214641-Provider.png",
         "2DFilename": "2D_Meat-1306214641-Provider.png",
@@ -2253,6 +2263,7 @@
     {
         "OriginalFileName": "MeatBoned--315069952-Provider.png",
         "Keep": true,
+        "SkipUpdate2D": true,
         "ID": 198,
         "3DFilename": "MeatBoned--315069952-Provider.png",
         "2DFilename": "2D_MeatBoned--315069952-Provider.png",
@@ -2264,6 +2275,7 @@
     {
         "OriginalFileName": "MeatThick--45632521-Provider.png",
         "Keep": true,
+        "SkipUpdate2D": true,
         "ID": 199,
         "3DFilename": "MeatThick--45632521-Provider.png",
         "2DFilename": "2D_MeatThick--45632521-Provider.png",
@@ -2275,6 +2287,7 @@
     {
         "OriginalFileName": "MeatThin-1256038534-Provider.png",
         "Keep": true,
+        "SkipUpdate2D": true,
         "ID": 200,
         "3DFilename": "MeatThin-1256038534-Provider.png",
         "2DFilename": "2D_MeatThin-1256038534-Provider.png",
@@ -2363,6 +2376,7 @@
     {
         "OriginalFileName": "Mince--2047874552-Provider.png",
         "Keep": true,
+        "SkipUpdate2D": true,
         "ID": 208,
         "3DFilename": "Mince--2047874552-Provider.png",
         "2DFilename": "2D_Mince--2047874552-Provider.png",
@@ -3717,6 +3731,7 @@
     {
         "OriginalFileName": "TurkeyIngredient--1831502471-Provider.png",
         "Keep": true,
+        "SkipUpdate2D": true,
         "ID": 330,
         "3DFilename": "TurkeyIngredient--1831502471-Provider.png",
         "2DFilename": "2D_TurkeyIngredient--1831502471-Provider.png",

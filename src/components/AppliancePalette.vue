@@ -1394,7 +1394,7 @@ export default {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
               ctx.save()
-              ctx.fillStyle = '#fff'
+              ctx.fillStyle = '#000'
               ctx.font = `700 ${Math.floor(CELL_PX * 0.45)}px sans-serif`
               ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
               ctx.shadowColor = 'rgba(0,0,0,0.6)'
@@ -1427,7 +1427,7 @@ export default {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
               ctx.save()
-              ctx.fillStyle = '#fff'
+              ctx.fillStyle = '#000'
               ctx.font = `700 ${Math.floor(CELL_PX * 0.45)}px sans-serif`
               ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
               ctx.shadowColor = 'rgba(0,0,0,0.6)'
@@ -2087,7 +2087,7 @@ export default {
               const num = String(cell.extraData)
               const nx = cx + CELL_PX / 2, ny = cy + CELL_PX / 2
               ctx.save()
-              ctx.fillStyle = '#fff'
+              ctx.fillStyle = '#000'
               ctx.font = `700 ${Math.floor(CELL_PX * 0.45)}px sans-serif`
               ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
               ctx.shadowColor = 'rgba(0,0,0,0.6)'
@@ -2126,7 +2126,7 @@ export default {
               ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill()
               ctx.restore()
               ctx.save()
-              ctx.fillStyle = '#fff'
+              ctx.fillStyle = '#000'
               ctx.font = `700 ${Math.floor(CELL_PX * 0.45)}px sans-serif`
               ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
               ctx.shadowColor = 'rgba(0,0,0,0.6)'
