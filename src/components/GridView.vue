@@ -2874,8 +2874,8 @@ export default {
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  color: #fff;
-  text-shadow: 0 0 3px #000, 0 0 6px #000;
+  color: #000;
+  text-shadow: 0 0 2px rgba(255,255,255,0.6);
   pointer-events: none;
   z-index: 5;
 }
