@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""
-copy_appliances.py
+"""Update the 4D graphics from a new data dump
 
 Usage example:
-python update_graphics.py \
+python update_graphics_3D.py \
   --json "..\src\public\res\appliances.json" \
   --src "C:\temp\plateup\originals\1.5.0\1.5.0\AppliancePicture" \
-  --dst "..\src\public\res\3D"
+  --dst "..\src\public\res\3D" \
+  --dry-run
 """
 import argparse
 import json
