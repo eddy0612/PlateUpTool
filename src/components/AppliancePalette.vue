@@ -495,7 +495,7 @@ export default {
     const { state } = useRestaurantStore()
     const { palette, loading } = useAppliancePalette()
     const { logTouchDebug } = useTouchDebug()
-    const { addToGrid, hoverLabel, viewportBoxHeight, removeSelected, selectedCells, selectedLabelIds, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState, getTeleporterPairPos, cellSize } = useGrid()
+    const { addToGrid, hoverLabel, viewportBoxHeight, removeSelected, selectedCells, selectedLabelIds, copyToClipboard, cutToClipboard, startPaste, startPasteFromCells, setPasteAnchor, confirmPaste, cancelPaste, isStructureMode, selectedStructureTool, setStructureTool, flatGrid, isImageIcon, isCellGhosted, grid, startPaletteDrag, updatePaletteDrag, commitPaletteDrag, loadGridFromState, getTeleporterPairPos, cellSize, get2DApplianceIcon, getApplianceLabel } = useGrid()
 
     const structureTools = [
       { id: 'wall', label: 'Wall', description: 'Full-height wall' },
@@ -1407,8 +1407,8 @@ export default {
 
       await Promise.all(localCells.map(({ dx, dy, cell }) => new Promise(resolve => {
         // match palette id loosely to tolerate string/number mismatches from older blueprints
-        const entry = palette.value.find(a => a.id == cell.applianceId)
-        const iconSrc = entry?.icon2D || entry?.icon
+        const iconSrc = get2DApplianceIcon(cell.applianceId, cell.extraData)
+        const label = getApplianceLabel(cell.applianceId, cell.extraData)
         const cx = padLeft + dx * CELL_PX
         const cy = padTop + dy * CELL_PX
 
@@ -1419,7 +1419,7 @@ export default {
           ctx.font = `${Math.floor(CELL_PX * 0.45)}px sans-serif`
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
-          ctx.fillText((entry?.label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
+          ctx.fillText((label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
           // Draw teleporter pair number if present
           try {
             if (supportsTeleporterLines(cell?.applianceId) && (cell.extraData || 0) > 0) {
@@ -2103,8 +2103,8 @@ export default {
         }
       }
       await Promise.all(cells.map(({ x, y, cell }) => new Promise(resolve => {
-        const entry = palette.value.find(a => a.id === cell.applianceId)
-        const iconSrc = entry?.icon2D || entry?.icon
+        const iconSrc = get2DApplianceIcon(cell.applianceId, cell.extraData)
+        const label = getApplianceLabel(cell.applianceId, cell.extraData)
         const cx = PAD + x * CELL_PX, cy = PAD + y * CELL_PX
         if (!iconSrc || !isImageIcon(iconSrc)) {
           ctx.fillStyle = isDark ? '#2a3a54' : '#dde3ea'
@@ -2112,7 +2112,7 @@ export default {
           ctx.fillStyle = isDark ? '#b0c0da' : '#555'
           ctx.font = `${Math.floor(CELL_PX * 0.4)}px sans-serif`
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-          ctx.fillText((entry?.label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
+          ctx.fillText((label || '?').slice(0, 2), cx + CELL_PX / 2, cy + CELL_PX / 2)
           // Draw teleporter pair number if present
           try {
             if (supportsTeleporterLines(cell?.applianceId) && (cell.extraData || 0) > 0) {
