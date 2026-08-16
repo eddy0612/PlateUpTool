@@ -567,7 +567,7 @@ export default {
       bbSearchDialogVisible.value = false
       nextTick(() => {
         try { if (bbScrollEl.value) bbScrollEl.value.scrollLeft = 0 } catch (e) {}
-        redrawPaletteCanvases()
+        scheduleRedrawPaletteCanvases()
         updateScrollChevrons()
       })
     }
@@ -580,7 +580,7 @@ export default {
       bbSearchQuery.value = ''
       nextTick(() => {
         try { if (bbScrollEl.value) bbScrollEl.value.scrollLeft = 0 } catch (e) {}
-        redrawPaletteCanvases()
+        scheduleRedrawPaletteCanvases()
         updateScrollChevrons()
       })
     }
@@ -606,7 +606,7 @@ export default {
 
     function openBbInventory() {
       bbInventoryVisible.value = true
-      nextTick(() => { updateInvScrollChevrons(); redrawPaletteCanvases() })
+      nextTick(() => { updateInvScrollChevrons(); scheduleRedrawPaletteCanvases() })
     }
 
     function closeBbInventory() {
@@ -659,8 +659,7 @@ export default {
     const inventoryTotal = computed(() => inventoryList.value.reduce((s, i) => s + i.count, 0))
 
     // Canvas image drawing with top-crop (but avoid top-crop for 2D icons).
-    // Probe 3D assets with `fetch({cache:'no-store'})` to avoid serving cached 304s;
-    // fall back to the 2D path when the probe or image load fails.
+    // Images are cached in memory to avoid re-downloading on every redraw.
 
     function drawModBadge(ctx, width, height) {
       const badgeH = Math.max(13, Math.round(height * 0.17))
@@ -687,62 +686,85 @@ export default {
       ctx.restore()
     }
 
+    // Module-level image cache to prevent re-downloading images
+    const imageCache = new Map()
+    const loadingImages = new Map()
+
     function cropAndDrawImage(canvas, src) {
       if (!canvas || !src) return
       const ctx = canvas.getContext('2d')
 
-      function drawFromUrl(url) {
+      function drawImageToCanvas(img, url) {
+        const cropTop = (typeof url === 'string' && (url.includes('/res/2D/') || url.includes('2D_'))) ? 0 : 50
+        const sx = 0, sy = cropTop, sw = img.width, sh = Math.max(img.height - cropTop, 1)
+        const rect = canvas.getBoundingClientRect()
+        canvas.width = rect.width || 100
+        canvas.height = rect.height || 100
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        const croppedAspect = sw / sh
+        const canvasAspect = canvas.width / canvas.height
+        let dw, dh, dx, dy
+        if (croppedAspect > canvasAspect) {
+          dw = canvas.width; dh = canvas.width / croppedAspect; dx = 0; dy = (canvas.height - dh) / 2
+        } else {
+          dh = canvas.height; dw = canvas.height * croppedAspect; dx = (canvas.width - dw) / 2; dy = 0
+        }
+        ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
+        if (canvas.dataset.isMod === 'true') {
+          drawModBadge(ctx, canvas.width, canvas.height)
+        }
+      }
+
+      function loadAndCacheImage(url, fallbackUrl = null) {
+        // Check if image is already cached
+        if (imageCache.has(url)) {
+          const img = imageCache.get(url)
+          if (img.complete && img.naturalWidth > 0) {
+            drawImageToCanvas(img, url)
+            return
+          }
+        }
+
+        // Check if image is currently being loaded
+        if (loadingImages.has(url)) {
+          loadingImages.get(url).push(() => {
+            const img = imageCache.get(url)
+            if (img && img.complete) drawImageToCanvas(img, url)
+          })
+          return
+        }
+
+        // Start loading the image
+        const callbacks = []
+        loadingImages.set(url, callbacks)
+
         const img = new window.Image()
         img.crossOrigin = 'anonymous'
+        
         img.onload = function () {
-          const cropTop = (typeof url === 'string' && (url.includes('/res/2D/') || url.includes('2D_'))) ? 0 : 50
-          const sx = 0, sy = cropTop, sw = img.width, sh = Math.max(img.height - cropTop, 1)
-          const rect = canvas.getBoundingClientRect()
-          canvas.width = rect.width || 100
-          canvas.height = rect.height || 100
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
-          const croppedAspect = sw / sh
-          const canvasAspect = canvas.width / canvas.height
-          let dw, dh, dx, dy
-          if (croppedAspect > canvasAspect) {
-            dw = canvas.width; dh = canvas.width / croppedAspect; dx = 0; dy = (canvas.height - dh) / 2
-          } else {
-            dh = canvas.height; dw = canvas.height * croppedAspect; dx = (canvas.width - dw) / 2; dy = 0
-          }
-          ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
-          if (canvas.dataset.isMod === 'true') {
-            drawModBadge(ctx, canvas.width, canvas.height)
-          }
+          imageCache.set(url, img)
+          loadingImages.delete(url)
+          drawImageToCanvas(img, url)
+          // Execute any pending callbacks for this image
+          callbacks.forEach(cb => cb())
         }
+        
         img.onerror = function () {
-          try {
-            if (typeof url === 'string' && url.includes('/res/3D/')) {
-              const alt = url.replace('/res/3D/', '/res/2D/')
-              drawFromUrl(alt)
-              return
-            }
-          } catch (e) {}
+          loadingImages.delete(url)
+          if (fallbackUrl) {
+            loadAndCacheImage(fallbackUrl)
+          }
         }
+        
         img.src = url
       }
 
+      // For 3D images, set up 2D fallback
       if (typeof src === 'string' && src.includes('/res/3D/')) {
-        try {
-          fetch(src, { method: 'GET', cache: 'no-store' }).then(resp => {
-            if (resp && resp.ok) {
-              drawFromUrl(src)
-            } else {
-              const alt = src.replace('/res/3D/', '/res/2D/')
-              drawFromUrl(alt)
-            }
-          }).catch(() => {
-            drawFromUrl(src)
-          })
-        } catch (e) {
-          drawFromUrl(src)
-        }
+        const fallback = src.replace('/res/3D/', '/res/2D/')
+        loadAndCacheImage(src, fallback)
       } else {
-        drawFromUrl(src)
+        loadAndCacheImage(src)
       }
     }
 
@@ -875,24 +897,34 @@ export default {
       })
     }
 
-    watch(filteredPalette, redrawPaletteCanvases, { immediate: true })
+    // Debounced version to batch multiple rapid redraw requests
+    let redrawTimeout = null
+    function scheduleRedrawPaletteCanvases() {
+      if (redrawTimeout) clearTimeout(redrawTimeout)
+      redrawTimeout = setTimeout(() => {
+        redrawTimeout = null
+        redrawPaletteCanvases()
+      }, 10)
+    }
+
+    watch(filteredPalette, scheduleRedrawPaletteCanvases, { immediate: true })
 
     watch(bbSearchQuery, () => {
-      nextTick(() => { redrawPaletteCanvases(); updateScrollChevrons() })
+      nextTick(() => { scheduleRedrawPaletteCanvases(); updateScrollChevrons() })
     })
 
     watch(isStructureMode, (val) => {
-      if (!val) redrawPaletteCanvases()
+      if (!val) scheduleRedrawPaletteCanvases()
       nextTick(updateScrollChevrons)
     })
 
     watch(isPreviewTab, (val) => {
-      if (!val) redrawPaletteCanvases()
-      else nextTick(redrawPaletteCanvases)
+      if (!val) scheduleRedrawPaletteCanvases()
+      else nextTick(scheduleRedrawPaletteCanvases)
       nextTick(updateScrollChevrons)
     })
 
-    watch(inventoryList, () => { nextTick(redrawPaletteCanvases) })
+    watch(inventoryList, () => { nextTick(scheduleRedrawPaletteCanvases) })
 
     function addAllToGrid() {
       for (const item of palette.value) {
@@ -915,7 +947,7 @@ export default {
     // Redraw bb-item canvases when the large-icon threshold (520px) is crossed so
     // cropAndDrawImage picks up the new CSS-driven canvas dimensions.
     const bbLargeItems = computed(() => bottomBarMode && windowWidth.value >= 520)
-    watch(bbLargeItems, redrawPaletteCanvases)
+    watch(bbLargeItems, scheduleRedrawPaletteCanvases)
 
     function onWindowResize() {
       windowWidth.value = getViewportWidth()
@@ -1170,7 +1202,7 @@ export default {
       el.scrollBy({ left: delta, behavior: 'smooth' })
     }
     watch(paletteTab, (val) => {
-      if (val === 'appliances') redrawPaletteCanvases()
+      if (val === 'appliances') scheduleRedrawPaletteCanvases()
       nextTick(updateScrollChevrons)
     })
     const blueprintFilter = ref('')
