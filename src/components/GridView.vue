@@ -420,6 +420,11 @@ export default {
       if (state.activeTabId === 'complete') return {}
       const cell = getDisplayCell(x, y)
       if (!cell?.applianceId) return {}
+      // Don't apply tab colour during move preview so the green/red highlight background shows through
+      if (moveDragActive.value) {
+        const move = getCellMoveState(x, y)
+        if (move === 'preview-valid' || move === 'preview-invalid') return {}
+      }
       const firstTabId = Array.isArray(cell.tabIds) ? cell.tabIds[0] : cell.tabId
       if (!firstTabId) return {}
       const idx = userTabColorMap.value[firstTabId]
