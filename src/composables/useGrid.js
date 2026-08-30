@@ -904,14 +904,26 @@ const moveDragTargetMap = computed(() => {
 
 const isMoveValid = computed(() => {
   if (!moveDragActive.value || moveDragTargetMap.value.size === 0) return false
+  const isSingle = selectedCells.value.size === 1
   const sourceKeys = new Set(moveDragTargetMap.value.values())
   for (const [tKey] of moveDragTargetMap.value) {
     const [tx, ty] = tKey.split(',').map(Number)
     if (tx < 0 || tx >= state.roomWidth || ty < 0 || ty >= state.roomHeight) return false
-    // Occupied by a cell that is NOT one of the sources being moved
-    if (grid.value[ty]?.[tx]?.applianceId && !sourceKeys.has(cellKey(tx, ty))) return false
+    // For multi-cell selections, occupied non-source cells block the move.
+    // For a single-cell selection, landing on an occupied cell triggers a swap instead.
+    if (!isSingle && grid.value[ty]?.[tx]?.applianceId && !sourceKeys.has(cellKey(tx, ty))) return false
   }
   return true
+})
+
+// True when a single-cell drag is hovering over a different occupied cell (swap scenario)
+const isSwapDrag = computed(() => {
+  if (!moveDragActive.value || selectedCells.value.size !== 1) return false
+  if (moveDragTargetMap.value.size === 0) return false
+  const [[tKey]] = moveDragTargetMap.value
+  const [tx, ty] = tKey.split(',').map(Number)
+  const sourceKeys = new Set(moveDragTargetMap.value.values())
+  return !!(grid.value[ty]?.[tx]?.applianceId && !sourceKeys.has(cellKey(tx, ty)))
 })
 
 const isMoveAllOutside = computed(() => {
@@ -928,7 +940,22 @@ function getCellMoveState(x, y) {
   if (!moveDragActive.value) return null
   const key = cellKey(x, y)
   if (moveDragTargetMap.value.has(key)) return isMoveValid.value ? 'preview-valid' : 'preview-invalid'
-  if (selectedCells.value.has(key) && !isCellGhosted(x, y)) return isMoveAllOutside.value ? 'delete-preview' : 'source'
+  // In a swap drag the source cell will receive the target item, so show it as preview-valid too.
+  // Use raw grid data for the ghost check to avoid triggering the getDisplayCell→isCellGhosted
+  // cycle that occurs because getDisplayCell now shows swap-preview content for this cell.
+  if (selectedCells.value.has(key)) {
+    const rawCell = grid.value[y]?.[x]
+    let ghosted = false
+    if (rawCell?.applianceId && state.activeTabId !== 'complete') {
+      ghosted = Array.isArray(rawCell.tabIds)
+        ? !rawCell.tabIds.includes(state.activeTabId)
+        : rawCell.tabId != null ? rawCell.tabId !== state.activeTabId : false
+    }
+    if (!ghosted) {
+      if (isSwapDrag.value) return 'preview-valid'
+      return isMoveAllOutside.value ? 'delete-preview' : 'source'
+    }
+  }
   return null
 }
 
@@ -939,6 +966,23 @@ function getDisplayCell(x, y) {
     if (srcKey !== undefined) {
       const [sx, sy] = srcKey.split(',').map(Number)
       return grid.value[sy]?.[sx] || null
+    }
+    // Swap preview: show the target item at the source position so the user can see the swap.
+    // Use raw grid data for the ghost check — calling isCellGhosted here would recurse back
+    // into getDisplayCell because isCellGhosted itself calls getDisplayCell.
+    if (isSwapDrag.value && selectedCells.value.has(cellKey(x, y))) {
+      const rawCell = grid.value[y]?.[x]
+      let ghosted = false
+      if (rawCell?.applianceId && state.activeTabId !== 'complete') {
+        ghosted = Array.isArray(rawCell.tabIds)
+          ? !rawCell.tabIds.includes(state.activeTabId)
+          : rawCell.tabId != null ? rawCell.tabId !== state.activeTabId : false
+      }
+      if (!ghosted) {
+        const [[tKey]] = moveDragTargetMap.value
+        const [tx, ty] = tKey.split(',').map(Number)
+        return grid.value[ty]?.[tx] || null
+      }
     }
   }
   if (pastePending.value) {
@@ -954,6 +998,7 @@ function updateMoveDragOffset(dx, dy) { moveDragOffset.value = { dx, dy } }
 
 function commitMoveDrag() {
   if (!isMoveValid.value) { cancelMoveDrag(); return }
+  const doSwap = isSwapDrag.value
   const moves = []
   const pairs = []
   for (const [tKey, sKey] of moveDragTargetMap.value) {
@@ -961,10 +1006,17 @@ function commitMoveDrag() {
     const [sx, sy] = sKey.split(',').map(Number)
     pairs.push({ sx, sy, tx, ty })
     moves.push({ tx, ty, content: { ...grid.value[sy][sx] } })
+    if (doSwap) {
+      // Place the displaced target item back at the source position
+      const displaced = grid.value[ty]?.[tx] ? { ...grid.value[ty][tx] } : null
+      moves.push({ tx: sx, ty: sy, content: displaced })
+    }
   }
-  for (const sKey of moveDragTargetMap.value.values()) {
-    const [sx, sy] = sKey.split(',').map(Number)
-    grid.value[sy][sx] = null
+  if (!doSwap) {
+    for (const sKey of moveDragTargetMap.value.values()) {
+      const [sx, sy] = sKey.split(',').map(Number)
+      grid.value[sy][sx] = null
+    }
   }
   for (const { tx, ty, content } of moves) {
     grid.value[ty][tx] = content
