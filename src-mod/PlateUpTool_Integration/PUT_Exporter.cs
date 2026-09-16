@@ -1325,6 +1325,27 @@ namespace PlateUpTool_Integration
                 try
                 {
                     object val = f.GetValue(obj);
+                    if (val != null)
+                    {
+                        var vtype = val.GetType();
+                        try
+                        {
+                            var countProp = vtype.GetProperty("Count");
+                            var indexer = vtype.GetProperty("Item");
+                            if (countProp != null && indexer != null)
+                            {
+                                int cnt = (int)countProp.GetValue(val);
+                                PlateUpTool_Integration.TDbg(prefix + indent + f.Name + " Count=" + cnt + " (");
+                                for (int ii = 0; ii < cnt; ii++)
+                                {
+                                    try { var it = indexer.GetValue(val, new object[] { ii }); PlateUpTool_Integration.TDbg(prefix + indent + "    [" + ii + "] = " + (it != null ? it.ToString() : "null")); } catch { PlateUpTool_Integration.TDbg(prefix + indent + "    [" + ii + "] = (error)"); }
+                                }
+                                PlateUpTool_Integration.TDbg(prefix + indent + ")");
+                                continue;
+                            }
+                        }
+                        catch { }
+                    }
                     PlateUpTool_Integration.TDbg(prefix + indent + f.Name + " = " + (val != null ? val.ToString() : "null"));
                 }
                 catch (Exception ex)
@@ -1339,6 +1360,29 @@ namespace PlateUpTool_Integration
                 try
                 {
                     object val = p.GetValue(obj);
+                    // Special-case KitchenData.ItemList / SpecificComponents so we print the contained item IDs
+                    if (val != null)
+                    {
+                        var vtype = val.GetType();
+                        try
+                        {
+                            // Detect common ItemList shape: has Count property and indexer
+                            var countProp = vtype.GetProperty("Count");
+                            var indexer = vtype.GetProperty("Item");
+                            if (countProp != null && indexer != null)
+                            {
+                                int cnt = (int)countProp.GetValue(val);
+                                PlateUpTool_Integration.TDbg(prefix + indent + p.Name + " Count=" + cnt + " (");
+                                for (int ii = 0; ii < cnt; ii++)
+                                {
+                                    try { var it = indexer.GetValue(val, new object[] { ii }); PlateUpTool_Integration.TDbg(prefix + indent + "    [" + ii + "] = " + (it != null ? it.ToString() : "null")); } catch { PlateUpTool_Integration.TDbg(prefix + indent + "    [" + ii + "] = (error)"); }
+                                }
+                                PlateUpTool_Integration.TDbg(prefix + indent + ")");
+                                continue;
+                            }
+                        }
+                        catch { }
+                    }
                     PlateUpTool_Integration.TDbg(prefix + indent + p.Name + " = " + (val != null ? val.ToString() : "null"));
                 }
                 catch { }
@@ -2190,11 +2234,29 @@ namespace PlateUpTool_Integration
             PlateUpTool_Integration.TDbg("  Imported IDs: " + string.Join(", ", imported.Select(c => c.applianceId + "@(" + c.x + "," + c.y + ")").ToArray()));
             PlateUpTool_Integration.TDbg("  Game IDs:     " + string.Join(", ", available.Select(g => g.applianceId + (g.altId != 0 ? "/alt" + g.altId : "") + "@(" + g.putX + "," + g.putY + ")").ToArray()));
 
-            // Greedily match each imported cell in ID order to improve determinism.
-            foreach (var imp in imported.OrderBy(c => c.applianceId))
+            // Greedily match each imported cell in ID order, but prefer imported
+            // cells that carry additionalData so exact-configured grabbers are
+            // matched first. This avoids a no-additionalData imported cell
+            // claiming a game appliance that actually has additionalData.
+            foreach (var imp in imported.OrderBy(c => c.applianceId)
+                                          .ThenByDescending(c => HasAdditionalData(c.additionalData)))
             {
                 // Candidates matching by applianceId (or altId)
                 var candidates = remaining.Where(g => (g.applianceId == imp.applianceId || (g.altId != 0 && g.altId == imp.applianceId))).ToList();
+                // If multiple candidates exist, log their additionalData for diagnostics
+                if (candidates.Count > 1)
+                {
+                    try
+                    {
+                        PlateUpTool_Integration.TDbg("  Multiple candidates for imp=" + imp.applianceId + "@(" + imp.x + "," + imp.y + ") count=" + candidates.Count);
+                        PlateUpTool_Integration.TDbg("    imp.additionalData=" + (HasAdditionalData(imp.additionalData) ? string.Join(",", imp.additionalData) : "(none)"));
+                        foreach (var g in candidates)
+                        {
+                            PlateUpTool_Integration.TDbg("    candidate at put=(" + g.putX + "," + g.putY + ") additionalData=" + (HasAdditionalData(g.additionalData) ? string.Join(",", g.additionalData) : "(none)"));
+                        }
+                    }
+                    catch { }
+                }
                 if (candidates.Count == 0)
                 {
                     PlateUpTool_Integration.TDbg("  FAIL no candidate: imp=" + imp.applianceId + " at (" + imp.x + "," + imp.y + ")");
@@ -2216,9 +2278,17 @@ namespace PlateUpTool_Integration
                 if (match == null)
                     match = candidates.FirstOrDefault(g => g.extraData == imp.extraData);
 
-                // 4) applianceId only (fallback to any candidate)
+                // 4) applianceId only (fallback to any candidate). Prefer a
+                // candidate that also has no additionalData when the imported
+                // cell lacks additionalData so plain grabbers match plain
+                // grabbers before claiming configured ones.
                 if (match == null)
-                    match = candidates[0];
+                {
+                    if (!HasAdditionalData(imp.additionalData))
+                        match = candidates.FirstOrDefault(g => !HasAdditionalData(g.additionalData)) ?? candidates[0];
+                    else
+                        match = candidates[0];
+                }
 
                 PlateUpTool_Integration.TDbg("  Matched: imp=" + imp.applianceId + "@(" + imp.x + "," + imp.y + ") -> game=" + match.applianceId + "@(" + match.putX + "," + match.putY + ")");
                 pairings.Add(new ImportPairing(imp, match));
