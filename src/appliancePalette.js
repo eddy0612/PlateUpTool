@@ -102,7 +102,9 @@ export async function getAppliancePalette() {
           label: alt['ItemDescription'] || label,
           icon: icon3 || icon2 || '',
           icon2D: icon2 || '',
-          flipPartner,
+          // Allow per-alternative flipPartner to override the main entry's
+          // flipPartner (keeps parity with Next/Prev stored on alternatives).
+          flipPartner: (alt.flipPartner != null) ? (Number(alt.flipPartner) || null) : flipPartner,
           alternativeKey: k,
           isMod: sourceSteamId !== -1,
           sourceSteamId,

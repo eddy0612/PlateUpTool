@@ -659,9 +659,25 @@ function flipSelectionVertical() {
     // When flipping across vertical axis (reverse x), mirror rotation: 1<->3, 0/2 unchanged
     const rot = src.rotation || 0
     const newRot = (4 - rot) % 4
-    const paletteEntry = palette.value.find(p => p.id === src.applianceId)
-    const newApplianceId = paletteEntry && paletteEntry.flipPartner ? paletteEntry.flipPartner : src.applianceId
-    return { tx, ty, content: { ...src, applianceId: newApplianceId, rotation: newRot } }
+    // Prefer a palette entry that matches the exact alternative (extraData)
+    // and read its per-alternative `flipPartner` if present. Do NOT use
+    // legacy raw appliance objects here.
+    const srcExtra = Number(src.extraData || 0)
+    const paletteEntry = palette.value.find(p => p.id === src.applianceId && (Number(p.alternativeKey || 0) === srcExtra)) || palette.value.find(p => p.id === src.applianceId)
+    // If the palette alternative defines flipPartner, it's the target alternative key.
+    let newApplianceId = src.applianceId
+    let newExtraData = srcExtra
+    if (paletteEntry && paletteEntry.flipPartner != null) {
+      const targetAltKey = Number(paletteEntry.flipPartner)
+      if (!Number.isNaN(targetAltKey)) {
+        const altEntry = palette.value.find(a => a.id === src.applianceId && Number(a.alternativeKey || 0) === targetAltKey)
+        if (altEntry) {
+          newApplianceId = src.applianceId
+          newExtraData = targetAltKey
+        }
+      }
+    }
+    return { tx, ty, content: { ...src, applianceId: newApplianceId, extraData: newExtraData, rotation: newRot } }
   })
 
   // Clear sources then write targets
@@ -739,9 +755,25 @@ function flipSelectionHorizontal() {
     // When flipping across horizontal axis (reverse y), invert up/down: 0<->2, 1/3 unchanged
     const rot = src.rotation || 0
     const newRot = (2 - rot + 4) % 4
-    const paletteEntry = palette.value.find(p => p.id === src.applianceId)
-    const newApplianceId = paletteEntry && paletteEntry.flipPartner ? paletteEntry.flipPartner : src.applianceId
-    return { tx, ty, content: { ...src, applianceId: newApplianceId, rotation: newRot } }
+    // Prefer a palette entry that matches the exact alternative (extraData)
+    // and read its per-alternative `flipPartner` if present. Do NOT use
+    // legacy raw appliance objects here.
+    const srcExtra = Number(src.extraData || 0)
+    const paletteEntry = palette.value.find(p => p.id === src.applianceId && (Number(p.alternativeKey || 0) === srcExtra)) || palette.value.find(p => p.id === src.applianceId)
+    // If the palette alternative defines flipPartner, it's the target alternative key.
+    let newApplianceId = src.applianceId
+    let newExtraData = srcExtra
+    if (paletteEntry && paletteEntry.flipPartner != null) {
+      const targetAltKey = Number(paletteEntry.flipPartner)
+      if (!Number.isNaN(targetAltKey)) {
+        const altEntry = palette.value.find(a => a.id === src.applianceId && Number(a.alternativeKey || 0) === targetAltKey)
+        if (altEntry) {
+          newApplianceId = src.applianceId
+          newExtraData = targetAltKey
+        }
+      }
+    }
+    return { tx, ty, content: { ...src, applianceId: newApplianceId, extraData: newExtraData, rotation: newRot } }
   })
 
   // Clear sources then write targets
