@@ -48,7 +48,7 @@ namespace PlateUpTool_Integration
             public int altId;                // canonical alias from MapGameId (0 = none)
             public int rotation;             // 0-3
             public int extraData;            // teleporter GroupID or 0
-            public List<int> additionalData;  // non-null when appliance is a configured smart grabber
+            public List<int> additionalData;  // non-null when appliance is a configured smart grabber, blueprint store or frozen prep station
             public Entity entity;
         }
 
@@ -744,6 +744,18 @@ namespace PlateUpTool_Integration
                                 bpData.HasBeenCopied ? 1 : 0,
                                 (int)bpData.Price
                             };
+                        }
+
+                        // Frozen prep stations (CItemProvider with Available > 0 and DefaultProvidedItem == 0) - Capture the provided item
+                        // so it can be matched on import. Encoded as [ProvidedItem]
+                        if (base.EntityManager.HasComponent<CItemProvider>(primaryOccupant))
+                        {
+                            var ipData = base.EntityManager.GetComponentData<CItemProvider>(primaryOccupant);
+                            if (ipData.Available > 0 && ipData.DefaultProvidedItem == 0)
+                            {
+                                PlateUpTool_Integration.TDbg("CItemProvider: ProvidedItem=" + ipData.ProvidedItem + " Available=" + ipData.Available);
+                                forceAdditionalData = new List<int> { ipData.ProvidedItem };
+                            }
                         }
 
                         // ===================================================================================
@@ -2405,6 +2417,13 @@ namespace PlateUpTool_Integration
                             bpData.HasBeenCopied ? 1 : 0,
                             (int)bpData.Price
                         };
+                    }
+                    // Frozen prep stations - [ProvidedItem] (mirrors ReallyExport)
+                    if (base.EntityManager.HasComponent<CItemProvider>(occupant))
+                    {
+                        var ipData = base.EntityManager.GetComponentData<CItemProvider>(occupant);
+                        if (ipData.Available > 0 && ipData.DefaultProvidedItem == 0)
+                            adItems = new List<int> { ipData.ProvidedItem };
                     }
 
                     gameAppliances.Add(new GameAppliance {
