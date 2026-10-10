@@ -758,6 +758,15 @@ namespace PlateUpTool_Integration
                             }
                         }
 
+                        // Freezers (CItemHolder with a non-null HeldItem) - Capture the held item's ID
+                        // (taken from the held entity's CItem component). Encoded as [HeldItemID]
+                        // Only applied if nothing above has already claimed additionalData.
+                        if (forceAdditionalData == null && TryGetHeldItemId(primaryOccupant, out int heldId))
+                        {
+                            PlateUpTool_Integration.TDbg("CItemHolder: HeldItem ID=" + heldId);
+                            forceAdditionalData = new List<int> { heldId };
+                        }
+
                         // ===================================================================================
                         // Special case for certain appliances -------------------------- ^^^^^^^^^^^^^^^^^^^^
                         // ===================================================================================
@@ -843,6 +852,58 @@ namespace PlateUpTool_Integration
         }
 
         // ===================================================================================================
+        // If the entity has a CItemHolder whose HeldItem is not Entity.Null, return the held item's
+        // ID (from the held entity's CItem component). Returns false otherwise.
+        private bool TryGetHeldItemId(Entity holder, out int itemId)
+        {
+            itemId = 0;
+            var em = base.EntityManager;
+            if (!em.HasComponent<CItemHolder>(holder)) return false;
+            Entity held = em.GetComponentData<CItemHolder>(holder).HeldItem;
+            if (held == Entity.Null || !em.Exists(held)) return false;
+            if (!em.HasComponent<CItem>(held)) return false;
+            itemId = em.GetComponentData<CItem>(held).ID;
+            return true;
+        }
+
+        // Guards against recursing if a held item itself carries a CItemHolder
+        private bool _dumpingHeldItem = false;
+
+        // Dumps the components of a held item entity, indented beneath the HeldItem line of a CItemHolder.
+        private void DumpHeldItemEntity(Entity held, int indentLevel, string prefix)
+        {
+            if (_dumpingHeldItem) return;
+            if (held == Entity.Null) return;
+
+            var em = base.EntityManager;
+            string indent = new string(' ', (indentLevel + 1) * 4);
+            if (!em.Exists(held)) { PlateUpTool_Integration.TDbg(prefix + indent + "(held entity no longer exists)"); return; }
+
+            _dumpingHeldItem = true;
+            try
+            {
+                var emType = typeof(EntityManager);
+                foreach (var ct in em.GetComponentTypes(held))
+                {
+                    PlateUpTool_Integration.TDbg(prefix + indent + GetComponentTypeName(ct));
+                    try
+                    {
+                        var managedType = GetManagedTypeFromComponentType(ct);
+                        if (managedType == null || managedType.IsGenericType) continue; // skip buffers/unknowns
+                        var method = emType.GetMethods().FirstOrDefault(m => m.Name == "GetComponentData" && m.IsGenericMethod && m.GetParameters().Length == 1);
+                        if (method == null) continue;
+                        object compObj = method.MakeGenericMethod(managedType).Invoke(em, new object[] { held });
+                        DumpObjectFields(compObj, indentLevel + 2, prefix);
+                    }
+                    catch (Exception ex)
+                    {
+                        PlateUpTool_Integration.TDbg(prefix + indent + "    (failed to read held component: " + ex.Message + ")");
+                    }
+                }
+            }
+            finally { _dumpingHeldItem = false; }
+        }
+
         // Dump data implementation: walk the room and log a tree of components per primary occupant
         // ===================================================================================================
         protected void ReallyDump()
@@ -913,6 +974,9 @@ namespace PlateUpTool_Integration
                                         }
                                     }
                                     catch { }
+
+                                    // CItemHolder needs its HeldItem entity expanded inline
+                                    bool isItemHolder = managedType == typeof(CItemHolder);
 
                                     var emType = typeof(EntityManager);
 
@@ -1113,6 +1177,9 @@ namespace PlateUpTool_Integration
                                                 var gen = method.MakeGenericMethod(managedType);
                                                 object compObj = gen.Invoke(base.EntityManager, new object[] { primaryOccupant });
                                                 DumpObjectFields(compObj, 2, coordPrefix);
+                                                // Once the whole CItemHolder is dumped, expand the entity it holds
+                                                if (isItemHolder)
+                                                    DumpHeldItemEntity(((CItemHolder)compObj).HeldItem, 2, coordPrefix);
                                             }
                                         }
                                         catch (Exception ex)
@@ -2425,6 +2492,9 @@ namespace PlateUpTool_Integration
                         if (ipData.Available > 0 && ipData.DefaultProvidedItem == 0)
                             adItems = new List<int> { ipData.ProvidedItem };
                     }
+                    // Freezers - [HeldItemID] (mirrors ReallyExport)
+                    if (adItems == null && TryGetHeldItemId(occupant, out int heldItemId))
+                        adItems = new List<int> { heldItemId };
 
                     gameAppliances.Add(new GameAppliance {
                         putX = xPos, putY = yPos,
